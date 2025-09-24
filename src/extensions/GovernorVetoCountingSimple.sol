@@ -9,7 +9,7 @@ abstract contract GovernorVetoCountingSimple is GovernorCountingSimple {
   function _vetoQuorumReached(uint256 proposalId) internal view virtual returns (bool) {
     (uint256 _againstVotes,,) = proposalVotes(proposalId);
 
-    return vetoQuorum(proposalSnapshot(proposalId)) >= _againstVotes;
+    return _againstVotes >= vetoQuorum(proposalSnapshot(proposalId));
   }
 
   function vetoQuorum(uint256 /*timepoint*/ ) public view virtual returns (uint256);
