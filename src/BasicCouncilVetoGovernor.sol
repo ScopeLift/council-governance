@@ -5,14 +5,13 @@ import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorVetoCountingSimple} from "./extensions/GovernorVetoCountingSimple.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
-import {GovernorPreventLateQuorum} from
-  "@openzeppelin/contracts/governance/extensions/GovernorPreventLateQuorum.sol";
+import {GovernorVetoOverride} from "./extensions/GovernorVetoOverride.sol";
 
 contract BasicCouncilVetoGovernor is
   Governor,
   GovernorVotes,
   GovernorVetoCountingSimple,
-  GovernorPreventLateQuorum
+  GovernorVetoOverride
 {
   address public immutable COUNCIL;
 
@@ -21,10 +20,15 @@ contract BasicCouncilVetoGovernor is
     _;
   }
 
-  constructor(IERC5805 _token, address _council, uint48 _lateQuorumVoteExtension)
+  constructor(
+    IERC5805 _token,
+    address _council,
+    address _vetoOverrideRole,
+    uint48 _vetoOverrideDuration
+  )
     Governor("BasicVetoGovernor")
     GovernorVotes(_token)
-    GovernorPreventLateQuorum(_lateQuorumVoteExtension)
+    GovernorVetoOverride(_vetoOverrideRole, _vetoOverrideDuration)
   {
     COUNCIL = _council;
   }
@@ -42,10 +46,6 @@ contract BasicCouncilVetoGovernor is
   }
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
-    return 0;
-  }
-
-  function vetoQuorum(uint256 /*timepoint*/ ) public view virtual override returns (uint256) {
     return 0;
   }
 
@@ -76,16 +76,12 @@ contract BasicCouncilVetoGovernor is
     return super._cancel(targets, values, calldatas, descriptionHash);
   }
 
-  function proposalDeadline(uint256 proposalId)
+  function state(uint256 proposalId)
     public
     view
-    override(Governor, GovernorPreventLateQuorum)
-    returns (uint256)
+    override(Governor, GovernorVetoOverride)
+    returns (ProposalState)
   {
-    return super.proposalDeadline(proposalId);
-  }
-
-  function _tallyUpdated(uint256 proposalId) internal override(Governor, GovernorPreventLateQuorum) {
-    super._tallyUpdated(proposalId);
+    return GovernorVetoOverride.state(proposalId);
   }
 }
