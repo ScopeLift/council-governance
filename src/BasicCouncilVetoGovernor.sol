@@ -41,11 +41,11 @@ contract BasicCouncilVetoGovernor is
   }
 
   function votingDelay() public pure override returns (uint256) {
-    return 7200; // 1 day
+    return 1 hours;
   }
 
   function votingPeriod() public pure override returns (uint256) {
-    return 50_400; // 1 week
+    return 1 days;
   }
 
   function proposalThreshold() public pure override returns (uint256) {
@@ -53,7 +53,7 @@ contract BasicCouncilVetoGovernor is
   }
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
-    return 0;
+    return 10_000e18;
   }
 
   function propose(
@@ -135,13 +135,11 @@ contract BasicCouncilVetoGovernor is
     return GovernorTimelockControl.proposalNeedsQueuing(proposalId);
   }
 
-  function _castVote(
-    uint256 proposalId,
-    address account,
-    uint8 support,
-    string memory reason,
-    bytes memory params
-  ) internal override(Governor, GovernorVetoCountingSimple) returns (uint256) {
-    return super._castVote(proposalId, account, support, reason, params);
+  function clock() public view override(Governor, GovernorVotes) returns (uint48) {
+    return uint48(block.timestamp);
+  }
+
+  function CLOCK_MODE() public pure override(Governor, GovernorVotes) returns (string memory) {
+    return "mode=timestamp";
   }
 }

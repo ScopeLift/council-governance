@@ -1,38 +1,82 @@
 // SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.4.0) (governance/extensions/GovernorCountingSimple.sol)
 
 pragma solidity ^0.8.30;
 
-import {GovernorCountingSimple} from
-  "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 
-abstract contract GovernorVetoCountingSimple is GovernorCountingSimple {
-  /**
-   * @dev See {Governor-_quorumReached}. In this module, the quorum is reached if the againstVotes
-   * are greater than or equal to the quorum.
-   */
-  function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
-    (uint256 _againstVotes,,) = proposalVotes(proposalId);
-    return quorum(proposalSnapshot(proposalId)) <= _againstVotes;
+/**
+ * @dev Extension of {Governor} for simple 1 vote option counting.
+ */
+abstract contract GovernorVetoCountingSimple is Governor {
+  struct ProposalVote {
+    uint256 vetoVotes;
+    mapping(address voter => bool) hasVoted;
+  }
+
+  mapping(uint256 proposalId => ProposalVote) private _proposalVotes;
+
+  /// @inheritdoc IGovernor
+  // solhint-disable-next-line func-name-mixedcase
+  function COUNTING_MODE() public pure virtual override returns (string memory) {
+    return "support=veto&quorum=veto";
+  }
+
+  /// @inheritdoc IGovernor
+  function hasVoted(uint256 proposalId, address account)
+    public
+    view
+    virtual
+    override
+    returns (bool)
+  {
+    return _proposalVotes[proposalId].hasVoted[account];
   }
 
   /**
-   * @dev See {Governor-_voteSucceeded}. In this module, the vote succeeds if the quorum has not
-   * been reached.
+   * @dev Accessor to the internal vote counts.
+   */
+  function proposalVotes(uint256 proposalId) public view virtual returns (uint256 vetoVotes) {
+    ProposalVote storage proposalVote = _proposalVotes[proposalId];
+    return (proposalVote.vetoVotes);
+  }
+
+  /// @inheritdoc Governor
+  function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
+    ProposalVote storage proposalVote = _proposalVotes[proposalId];
+
+    // Inverse quorum
+    // If veto votes are greater than or equal to the quorum, quorum is not reached
+    return !(proposalVote.vetoVotes >= quorum(proposalSnapshot(proposalId)));
+  }
+
+  /**
+   * @dev See {Governor-_voteSucceeded}. In this module, the forVotes must be strictly over the
+   * againstVotes.
    */
   function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
-    return !_quorumReached(proposalId);
+    return _quorumReached(proposalId);
   }
 
-  function _castVote(
+  /**
+   * @dev See {Governor-_countVote}. In this module, the support follows the `VoteType` enum (from
+   * Governor Bravo).
+   */
+  function _countVote(
     uint256 proposalId,
     address account,
     uint8 support,
-    string memory reason,
-    bytes memory params
+    uint256 totalWeight,
+    bytes memory // params
   ) internal virtual override returns (uint256) {
-    require(
-      support == uint8(VoteType.Against), "GovernorVetoCountingSimple: can only cast against vote"
-    );
-    return super._castVote(proposalId, account, support, reason, params);
+    ProposalVote storage proposalVote = _proposalVotes[proposalId];
+
+    if (proposalVote.hasVoted[account]) revert GovernorAlreadyCastVote(account);
+    proposalVote.hasVoted[account] = true;
+
+    if (support == 0) proposalVote.vetoVotes += totalWeight;
+    else revert GovernorInvalidVoteType();
+
+    return totalWeight;
   }
 }

@@ -24,15 +24,15 @@ contract BasicCouncilGovernor is
   {}
 
   function votingDelay() public pure override returns (uint256) {
-    return 7200; // 1 day
+    return 1 days;
   }
 
   function votingPeriod() public pure override returns (uint256) {
-    return 50_400; // 1 week
+    return 1 weeks;
   }
 
   function proposalThreshold() public pure override returns (uint256) {
-    return 0;
+    return 1;
   }
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
@@ -118,6 +118,7 @@ contract BasicCouncilGovernor is
     override(GovernorSuperQuorum, GovernorCountingSimple)
     returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
   {
-    return super.proposalVotes(proposalId);
+    // GovernorSuperQuorum.proposalVotes is unimplemented.
+    return GovernorCountingSimple.proposalVotes(proposalId);
   }
 }
