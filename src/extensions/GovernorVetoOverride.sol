@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 
+// TODO: `onlyGovernance` prob the right modifier for these fns, go with `onlyAdmin`
 abstract contract GovernorVetoOverride is Governor {
   mapping(uint256 proposalId => bool) public isVetoOverridden;
   uint48 public vetoOverrideDuration;

@@ -10,6 +10,8 @@ contract MockERC20Votes is ERC20VotesTimestampMock {
 
   function mint(address account, uint256 amount) public {
     _mint(account, amount);
+    // auto-delegate to make things easier
+    _delegate(account, account);
   }
 
   function burn(address account, uint256 amount) public {
