@@ -90,7 +90,7 @@
 - `constructor`
   - Do we need `EIP712(_name, "1")`
 - `_update`
-  - Should we do `if (from != address(0) && to != address(0)) revert("Not allowed");` cause this will break `burn`.
+  - ~~Should we do `if (from != address(0) && to != address(0)) revert("Not allowed");` cause this will break `burn`.~~
 - `_delegate`
   - We should likely revert `_delegate` right?
 - `_mint` 
@@ -109,7 +109,10 @@
 ```javascript
 if (_checkVetoGovernorStateBitmap(proposalId, _encodeStateBitmap(ProposalState.Executed))) {
     return ProposalState.Executed;  // Completed
-} else if (_checkVetoGovernorStateBitmap(proposalId, _encodeStateBitmap(ProposalState.Canceled))) {
+} else if (_checkVetoGovernorStateBitmap(proposalId, 
+    _encodeStateBitmap(ProposalState.Canceled) |
+    _encodeStateBitmap(ProposalState.Defeated)
+)) {
     return ProposalState.Canceled;  // Canceled / Vetoed
 } else {
     return ProposalState.Queued;  // Still processing (Pending/Active/Queued/Succeeded/Defeated)
