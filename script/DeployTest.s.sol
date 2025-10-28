@@ -83,7 +83,7 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
     console.log("\nDeploying tokens and funding accounts...");
 
     // Deploy CouncilERC20, with the Main DAO Governor as the owner/admin
-    councilToken = new CouncilERC20("Optimistic Council", "OC", MAIN_DAO_GOVERNOR);
+    councilToken = new CouncilERC20("Optimistic Council", "OC", MAIN_DAO_GOVERNOR, 1);
 
     // Mint one "council seat" token to each member
     // In a real scenario, this would be called by the Main DAO Governor
