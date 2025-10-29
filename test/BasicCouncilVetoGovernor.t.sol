@@ -226,4 +226,18 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     vm.prank(nonCouncilProposer);
     vetoGovernor.propose(targets, values, calldatas, "Invalid Proposal");
   }
+
+  function test_RevertIf_CancelAPendingProposal() public {
+    uint256 proposalId = _proposeAndForwardToVetoGovernor("Overridden");
+
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        BasicCouncilVetoGovernor.CouncilVetoGovernor_OperationNotSupported.selector
+      )
+    );
+    vm.prank(councilMembers[0]);
+    vetoGovernor.cancel(targets, values, calldatas, descriptionHash);
+  }
 }
