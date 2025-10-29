@@ -136,8 +136,7 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes32 descriptionHash
   ) internal virtual override returns (uint256) {
     uint256 proposalId = super._cancel(targets, values, calldatas, descriptionHash);
-
-    councilVetoGovernor.cancel(targets, values, calldatas, descriptionHash);
+    delete _proposalDescriptions[proposalId];
 
     return proposalId;
   }
