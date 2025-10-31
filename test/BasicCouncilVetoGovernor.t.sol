@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {Test, console2} from "forge-std/Test.sol";
 import {BasicCouncilGovernor} from "../src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "../src/BasicCouncilVetoGovernor.sol";
+import {GovernorVetoGuardian} from "../src/extensions/GovernorVetoGuardian.sol";
 import {CouncilERC20} from "../src/CouncilERC20.sol";
 import {MockERC20Votes} from "./helpers/MockERC20Votes.sol";
 import {Counter} from "./helpers/Counter.sol";
@@ -24,6 +25,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
   address internal deployer = makeAddr("deployer");
   address internal nonCouncilProposer = makeAddr("nonCouncilProposer");
   address[] internal councilMembers;
+  address internal vetoGuardian = makeAddr("vetoGuardian");
   address internal whale1 = makeAddr("whale1");
   address internal whale2 = makeAddr("whale2");
 
@@ -85,6 +87,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     vetoGovernor = new BasicCouncilVetoGovernor(
       daoToken,
       councilGovernorAddress,
+      vetoGuardian,
       deployer, // Veto override role
       4 days, // Veto override duration
       timelock
@@ -225,5 +228,63 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
 
     vm.prank(nonCouncilProposer);
     vetoGovernor.propose(targets, values, calldatas, "Invalid Proposal");
+  }
+
+  function test_VetoGuardianVetoesPendingProposal() public {
+    uint256 proposalId = _proposeAndForwardToVetoGovernor("Vetoed");
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+    vm.prank(vetoGuardian);
+    vetoGovernor.guardianVeto(proposalId);
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+  }
+
+  function test_VetoGuardianVetoesActiveProposal() public {
+    uint256 proposalId = _proposeAndForwardToVetoGovernor("Vetoed");
+    skip(vetoGovernor.votingDelay() + 1);
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Active));
+
+    vm.prank(vetoGuardian);
+    vetoGovernor.guardianVeto(proposalId);
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+  }
+
+  function test_ProposalVetoedByGuardianIsOverriddenAndExecuted() public {
+    uint256 proposalId = _proposeAndForwardToVetoGovernor("Overridden");
+
+    // Veto the proposal
+    skip(vetoGovernor.votingDelay() + 1);
+    vm.prank(vetoGuardian);
+    vetoGovernor.guardianVeto(proposalId);
+    skip(vetoGovernor.votingPeriod() + 1);
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Defeated));
+
+    // Override the veto
+    vm.prank(deployer); // `deployer` has the vetoOverrideRole
+    vetoGovernor.overrideVeto(proposalId);
+
+    // Assert the state is now Succeeded due to the override
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+    // Now, proceed with queuing and executing
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Overridden")));
+
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+    skip(timelock.getMinDelay() + 1);
+    councilGovernor.execute(targets, values, calldatas, keccak256(bytes("Overridden")));
+
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Executed));
+    assertEq(target.number(), 1);
+  }
+
+  function test_RevertIf_VetoGuardianVetoesSucceededProposal() public {
+    uint256 proposalId = _proposeAndForwardToVetoGovernor("Not Vetoed");
+    skip(vetoGovernor.votingDelay() + vetoGovernor.votingPeriod() + 1);
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+    vm.expectRevert(GovernorVetoGuardian.GovernorVetoGuardian_UnexpectedProposalState.selector);
+    vm.prank(vetoGuardian);
+    vetoGovernor.guardianVeto(proposalId);
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
   }
 }
