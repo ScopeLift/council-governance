@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {Test, console2} from "forge-std/Test.sol";
 import {BasicCouncilGovernor} from "../src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "../src/BasicCouncilVetoGovernor.sol";
+import {GovernorVetoGuardian} from "../src/extensions/GovernorVetoGuardian.sol";
 import {CouncilERC20} from "../src/CouncilERC20.sol";
 import {MockERC20Votes} from "./helpers/MockERC20Votes.sol";
 import {Counter} from "./helpers/Counter.sol";
@@ -24,6 +25,7 @@ abstract contract BasicCouncilGovernorTest is Test {
   address internal deployer = makeAddr("deployer");
   address internal nonCouncilMember = makeAddr("nonCouncilMember");
   address[] internal councilMembers;
+  address internal vetoGuardian = makeAddr("vetoGuardian");
 
   // === Proposal Details ===
   address[] internal targets;
@@ -70,6 +72,7 @@ abstract contract BasicCouncilGovernorTest is Test {
     vetoGovernor = new BasicCouncilVetoGovernor(
       daoToken,
       councilGovernorAddress,
+      vetoGuardian,
       deployer, // Veto override role
       4 days, // Veto override duration
       timelock
