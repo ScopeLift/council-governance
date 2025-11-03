@@ -62,7 +62,7 @@ abstract contract GovernorVetoGuardian is Governor {
   /// proposals evaluates to `Defeated`.
   /// @dev This status can later be cleared by a veto override module.
   /// @param proposalId is the proposalId to be vetoed by the guardian.
-  function guardianVeto(uint256 proposalId) external onlyVetoGuardian {
+  function vetoByGuardian(uint256 proposalId) external onlyVetoGuardian {
     ProposalState current = state(proposalId);
     if (current != ProposalState.Pending && current != ProposalState.Active) {
       revert GovernorVetoGuardian_UnexpectedProposalState();
