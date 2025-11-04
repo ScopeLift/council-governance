@@ -9,30 +9,43 @@ import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {GovernorCouncilQueuing} from "./extensions/GovernorCouncilQueuing.sol";
 import {GovernorSuperQuorum} from
   "@openzeppelin/contracts/governance/extensions/GovernorSuperQuorum.sol";
+import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
+import {GovernorAdmin} from "./extensions/GovernorAdmin.sol";
 
 contract BasicCouncilGovernor is
   Governor,
   GovernorVotes,
   GovernorCountingSimple,
   GovernorCouncilQueuing,
-  GovernorSuperQuorum
+  GovernorSuperQuorum,
+  GovernorSettings,
+  GovernorAdmin
 {
-  constructor(IERC5805 _token, IGovernor _councilVetoGovernor)
+  constructor(
+    IERC5805 _token,
+    IGovernor _councilVetoGovernor,
+    address _governorAdmin,
+    uint48 initialVotingDelay,
+    uint32 initialVotingPeriod,
+    uint256 initialProposalThreshold
+  )
     Governor("BasicCouncilGovernor")
     GovernorVotes(_token)
     GovernorCouncilQueuing(_councilVetoGovernor)
+    GovernorSettings(initialVotingDelay, initialVotingPeriod, initialProposalThreshold)
+    GovernorAdmin(_governorAdmin)
   {}
 
-  function votingDelay() public pure override returns (uint256) {
-    return 1 days;
+  function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
+    return super.votingDelay();
   }
 
-  function votingPeriod() public pure override returns (uint256) {
-    return 1 weeks;
+  function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
+    return super.votingPeriod();
   }
 
-  function proposalThreshold() public pure override returns (uint256) {
-    return 1;
+  function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
+    return super.proposalThreshold();
   }
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
@@ -50,6 +63,28 @@ contract BasicCouncilGovernor is
   /// forge-lint: disable-next-line(mixed-case-function)
   function CLOCK_MODE() public pure override(Governor, GovernorVotes) returns (string memory) {
     return "mode=timestamp";
+  }
+
+
+  function _checkGovernance() internal virtual override(Governor, GovernorAdmin) {
+    GovernorAdmin._checkGovernance();
+  }
+
+  function setVotingDelay(uint48 newVotingDelay) public virtual override onlyGovernance {
+    _setVotingDelay(newVotingDelay);
+  }
+
+  function setVotingPeriod(uint32 newVotingPeriod) public virtual override onlyGovernance {
+    _setVotingPeriod(newVotingPeriod);
+  }
+
+  function setProposalThreshold(uint256 newProposalThreshold)
+    public
+    virtual
+    override
+    onlyGovernance
+  {
+    _setProposalThreshold(newProposalThreshold);
   }
 
   function _cancel(

@@ -6,7 +6,7 @@ import {GovernorVetoCountingSimple} from "./extensions/GovernorVetoCountingSimpl
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {GovernorVetoOverride} from "./extensions/GovernorVetoOverride.sol";
-import {GovernorVetoGuardian} from "./extensions/GovernorVetoGuardian.sol";
+import {GovernorAdmin} from "./extensions/GovernorAdmin.sol";
 import {
   GovernorTimelockControl,
   TimelockController
@@ -18,6 +18,7 @@ contract BasicCouncilVetoGovernor is
   GovernorVetoCountingSimple,
   GovernorVetoGuardian,
   GovernorVetoOverride,
+  GovernorAdmin,
   GovernorTimelockControl
 {
   /// @notice Thrown when an operation is not supported
@@ -35,6 +36,7 @@ contract BasicCouncilVetoGovernor is
     address _council,
     address _vetoGuardian,
     address _vetoOverrideRole,
+    address _governorAdmin,
     uint48 _vetoOverrideDuration,
     TimelockController _timelock
   )
@@ -43,6 +45,7 @@ contract BasicCouncilVetoGovernor is
     GovernorVetoGuardian(_vetoGuardian)
     GovernorVetoOverride(_vetoOverrideRole, _vetoOverrideDuration)
     GovernorTimelockControl(_timelock)
+    GovernorAdmin(_governorAdmin)
   {
     COUNCIL = _council;
   }
@@ -61,6 +64,10 @@ contract BasicCouncilVetoGovernor is
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
     return 10_000e18;
+  }
+
+  function _checkGovernance() internal virtual override(Governor, GovernorAdmin) {
+    GovernorAdmin._checkGovernance();
   }
 
   function propose(
