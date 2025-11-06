@@ -117,8 +117,9 @@ contract GovernorCouncilQueuingMock is
   function exposed_checkVetoGovernorStateBitmap(uint256 proposalId, bytes32 allowedStates)
     public
     view
+    returns (bool)
   {
-    _checkVetoGovernorStateBitmap(proposalId, allowedStates);
+    return _checkVetoGovernorStateBitmap(proposalId, allowedStates);
   }
 
   function exposed_proposalDescription(uint256 proposalId) public view returns (string memory) {

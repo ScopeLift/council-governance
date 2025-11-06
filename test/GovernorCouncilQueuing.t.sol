@@ -11,6 +11,9 @@ import {GovernorCountingSimple} from
 import {BasicCouncilVetoGovernorFake} from "test/fakes/BasicCouncilVetoGovernorFake.sol";
 
 contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
+  bytes32 internal constant ALL_PROPOSAL_STATES_BITMAP =
+    bytes32((2 ** (uint8(type(IGovernor.ProposalState).max) + 1)) - 1);
+
   BasicCouncilVetoGovernorFake internal vetoFake;
   GovernorCouncilQueuingMock internal councilMock;
 
@@ -23,7 +26,7 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
       1 weeks, // _initialVotingPeriod
       1, // _initialProposalThreshold
       vetoFake, // _vetoGovernor
-      address(councilToken)
+      address(councilToken) // councilToken
     );
 
     vm.label(address(vetoFake), "vetoFake");
@@ -39,6 +42,10 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
     view
   {
     assertEq(uint8(vetoFake.state(proposalId)), uint8(expected));
+  }
+
+  function _encodeStateBitmap(IGovernor.ProposalState proposalState) public pure returns (bytes32) {
+    return bytes32(1 << uint8(proposalState));
   }
 
   function _getNonTerminalVetoGovernorProposalState(uint8 _proposalStateIndex)
@@ -97,7 +104,6 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
   }
 
   function _passSubmittedProposal(uint256 _proposalId) public {
-    // IERC20 _ercToken = IERC20(address(token));
     uint256 _quorumVotesNeeded = councilMock.quorum(block.timestamp);
     uint256 _votesCast;
     for (uint256 i = 0; i < councilMembers.length; i++) {
@@ -165,8 +171,83 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
   }
 }
 
-contract UpdateCouncilVetoGovernor is GovernorCouncilQueuingTest {
-  function testFuzz_updateCouncilVetoGovernor() public {}
+contract _checkVetoGovernorStateBitmap is GovernorCouncilQueuingTest {
+  function testFuzz_ReturnsTrueWhenProposalStateMatchesBitmap(
+    uint256 _councilMemberIndex,
+    uint8 _proposalStateIndex,
+    address _caller
+  ) public {
+    address _proposer = _selectCouncilMember(_councilMemberIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+
+    IGovernor.ProposalState _proposalState =
+      IGovernor.ProposalState(uint8(bound(_proposalStateIndex, 0, 7)));
+    vetoFake.setProposalState(_proposalId, _proposalState);
+
+    assertEq(
+      councilMock.exposed_checkVetoGovernorStateBitmap(
+        _proposalId, _encodeStateBitmap(_proposalState)
+      ),
+      true
+    );
+  }
+
+  function testFuzz_ReturnsFalseWhenProposalStateNotInBitmap(
+    uint256 _councilMemberIndex,
+    uint8 _proposalStateIndex,
+    address _caller
+  ) public {
+    address _proposer = _selectCouncilMember(_councilMemberIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+
+    IGovernor.ProposalState _proposalState =
+      IGovernor.ProposalState(uint8(bound(_proposalStateIndex, 0, 7)));
+    vetoFake.setProposalState(_proposalId, _proposalState);
+
+    assertEq(
+      councilMock.exposed_checkVetoGovernorStateBitmap(
+        _proposalId, ALL_PROPOSAL_STATES_BITMAP ^ _encodeStateBitmap(_proposalState)
+      ),
+      false
+    );
+  }
+
+  function test_CorrectlyHandlesNonTerminalStateBitmap(uint256 _councilMemberIndex, address _caller)
+    public
+  {
+    bytes32 nonTerminalBitmap = _encodeStateBitmap(IGovernor.ProposalState.Pending)
+      | _encodeStateBitmap(IGovernor.ProposalState.Active)
+      | _encodeStateBitmap(IGovernor.ProposalState.Queued)
+      | _encodeStateBitmap(IGovernor.ProposalState.Succeeded);
+
+    address _proposer = _selectCouncilMember(_councilMemberIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+
+    IGovernor.ProposalState[] memory nonTerminalStates = new IGovernor.ProposalState[](4);
+    nonTerminalStates[0] = IGovernor.ProposalState.Pending;
+    nonTerminalStates[1] = IGovernor.ProposalState.Active;
+    nonTerminalStates[2] = IGovernor.ProposalState.Queued;
+    nonTerminalStates[3] = IGovernor.ProposalState.Succeeded;
+
+    for (uint256 i = 0; i < nonTerminalStates.length; i++) {
+      vetoFake.setProposalState(_proposalId, nonTerminalStates[i]);
+      assertTrue(councilMock.exposed_checkVetoGovernorStateBitmap(_proposalId, nonTerminalBitmap));
+    }
+
+    IGovernor.ProposalState[] memory terminalStates = new IGovernor.ProposalState[](4);
+    terminalStates[0] = IGovernor.ProposalState.Canceled;
+    terminalStates[1] = IGovernor.ProposalState.Defeated;
+    terminalStates[2] = IGovernor.ProposalState.Expired;
+    terminalStates[3] = IGovernor.ProposalState.Executed;
+
+    for (uint256 i = 0; i < terminalStates.length; i++) {
+      vetoFake.setProposalState(_proposalId, terminalStates[i]);
+      assertFalse(councilMock.exposed_checkVetoGovernorStateBitmap(_proposalId, nonTerminalBitmap));
+    }
+  }
 }
 
 contract State is GovernorCouncilQueuingTest {
@@ -181,7 +262,6 @@ contract State is GovernorCouncilQueuingTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
   }
 
-  // !fuzz the time within active
   function testFuzz_CouncilProposalStateIsActiveWhenProposalIsActiveOnTheCouncil(
     uint256 _councilMemberIndex
   ) public {
@@ -232,19 +312,7 @@ contract State is GovernorCouncilQueuingTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
-  function testFuzz_CouncilProposalStateIsQueuedWhenProposalIsQueuedToTheVetoGovernor(
-    uint256 _councilMemberIndex,
-    address _caller
-  ) public {
-    address _proposer = _selectCouncilMember(_councilMemberIndex);
-    Proposal memory _proposal = _buildEmptyProposal();
-
-    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
-
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
-  }
-
-  function testFuzz_CouncilProposalStateIsQueuedWhenProposalCouncilProposalStateIsNonTerminalOnTheVetoGovernor(
+  function testFuzz_CouncilProposalStateIsQueuedWhenProposalStateIsNonTerminalOnTheVetoGovernor(
     uint256 _councilMemberIndex,
     uint8 _proposalStateIndex,
     address _caller
@@ -306,7 +374,7 @@ contract Propose is GovernorCouncilQueuingTest {
     assertEq(vetoFake.proposeCallCount(), 1);
   }
 
-  function testFuzz_QueueSavesProposalDescriptionInStorage(
+  function testFuzz_QueueSavesProposalDescriptionToStorage(
     uint256 _councilMemberIndex,
     string memory _proposalDescription
   ) public {
@@ -318,34 +386,7 @@ contract Propose is GovernorCouncilQueuingTest {
   }
 }
 
-contract _executeOperations is GovernorCouncilQueuingTest {
-  // !
-  function testFuzz_ExecuteOperationsCallsVetoGovernorExecute(
-    uint256 _councilMemberIndex,
-    address _caller
-  ) public {
-    address _proposer = _selectCouncilMember(_councilMemberIndex);
-    vm.assume(_caller != _proposer);
-    Proposal memory _proposal = _buildEmptyProposal();
-    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
-
-    // Manually set proposal state to queued
-    vetoFake.setProposalState(_proposalId, IGovernor.ProposalState.Queued);
-
-    vm.prank(_caller);
-    councilMock.exposed_executeOperations(
-      _proposalId,
-      _proposal.targets,
-      _proposal.values,
-      _proposal.calldatas,
-      keccak256(bytes(_proposal.description))
-    );
-    assertEq(vetoFake.executeCallCount(), 1);
-  }
-}
-
 contract _queueOperations is GovernorCouncilQueuingTest {
-  // !
   function testFuzz_QueueOperationsCallsVetoGovernorPropose(
     uint256 _councilMemberIndex,
     address _caller
@@ -405,7 +446,7 @@ contract _queueOperations is GovernorCouncilQueuingTest {
     assertEq(councilMock.exposed_proposalDescription(_proposalId), "");
   }
 
-  function testFuzz_QueueOperationReturnsVetoGovernorProposalDeadline(
+  function testFuzz_QueueOperationsReturnsVetoGovernorProposalDeadline(
     uint256 _councilMemberIndex,
     address _caller
   ) public {
@@ -422,4 +463,31 @@ contract _queueOperations is GovernorCouncilQueuingTest {
   }
 }
 
-contract _checkVetoGovernorStateBitmap is GovernorCouncilQueuingTest {}
+contract _executeOperations is GovernorCouncilQueuingTest {
+  function testFuzz_ExecuteOperationsCallsVetoGovernorExecute(
+    uint256 _councilMemberIndex,
+    address _caller
+  ) public {
+    address _proposer = _selectCouncilMember(_councilMemberIndex);
+    vm.assume(_caller != _proposer);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+
+    // Manually set proposal state to queued
+    vetoFake.setProposalState(_proposalId, IGovernor.ProposalState.Queued);
+
+    vm.prank(_caller);
+    councilMock.exposed_executeOperations(
+      _proposalId,
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+    assertEq(vetoFake.executeCallCount(), 1);
+  }
+}
+
+contract UpdateCouncilVetoGovernor is GovernorCouncilQueuingTest {
+  function testFuzz_updateCouncilVetoGovernor() public {}
+}
