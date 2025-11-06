@@ -24,22 +24,23 @@ contract GovernorCouncilQueuingMock is
     uint48 _initialVotingDelay,
     uint32 _initialVotingPeriod,
     uint256 _initialProposalThreshold,
-    IGovernor _vetoGovernor
+    IGovernor _vetoGovernor,
+    address councilToken
   )
     Governor(_name)
     GovernorCouncilQueuing(_vetoGovernor)
     GovernorSettings(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold)
     GovernorVotesQuorumFraction(100)
-    GovernorVotes(IVotes(address(0)))
+    GovernorVotes(IVotes(councilToken))
   {}
 
-  function quorum(uint256 blockNumber)
+  function quorum(uint256)
     public
-    view
+    pure
     override(Governor, GovernorVotesQuorumFraction)
     returns (uint256)
   {
-    return 100;
+    return 5;
   }
 
   function state(uint256 proposalId)
@@ -90,8 +91,8 @@ contract GovernorCouncilQueuingMock is
     uint256[] memory values,
     bytes[] memory calldatas,
     bytes32 descriptionHash
-  ) public {
-    _queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+  ) public returns (uint48) {
+    return _queueOperations(proposalId, targets, values, calldatas, descriptionHash);
   }
 
   function exposed_executeOperations(
@@ -113,7 +114,10 @@ contract GovernorCouncilQueuingMock is
     _cancel(targets, values, calldatas, descriptionHash);
   }
 
-  function exposed_checkVetoGovernorStateBitmap(uint256 proposalId, bytes32 allowedStates) public view {
+  function exposed_checkVetoGovernorStateBitmap(uint256 proposalId, bytes32 allowedStates)
+    public
+    view
+  {
     _checkVetoGovernorStateBitmap(proposalId, allowedStates);
   }
 
