@@ -1,0 +1,32 @@
+## GovernorCouncilQueuing
+- [ ] `updateCouncilVetoGovernor`
+    - [ ] when called by any address other than the main DAO governor timelock
+        - [ ] reverts with `GovernorOnlyExecutor`
+    - [ ] when called by the main DAO governor timelock
+        - [ ] emits event `CouncilVetoGovernorChange`
+        - [ ] veto governor address updated
+        - [ ] when unexecuted proposals exist on the old veto governor (out of scope, move to integration tests)
+            - [ ] the proposals will no longer be executable unless the address is set back to the old veto governor
+- [x] `_executeOperations`
+    - [x] calls `execute` on **CouncilVetoGovernor** with proposal params
+- [x] `_queueOperations`
+    - [x] calls `propose` on **CouncilVetoGovernor** with proposal params
+    - [x] deletes proposal description from storage
+    - [x] returns proposal deadline on **CouncilVetoGovernor**
+- [x] `propose`
+    - [x] save proposal description to storage
+    - [x] call `super.propose`
+- [ ] `state`
+    - [x] when proposal state is not `Queued`
+        - [x] returns proposal state from CouncilGovernor
+    - [ ] when proposal state is `Queued`
+        - [x] when **CouncilVetoGovernor** proposal state is `Pending`, `Active`, `Succeeded`, `Queued`
+            - [x] return `Queued`
+        - [x] when **CouncilVetoGovernor** proposal state is `Executed`
+            - [x] return `Executed`
+        - [x] when **CouncilVetoGovernor** proposal state is `Cancelled`, `Defeated`, `Expired`
+            - [x] return `Cancelled`
+- [ ] `_checkVetoGovernorStateBitmap`
+    - [ ] fetches proposal state from **CouncilVetoGovernor**
+    - [ ] returns `true` if proposal state matches one of the allowed proposal states
+    - [ ] returns `false` if proposal state doesn't match one of the allowed proposal states
