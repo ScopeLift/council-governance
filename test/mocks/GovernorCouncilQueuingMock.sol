@@ -117,6 +117,10 @@ contract GovernorCouncilQueuingMock is
     _checkVetoGovernorStateBitmap(proposalId, allowedStates);
   }
 
+  function exposed_proposalDescription(uint256 proposalId) public view returns (string memory) {
+    return _proposalDescriptions[proposalId];
+  }
+
   function _executeOperations(
     uint256 proposalId,
     address[] memory targets,

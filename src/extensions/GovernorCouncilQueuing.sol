@@ -3,7 +3,6 @@
 pragma solidity ^0.8.30;
 
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
-
 /**
  * @dev Extension of {Governor} that binds the execution process to an instance of
  * {CouncilVetoGovernor}. The {CouncilGovernor} needs to be able to call `propose`, `cancel`, and
@@ -16,8 +15,9 @@ import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.s
  * {CouncilGovernor} will be
  * inaccessible from a proposal, unless executed via {CouncilGovernor-relay}.
  */
+
 abstract contract GovernorCouncilQueuing is Governor {
-  mapping(uint256 proposalId => string) private _proposalDescriptions;
+  mapping(uint256 proposalId => string) internal _proposalDescriptions;
   IGovernor public councilVetoGovernor;
 
   /**
@@ -50,7 +50,6 @@ abstract contract GovernorCouncilQueuing is Governor {
     ProposalState currentState = super.state(proposalId);
 
     if (currentState != ProposalState.Queued) return currentState;
-
     if (
       _checkVetoGovernorStateBitmap(
         proposalId,
