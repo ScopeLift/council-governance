@@ -9,12 +9,11 @@ import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
  * @dev Minimal fake implementation of Governor for testing GovernorCouncilQueuing.
  * This fake inherits from Governor and only overrides what's needed for testing.
  */
-// !! Should we inherit GovernorTimelockControl just to add timelock to it
 contract BasicCouncilVetoGovernorFake is Governor, GovernorVotes {
-  // Storage for controlling fake behavior
+  /// @dev Storage for controlling fake behavior.
   mapping(uint256 proposalId => ProposalState) private _fakeStates;
 
-  // Track function calls for testing
+  /// @dev Track function calls for testing.
   address[] public lastProposeTargets;
   uint256[] public lastProposeValues;
   bytes[] public lastProposeCalldatas;
@@ -26,9 +25,7 @@ contract BasicCouncilVetoGovernorFake is Governor, GovernorVotes {
 
   constructor(IERC5805 _token) Governor("BasicCouncilVetoGovernorFake") GovernorVotes(_token) {}
 
-  /**
-   * @dev Manually set the state of a proposal for testing.
-   */
+  /// @dev Manually set the state of a proposal for testing.
   function setProposalState(uint256 proposalId, ProposalState newState) external {
     _fakeStates[proposalId] = newState;
   }
@@ -39,9 +36,7 @@ contract BasicCouncilVetoGovernorFake is Governor, GovernorVotes {
     return super.state(proposalId);
   }
 
-  /**
-   * @dev Override propose to track calls.
-   */
+  /// @dev Override propose to track calls.
   function propose(
     address[] memory targets,
     uint256[] memory values,
@@ -66,9 +61,7 @@ contract BasicCouncilVetoGovernorFake is Governor, GovernorVotes {
     return proposalId;
   }
 
-  /**
-   * @dev Override execute to track calls.
-   */
+  /// @dev Override execute to track calls.
   function execute(
     address[] memory targets,
     uint256[] memory values,
@@ -79,16 +72,7 @@ contract BasicCouncilVetoGovernorFake is Governor, GovernorVotes {
     return super.execute(targets, values, calldatas, descriptionHash);
   }
 
-  /**
-   * @dev Helper to reset call counts between tests.
-   */
-  function reset() external {
-    proposeCallCount = 0;
-    executeCallCount = 0;
-    lastProposedId = 0;
-  }
   /// Required overrides
-
   function votingDelay() public pure override returns (uint256) {
     return 1 days;
   }
@@ -105,7 +89,7 @@ contract BasicCouncilVetoGovernorFake is Governor, GovernorVotes {
 
   /// Required overrides
   function COUNTING_MODE() public pure override returns (string memory) {
-    return "support=bravo&quorum=for,abstain";
+    return "support=veto&quorum=veto";
   }
 
   /// Required overrides
