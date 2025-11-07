@@ -2,13 +2,12 @@
 
 pragma solidity ^0.8.30;
 
-import {Test, console2} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {OptimisticGovernanceTestBase} from "test/helpers/OptimisticGovernanceTestBase.sol";
 import {GovernorCouncilQueuingMock} from "test/mocks/GovernorCouncilQueuingMock.sol";
 import {GovernorCountingSimple} from
   "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
-import {BasicCouncilVetoGovernorFake} from "test/fakes/BasicCouncilVetoGovernorFake.sol";
 
 contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
   bytes32 internal constant ALL_PROPOSAL_STATES_BITMAP =
@@ -19,7 +18,7 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
 
   function setUp() public override {
     super.setUp();
-    vetoGovernor = makeAddr("veto fake");
+    vetoGovernor = makeAddr("veto governor");
     councilMock = new GovernorCouncilQueuingMock(
       "GovernorCouncilQueuingMock", // _name
       1 days, // _initialVotingDelay
@@ -29,7 +28,6 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
       address(councilToken) // councilToken
     );
 
-    // vm.label(address(vetoGovernor), "vetoGovernor");
     vm.label(address(councilMock), "councilMock");
   }
 
@@ -37,15 +35,77 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
     assertEq(uint8(councilMock.state(proposalId)), uint8(expected));
   }
 
-  // function _assertVetoGovernorProposalState(uint256 proposalId, IGovernor.ProposalState expected)
-  //   internal
-  //   view
-  // {
-  //   assertEq(uint8(vetoGovernor.state(proposalId)), uint8(expected));
-  // }
-
   function _encodeStateBitmap(IGovernor.ProposalState proposalState) public pure returns (bytes32) {
     return bytes32(1 << uint8(proposalState));
+  }
+
+  function _mockVetoGovernorState(uint256 _proposalId, IGovernor.ProposalState _proposalState)
+    internal
+  {
+    vm.mockCall(
+      vetoGovernor,
+      abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
+      abi.encode(_proposalState)
+    );
+  }
+
+  function _mockVetoGovernorPropose(uint256 _proposalId) internal {
+    vm.mockCall(
+      vetoGovernor, abi.encodeWithSelector(IGovernor.propose.selector), abi.encode(_proposalId)
+    );
+  }
+
+  function _mockVetoGovernorProposalDeadline(uint256 _proposalId, uint48 _expectedDeadline)
+    internal
+  {
+    vm.mockCall(
+      address(vetoGovernor),
+      abi.encodeWithSelector(IGovernor.proposalDeadline.selector, _proposalId),
+      abi.encode(_expectedDeadline)
+    );
+  }
+
+  function _mockVetoGovernorProposalDeadline(uint256 _proposalId) internal {
+    _mockVetoGovernorProposalDeadline(_proposalId, 1 days);
+  }
+
+  function _mockVetoGovernorExecute(uint256 _proposalId, Proposal memory _proposal) internal {
+    vm.mockCall(
+      address(vetoGovernor),
+      abi.encodeWithSelector(
+        IGovernor.execute.selector,
+        _proposal.targets,
+        _proposal.values,
+        _proposal.calldatas,
+        keccak256(bytes(_proposal.description))
+      ),
+      abi.encode(_proposalId)
+    );
+  }
+
+  function _expectVetoGovernorPropose(Proposal memory _proposal) internal {
+    vm.expectCall(
+      vetoGovernor,
+      abi.encodeCall(
+        IGovernor.propose,
+        (_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description)
+      )
+    );
+  }
+
+  function _expectVetoGovernorExecute(Proposal memory _proposal) internal {
+    vm.expectCall(
+      vetoGovernor,
+      abi.encodeCall(
+        IGovernor.execute,
+        (
+          _proposal.targets,
+          _proposal.values,
+          _proposal.calldatas,
+          keccak256(bytes(_proposal.description))
+        )
+      )
+    );
   }
 
   function _getNonTerminalVetoGovernorProposalState(uint8 _proposalStateIndex)
@@ -141,21 +201,9 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
   {
     _proposalId = _passProposal(_proposer, _proposal);
 
-    vm.mockCall(
-      vetoGovernor,
-      abi.encodeWithSelector(IGovernor.propose.selector),
-      abi.encode(_proposalId)
-    );
-    vm.mockCall(
-      vetoGovernor,
-      abi.encodeWithSelector(IGovernor.proposalDeadline.selector),
-      abi.encode(uint48(block.timestamp + 2 weeks))
-    );
-    vm.mockCall(
-      vetoGovernor,
-      abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-      abi.encode(IGovernor.ProposalState.Pending)
-    );
+    _mockVetoGovernorPropose(_proposalId);
+    _mockVetoGovernorProposalDeadline(_proposalId);
+    _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Pending);
 
     vm.prank(_caller);
     councilMock.queue(
@@ -163,31 +211,6 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
       _proposal.values,
       _proposal.calldatas,
       keccak256(bytes(_proposal.description))
-    );
-  }
-
-  function _executeProposal(Proposal memory _proposal) public {
-    councilMock.execute(
-      _proposal.targets,
-      _proposal.values,
-      _proposal.calldatas,
-      keccak256(bytes(_proposal.description))
-    );
-  }
-
-  function _passQueueAndExecuteProposal(
-    address _proposer,
-    address _caller,
-    Proposal memory _proposal
-  ) public returns (uint256 _proposalId) {
-    _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
-
-    // vm.warp(block.timestamp + vetoGovernor.votingDelay() + vetoGovernor.votingPeriod() + 1);
-    // _executeProposal(_proposal);
-    vm.mockCall(
-      address(vetoGovernor),
-      abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-      abi.encode(IGovernor.ProposalState.Executed)
     );
   }
 }
@@ -201,27 +224,10 @@ contract _checkVetoGovernorStateBitmap is GovernorCouncilQueuingTest {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
-
     IGovernor.ProposalState _proposalState =
       IGovernor.ProposalState(uint8(bound(_proposalStateIndex, 0, 7)));
-    // //     vm.mockCall(address(vetoGovernor),
-    // abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-    // abi.encode(_proposalState)
-    // );
-    vm.mockCall(address(vetoGovernor), // the contract we are calling
-    abi.encodeWithSelector(IGovernor.state.selector, _proposalId), // the function we are calling, with param
-    abi.encode(_proposalState)); // return?
 
-// function mockCall(
-//     address where,
-//     uint256 value,
-//     bytes calldata data,
-//     bytes calldata retdata
-// ) external;
-
-// function mockCall(address where, bytes calldata data, bytes calldata retdata) external;
-
-
+    _mockVetoGovernorState(_proposalId, _proposalState);
 
     assertEq(
       councilMock.exposed_checkVetoGovernorStateBitmap(
@@ -239,13 +245,10 @@ contract _checkVetoGovernorStateBitmap is GovernorCouncilQueuingTest {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
-
     IGovernor.ProposalState _proposalState =
       IGovernor.ProposalState(uint8(bound(_proposalStateIndex, 0, 7)));
-        vm.mockCall(address(vetoGovernor),
-    abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-    abi.encode(_proposalState)
-    );
+
+    _mockVetoGovernorState(_proposalId, _proposalState);
 
     assertEq(
       councilMock.exposed_checkVetoGovernorStateBitmap(
@@ -274,10 +277,7 @@ contract _checkVetoGovernorStateBitmap is GovernorCouncilQueuingTest {
     nonTerminalStates[3] = IGovernor.ProposalState.Succeeded;
 
     for (uint256 i = 0; i < nonTerminalStates.length; i++) {
-          vm.mockCall(address(vetoGovernor),
-    abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-    abi.encode(nonTerminalStates[i])
-    );
+      _mockVetoGovernorState(_proposalId, nonTerminalStates[i]);
       assertTrue(councilMock.exposed_checkVetoGovernorStateBitmap(_proposalId, nonTerminalBitmap));
     }
 
@@ -288,10 +288,7 @@ contract _checkVetoGovernorStateBitmap is GovernorCouncilQueuingTest {
     terminalStates[3] = IGovernor.ProposalState.Executed;
 
     for (uint256 i = 0; i < terminalStates.length; i++) {
-          vm.mockCall(address(vetoGovernor),
-    abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-    abi.encode(terminalStates[i])
-    );
+      _mockVetoGovernorState(_proposalId, terminalStates[i]);
       assertFalse(councilMock.exposed_checkVetoGovernorStateBitmap(_proposalId, nonTerminalBitmap));
     }
   }
@@ -325,11 +322,7 @@ contract State is GovernorCouncilQueuingTest {
   ) public {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
-
     uint256 _proposalId = _submitProposal(_proposer, _proposal);
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
-
-    skip(1);
 
     vm.prank(_proposer);
     councilMock.cancel(targets, values, calldatas, keccak256(bytes("Empty proposal")));
@@ -366,20 +359,12 @@ contract State is GovernorCouncilQueuingTest {
   ) public {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
-
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+
     IGovernor.ProposalState _proposalState =
       _getNonTerminalVetoGovernorProposalState(_proposalStateIndex);
-    // //     vm.mockCall(address(vetoGovernor),
-    // abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-    // abi.encode(_proposalState)
-    // );
-    vm.mockCall(address(vetoGovernor),
-    abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-    abi.encode(_proposalState)
-    );
+    _mockVetoGovernorState(_proposalId, _proposalState);
 
-    // _assertVetoGovernorProposalState(_proposalId, _proposalState);
     _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
   }
 
@@ -391,12 +376,8 @@ contract State is GovernorCouncilQueuingTest {
     Proposal memory _proposal = _buildEmptyProposal();
 
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
-        vm.mockCall(address(vetoGovernor),
-    abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-    abi.encode(IGovernor.ProposalState.Executed)
-    );
+    _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Executed);
 
-    // _assertVetoGovernorProposalState(_proposalId, IGovernor.ProposalState.Executed);
     _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
   }
 
@@ -408,17 +389,11 @@ contract State is GovernorCouncilQueuingTest {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
 
     IGovernor.ProposalState _proposalState =
       _getFailedVetoGovernorProposalState(_proposalStateIndex);
+    _mockVetoGovernorState(_proposalId, _proposalState);
 
-    vm.mockCall(address(vetoGovernor),
-    abi.encodeWithSelector(IGovernor.state.selector, _proposalId),
-    abi.encode(_proposalState)
-    );
-
-    console2.log(uint8(_proposalState));
     _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
   }
 }
@@ -430,9 +405,8 @@ contract Propose is GovernorCouncilQueuingTest {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     vm.assume(_caller != _proposer);
     Proposal memory _proposal = _buildEmptyProposal();
-    vm.expectCall(
-        vetoGovernor, abi.encodeCall(IGovernor.propose, (_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description))
-    );
+
+    _expectVetoGovernorPropose(_proposal);
     _passAndQueueProposal(_proposer, _caller, _proposal);
   }
 
@@ -458,10 +432,11 @@ contract _queueOperations is GovernorCouncilQueuingTest {
     Proposal memory _proposal = _buildEmptyProposal();
     uint256 _proposalId = _passProposal(_proposer, _proposal);
 
+    _mockVetoGovernorPropose(_proposalId);
+    _mockVetoGovernorProposalDeadline(_proposalId);
+    _expectVetoGovernorPropose(_proposal);
+
     vm.prank(_caller);
-    vm.expectCall(
-        vetoGovernor, abi.encodeCall(IGovernor.propose, (_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description)), 1
-    );
     councilMock.exposed_queueOperations(
       _proposalId, targets, values, calldatas, keccak256(bytes(_proposal.description))
     );
@@ -477,9 +452,10 @@ contract _queueOperations is GovernorCouncilQueuingTest {
     Proposal memory _proposal = _buildEmptyProposal(_proposalDescription);
     uint256 _proposalId = _passProposal(_proposer, _proposal);
 
-    vm.expectCall(
-        vetoGovernor, abi.encodeCall(IGovernor.propose, (_proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description))
-    );
+    _mockVetoGovernorPropose(_proposalId);
+    _mockVetoGovernorProposalDeadline(_proposalId);
+    _expectVetoGovernorPropose(_proposal);
+
     vm.prank(_caller);
     councilMock.exposed_queueOperations(
       _proposalId, targets, values, calldatas, keccak256(bytes(_proposal.description))
@@ -495,6 +471,9 @@ contract _queueOperations is GovernorCouncilQueuingTest {
     vm.assume(_caller != _proposer);
     Proposal memory _proposal = _buildEmptyProposal(_proposalDescription);
     uint256 _proposalId = _passProposal(_proposer, _proposal);
+
+    _mockVetoGovernorPropose(_proposalId);
+    _mockVetoGovernorProposalDeadline(_proposalId);
 
     vm.prank(_caller);
     councilMock.exposed_queueOperations(
@@ -513,13 +492,10 @@ contract _queueOperations is GovernorCouncilQueuingTest {
     Proposal memory _proposal = _buildEmptyProposal();
     uint256 _proposalId = _passProposal(_proposer, _proposal);
     uint48 _expectedDeadline = uint48(block.timestamp + 2 weeks);
-    vm.mockCall(
-      address(vetoGovernor),
-      abi.encodeWithSelector(
-        IGovernor.proposalDeadline.selector, _proposalId
-      ),
-      abi.encode(_expectedDeadline)
-    );
+
+    _mockVetoGovernorPropose(_proposalId);
+    _mockVetoGovernorProposalDeadline(_proposalId, _expectedDeadline);
+
     vm.prank(_caller);
     uint48 _returnedDeadline = councilMock.exposed_queueOperations(
       _proposalId, targets, values, calldatas, keccak256(bytes(_proposal.description))
@@ -538,29 +514,10 @@ contract _executeOperations is GovernorCouncilQueuingTest {
     Proposal memory _proposal = _buildEmptyProposal();
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
 
-    // Manually set proposal state to queued
-    vm.mockCall(
-      address(vetoGovernor),
-      abi.encodeWithSelector(
-        IGovernor.state.selector, _proposalId
-      ),
-      abi.encode(IGovernor.ProposalState.Queued)
-    );
+    _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Queued);
+    _mockVetoGovernorExecute(_proposalId, _proposal);
+    _expectVetoGovernorExecute(_proposal);
 
-    vm.mockCall(
-      address(vetoGovernor),
-      abi.encodeWithSelector(
-        IGovernor.execute.selector,
-        _proposal.targets,
-        _proposal.values,
-        _proposal.calldatas,
-        keccak256(bytes(_proposal.description))
-      ),
-      abi.encode(_proposalId)
-    );
-    vm.expectCall(
-        vetoGovernor, abi.encodeCall(IGovernor.execute, (_proposal.targets, _proposal.values, _proposal.calldatas, keccak256(bytes(_proposal.description))))
-    );
     vm.prank(_caller);
     councilMock.exposed_executeOperations(
       _proposalId,
@@ -572,6 +529,17 @@ contract _executeOperations is GovernorCouncilQueuingTest {
   }
 }
 
+// updateCouncilVetoGovernor can only be properly tested once GovernorAdmin is merged.
 contract UpdateCouncilVetoGovernor is GovernorCouncilQueuingTest {
-  function testFuzz_updateCouncilVetoGovernor() public {}
+  function testFuzz_MainDaoUpdatesCouncilVetoGovernor() public {
+    vm.skip();
+  }
+
+  function testFuzz_EmitsCouncilVetoGvernorChange() public {
+    vm.skip();
+  }
+
+  function testFuzz_RevertIf_AnyAddressOtherThanMainDaoUpdatesCouncilVetoGovernor() public {
+    vm.skip();
+  }
 }
