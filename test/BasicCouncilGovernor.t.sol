@@ -74,6 +74,7 @@ abstract contract BasicCouncilGovernorTest is Test {
       councilGovernorAddress,
       vetoGuardian,
       deployer, // Veto override role
+      deployer, // Governor admin
       4 days, // Veto override duration
       timelock
     );

@@ -135,12 +135,20 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
       predictedCouncilGovernorAddress,
       vetoGuardian,
       MAIN_DAO_GOVERNOR, // The main DAO governor is the veto overrider
+      MAIN_DAO_GOVERNOR, // The main DAO governor is the governor admin
       VETO_OVERRIDE_DURATION,
       timelock
     );
 
     // Deploy the Council Governor, passing the now-deployed VetoGovernor address
-    councilGovernor = new BasicCouncilGovernor(councilToken, vetoGovernor);
+    councilGovernor = new BasicCouncilGovernor(
+      councilToken,
+      vetoGovernor,
+      MAIN_DAO_GOVERNOR, // The main DAO governor is the governor admin
+      1 days,
+      1 weeks,
+      1
+    );
 
     // Sanity check: ensure predicted addresses match actual addresses
     assertEq(address(vetoGovernor), predictedVetoGovernorAddress);
