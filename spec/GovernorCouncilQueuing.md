@@ -6,7 +6,7 @@
 - [x] `state`
     - [x] when proposal state is not `Queued`
         - [x] returns proposal state from CouncilGovernor
-    - [ ] when proposal state is `Queued`
+    - [x] when proposal state is `Queued`
         - [x] when **CouncilVetoGovernor** proposal state is `Pending`, `Active`, `Succeeded`, `Queued`
             - [x] return `Queued`
         - [x] when **CouncilVetoGovernor** proposal state is `Executed`
@@ -28,5 +28,3 @@
     - [ ] when called by the main DAO governor timelock
         - [ ] emits event `CouncilVetoGovernorChange`
         - [ ] veto governor address updated
-        - [ ] when unexecuted proposals exist on the old veto governor (out of scope, move to integration tests)
-            - [ ] the proposals will no longer be executable unless the address is set back to the old veto governor
