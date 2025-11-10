@@ -529,17 +529,68 @@ contract _executeOperations is GovernorCouncilQueuingTest {
   }
 }
 
+contract _cancel is GovernorCouncilQueuingTest {
+  function testFuzz_CancelsPendingProposal(
+    uint256 _councilMemberIndex,
+    string memory _proposalDescription,
+    address _caller
+  ) public {
+    address _proposer = _selectCouncilMember(_councilMemberIndex);
+    vm.assume(_caller != _proposer);
+    Proposal memory _proposal = _buildEmptyProposal(_proposalDescription);
+    uint256 _proposalId = _submitProposal(_proposer, _proposal);
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
+
+    vm.prank(_proposer);
+    councilMock.cancel(targets, values, calldatas, keccak256(bytes(_proposalDescription)));
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
+  }
+
+  function testFuzz_DeletesProposalDescriptionFromStorage(
+    uint256 _councilMemberIndex,
+    string memory _proposalDescription,
+    address _caller
+  ) public {
+    address _proposer = _selectCouncilMember(_councilMemberIndex);
+    vm.assume(_caller != _proposer);
+    Proposal memory _proposal = _buildEmptyProposal(_proposalDescription);
+    uint256 _proposalId = _submitProposal(_proposer, _proposal);
+
+    vm.prank(_proposer);
+    councilMock.cancel(targets, values, calldatas, keccak256(bytes(_proposalDescription)));
+
+    assertEq(councilMock.exposed_proposalDescription(_proposalId), "");
+  }
+
+  function testFuzz_RevertIf_CancelAForwardedPendingProposal(
+    uint256 _councilMemberIndex,
+    address _caller
+  ) public {
+    address _proposer = _selectCouncilMember(_councilMemberIndex);
+    vm.assume(_caller != _proposer);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+
+    _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Pending);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IGovernor.GovernorUnableToCancel.selector, _proposalId, _proposer)
+    );
+    vm.prank(_proposer);
+    councilMock.cancel(targets, values, calldatas, keccak256(bytes("Empty proposal")));
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+  }
+}
+
 // updateCouncilVetoGovernor can only be properly tested once GovernorAdmin is merged.
 contract UpdateCouncilVetoGovernor is GovernorCouncilQueuingTest {
-  function testFuzz_MainDaoUpdatesCouncilVetoGovernor() public {
-    vm.skip();
-  }
+  function testFuzz_MainDaoUpdatesCouncilVetoGovernor() public {}
 
-  function testFuzz_EmitsCouncilVetoGvernorChange() public {
-    vm.skip();
-  }
+  function testFuzz_UpdatesVetoGovernor() public {}
 
-  function testFuzz_RevertIf_AnyAddressOtherThanMainDaoUpdatesCouncilVetoGovernor() public {
-    vm.skip();
-  }
+  function testFuzz_EmitsCouncilVetoGvernorChange() public {}
+
+  function testFuzz_RevertIf_AnyAddressOtherThanMainDaoUpdatesCouncilVetoGovernor() public {}
 }
