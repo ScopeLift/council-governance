@@ -368,7 +368,7 @@ contract State is GovernorCouncilQueuingTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
   }
 
-  function testFuzz_CouncilProposalStateIsExecutedWhenProposalStatedIsExecutedOnTheVetoGovernor(
+  function testFuzz_CouncilProposalStateIsExecutedWhenProposalStateIsExecutedOnTheVetoGovernor(
     uint256 _councilMemberIndex,
     address _caller
   ) public {
@@ -462,7 +462,7 @@ contract _queueOperations is GovernorCouncilQueuingTest {
     );
   }
 
-  function testFuzz_QueueOpeartionsDeletesProposalDescriptionFromStorage(
+  function testFuzz_QueueOperationsDeletesProposalDescriptionFromStorage(
     uint256 _councilMemberIndex,
     string memory _proposalDescription,
     address _caller

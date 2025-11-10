@@ -13,6 +13,10 @@ import {
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol";
 
+/**
+ * @title GovernorCouncilQueuingMock
+ * @dev Mock implementation of GovernorCouncilQueuing for testing purposes.
+ */
 contract GovernorCouncilQueuingMock is
   GovernorCouncilQueuing,
   GovernorSettings,
