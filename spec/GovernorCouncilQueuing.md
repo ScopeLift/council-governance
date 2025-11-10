@@ -19,6 +19,12 @@
     - [x] returns proposal deadline on **CouncilVetoGovernor**
 - [x] `_executeOperations`
     - [x] calls `execute` on **CouncilVetoGovernor** with proposal params
+- [x] `_cancel`
+    - [x] when proposal is `Pending` on the council
+        - [x] cancels the proposal
+        - [x] deletes proposal description from storage
+    - [x] when proposal is forwarded and `Pending` on the veto governor
+        - [x] reverts with `GovernorUnableToCancel`
 - [x] `propose`
     - [x] save proposal description to storage
     - [x] call `super.propose`
