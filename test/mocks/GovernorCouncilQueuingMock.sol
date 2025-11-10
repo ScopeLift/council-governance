@@ -24,14 +24,13 @@ contract GovernorCouncilQueuingMock is
   GovernorVotesQuorumFraction
 {
   constructor(
-    string memory _name,
     uint48 _initialVotingDelay,
     uint32 _initialVotingPeriod,
     uint256 _initialProposalThreshold,
     IGovernor _vetoGovernor,
     address councilToken
   )
-    Governor(_name)
+    Governor("GovernorCouncilQueuingMock")
     GovernorCouncilQueuing(_vetoGovernor)
     GovernorSettings(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold)
     GovernorVotesQuorumFraction(100)
