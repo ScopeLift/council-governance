@@ -1,4 +1,4 @@
-## GovernorCouncilQueuing
+## Unit Tests
 - [x] `_checkVetoGovernorStateBitmap`
     - [x] returns `true` if proposal state matches one of the allowed proposal states
     - [x] returns `false` if proposal state doesn't match one of the allowed proposal states
@@ -28,9 +28,13 @@
 - [x] `propose`
     - [x] save proposal description to storage
     - [x] call `super.propose`
+- [ ] `_updateCouncilVetoGovernor`
+    - [ ] emits event `CouncilVetoGovernorChange`
+    - [ ] veto governor address updated
+
+## Integrations Tests
 - [ ] `updateCouncilVetoGovernor`
     - [ ] when called by any address other than the main DAO governor timelock
         - [ ] reverts with `GovernorOnlyExecutor`
     - [ ] when called by the main DAO governor timelock
-        - [ ] emits event `CouncilVetoGovernorChange`
-        - [ ] veto governor address updated
+        - [ ] calls `_updateCouncilVetoGovernor`
