@@ -9,34 +9,12 @@ import {GovernorCouncilQueuingMock} from "test/mocks/GovernorCouncilQueuingMock.
 import {GovernorCountingSimple} from
   "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
-contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
-  bytes32 internal constant ALL_PROPOSAL_STATES_BITMAP =
-    bytes32((2 ** (uint8(type(IGovernor.ProposalState).max) + 1)) - 1);
-
+contract MockCallVetoGovernor is OptimisticGovernanceTestBase {
   address internal vetoGovernor;
-  GovernorCouncilQueuingMock internal councilMock;
 
-  function setUp() public override {
+  function setUp() public virtual override {
     super.setUp();
     vetoGovernor = makeAddr("veto governor");
-    councilMock = new GovernorCouncilQueuingMock(
-      "GovernorCouncilQueuingMock", // _name
-      1 days, // _initialVotingDelay
-      1 weeks, // _initialVotingPeriod
-      1, // _initialProposalThreshold
-      IGovernor(vetoGovernor), // _vetoGovernor
-      address(councilToken) // councilToken
-    );
-
-    vm.label(address(councilMock), "councilMock");
-  }
-
-  function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected) internal view {
-    assertEq(uint8(councilMock.state(proposalId)), uint8(expected));
-  }
-
-  function _encodeStateBitmap(IGovernor.ProposalState proposalState) public pure returns (bytes32) {
-    return bytes32(1 << uint8(proposalState));
   }
 
   function _mockVetoGovernorState(uint256 _proposalId, IGovernor.ProposalState _proposalState)
@@ -107,6 +85,34 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
       )
     );
   }
+}
+
+contract GovernorCouncilQueuingTest is MockCallVetoGovernor {
+  bytes32 internal constant ALL_PROPOSAL_STATES_BITMAP =
+    bytes32((2 ** (uint8(type(IGovernor.ProposalState).max) + 1)) - 1);
+
+  GovernorCouncilQueuingMock internal councilMock;
+
+  function setUp() public override {
+    super.setUp();
+    councilMock = new GovernorCouncilQueuingMock(
+      1 days, // _initialVotingDelay
+      1 weeks, // _initialVotingPeriod
+      1, // _initialProposalThreshold
+      IGovernor(vetoGovernor), // _vetoGovernor
+      address(councilToken) // councilToken
+    );
+
+    vm.label(address(councilMock), "councilMock");
+  }
+
+  function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected) internal view {
+    assertEq(uint8(councilMock.state(proposalId)), uint8(expected));
+  }
+
+  function _encodeStateBitmap(IGovernor.ProposalState proposalState) public pure returns (bytes32) {
+    return bytes32(1 << uint8(proposalState));
+  }
 
   function _getNonTerminalVetoGovernorProposalState(uint8 _proposalStateIndex)
     internal
@@ -129,20 +135,6 @@ contract GovernorCouncilQueuingTest is OptimisticGovernanceTestBase {
     if (_proposalStateIndex == 0) return IGovernor.ProposalState.Canceled;
     if (_proposalStateIndex == 1) return IGovernor.ProposalState.Expired;
     return IGovernor.ProposalState.Defeated;
-  }
-
-  function _buildEmptyProposal() internal returns (Proposal memory _proposal) {
-    _proposal = _buildEmptyProposal("Empty proposal");
-  }
-
-  function _buildEmptyProposal(string memory _description)
-    internal
-    returns (Proposal memory _proposal)
-  {
-    targets = new address[](1);
-    values = new uint256[](1);
-    calldatas = new bytes[](1);
-    _proposal = Proposal(targets, values, calldatas, _description);
   }
 
   function _submitProposal(address _proposer, Proposal memory _proposal)
