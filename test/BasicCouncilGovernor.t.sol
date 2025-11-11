@@ -72,14 +72,14 @@ abstract contract BasicCouncilGovernorTest is Test {
       .ConstructorParams(
       "BasicCouncilVetoGovernor",
       daoToken,
-      councilGovernorAddress,
-      deployer, // The main DAO governor is the veto overrider
-      4 days,
-      deployer, // The main DAO governor is the governor admin
       1 hours, // initialVotingDelay
       1 days, // initialVotingPeriod
       0, // initialProposalThreshold
-      timelock
+      deployer, // The main DAO governor is the veto overrider
+      4 days,
+      timelock,
+      deployer, // The main DAO governor is the governor admin
+      councilGovernorAddress
     );
 
     vm.prank(deployer);
