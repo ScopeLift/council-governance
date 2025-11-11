@@ -14,7 +14,9 @@ import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
  * @title GovernorVetoOverrideMock
  * @dev Mock implementation of GovernorVetoOverride for testing purposes.
  */
-contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes, GovernorCountingSimple {
+contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
+  mapping(uint256 => bool) internal _defeated;
+
   constructor(IERC5805 _daoToken, address _vetoOverrideRole, uint48 _vetoOverrideDuration)
     Governor("GovernorVetoOverrideMock")
     GovernorVotes(_daoToken)
@@ -31,6 +33,39 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes, Govern
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
     return 10_000e18;
+  }
+
+  function COUNTING_MODE() external pure returns (string memory) {
+    return "support=veto&quorum=veto";
+  }
+
+  function hasVoted(
+    uint256, //proposalId
+    address //account
+  ) public view virtual override returns (bool) {
+    return false;
+  }
+
+  function _countVote(
+    uint256, // proposalId
+    address, // account
+    uint8, // support
+    uint256, // totalWeight
+    bytes memory // params
+  ) internal virtual override returns (uint256) {
+    return 0;
+  }
+
+  function setDefeated(uint256 proposalId, bool defeated) public {
+    _defeated[proposalId] = defeated;
+  }
+
+  function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
+    return !_defeated[proposalId];
+  }
+
+  function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
+    return !_defeated[proposalId];
   }
 
   function exposed_SetOverrideRole(address vetoOverrideRole) public {
