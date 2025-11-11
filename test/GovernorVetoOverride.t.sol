@@ -11,34 +11,35 @@ import {
 } from "test/mocks/GovernorVetoOverrideMock.sol";
 
 contract GovernorVetoOverrideTest is OptimisticGovernanceTestBase {
-  GovernorVetoOverrideMock internal councilMock;
+  GovernorVetoOverrideMock internal vetoOverrideMock;
 
   address mainDao = makeAddr("main DAO");
   address councilGovernor = makeAddr("council governor");
 
   function setUp() public override {
     super.setUp();
-    councilMock = new GovernorVetoOverrideMock(daoToken, mainDao, 2 weeks);
-    vm.label(address(councilMock), "councilMock");
+    vetoOverrideMock = new GovernorVetoOverrideMock(daoToken, mainDao, 2 weeks);
+    vm.label(address(vetoOverrideMock), "vetoOverrideMock");
   }
 
   function _submitProposal(Proposal memory _proposal) internal returns (uint256 _proposalId) {
     vm.prank(councilGovernor);
-    _proposalId = councilMock.propose(
+    _proposalId = vetoOverrideMock.propose(
       _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
     );
   }
 
-  /// @notice In the actual implementation, a proposal is defeated by the main DAO or the veto
-  /// governor. Since we are not inheriting either in our unit test, not reaching quorum suffices to
-  /// defeat the proposal.
+  /// @notice Manually sets proposal to defeated by manipulating the return state of
+  /// `_quorumReached`
+  /// and `_voteSucceeded`
   function _createDefeatedProposal() public returns (uint256 _proposalId) {
     _proposalId = _submitProposal(_buildEmptyProposal());
-    vm.warp(block.timestamp + councilMock.votingDelay() + councilMock.votingPeriod() + 1);
+    vetoOverrideMock.setDefeated(_proposalId, true);
+    vm.warp(block.timestamp + vetoOverrideMock.votingDelay() + vetoOverrideMock.votingPeriod() + 1);
   }
 
   function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected) internal view {
-    assertEq(uint8(councilMock.state(proposalId)), uint8(expected));
+    assertEq(uint8(vetoOverrideMock.state(proposalId)), uint8(expected));
   }
 }
 
@@ -56,35 +57,35 @@ contract Constructor is OptimisticGovernanceTestBase {
 
 contract _setOverrideRole is GovernorVetoOverrideTest {
   function testFuzz_UpdatesOverrideRole(address _newVetoOverrideRole) public {
-    councilMock.exposed_SetOverrideRole(_newVetoOverrideRole);
+    vetoOverrideMock.exposed_SetOverrideRole(_newVetoOverrideRole);
 
-    assertEq(councilMock.vetoOverrideRole(), _newVetoOverrideRole);
+    assertEq(vetoOverrideMock.vetoOverrideRole(), _newVetoOverrideRole);
   }
 
   function testFuzz_EmitsVetoOverrideRoleSet(address _newVetoOverrideRole) public {
     vm.expectEmit();
     emit GovernorVetoOverride.VetoOverrideRoleSet(
-      councilMock.vetoOverrideRole(), _newVetoOverrideRole
+      vetoOverrideMock.vetoOverrideRole(), _newVetoOverrideRole
     );
 
-    councilMock.exposed_SetOverrideRole(_newVetoOverrideRole);
+    vetoOverrideMock.exposed_SetOverrideRole(_newVetoOverrideRole);
   }
 }
 
 contract _setOverrideDuration is GovernorVetoOverrideTest {
   function testFuzz_UpdatesOverrideDuration(uint48 _newVetoOverrideDuration) public {
-    councilMock.exposed_SetOverrideDuration(_newVetoOverrideDuration);
+    vetoOverrideMock.exposed_SetOverrideDuration(_newVetoOverrideDuration);
 
-    assertEq(councilMock.vetoOverrideDuration(), _newVetoOverrideDuration);
+    assertEq(vetoOverrideMock.vetoOverrideDuration(), _newVetoOverrideDuration);
   }
 
   function testFuzz_EmitsVetoOverrideDurationSet(uint48 _newVetoOverrideDuration) public {
     vm.expectEmit();
     emit GovernorVetoOverride.VetoOverrideDurationSet(
-      councilMock.vetoOverrideDuration(), _newVetoOverrideDuration
+      vetoOverrideMock.vetoOverrideDuration(), _newVetoOverrideDuration
     );
 
-    councilMock.exposed_SetOverrideDuration(_newVetoOverrideDuration);
+    vetoOverrideMock.exposed_SetOverrideDuration(_newVetoOverrideDuration);
   }
 }
 
@@ -92,59 +93,85 @@ contract OverrideVeto is GovernorVetoOverrideTest {
   function test_OverridesVeto() public {
     uint256 _proposalId = _createDefeatedProposal();
 
-    vm.prank(councilMock.vetoOverrideRole());
-    councilMock.overrideVeto(_proposalId);
-    assertEq(councilMock.isVetoOverridden(_proposalId), true);
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
+    assertEq(vetoOverrideMock.isVetoOverridden(_proposalId), true);
   }
 
   function test_EmitsVetoOverridden(uint256 _proposalId) public {
     vm.expectEmit();
     emit GovernorVetoOverride.VetoOverridden(_proposalId);
-    vm.prank(councilMock.vetoOverrideRole());
-    councilMock.overrideVeto(_proposalId);
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
   }
 
   function testFuzz_OverrideVetoWhenProposalDoesNotExist(uint256 _proposalId) public {
-    vm.prank(councilMock.vetoOverrideRole());
-    councilMock.overrideVeto(_proposalId);
-    assertEq(councilMock.isVetoOverridden(_proposalId), true);
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
+    assertEq(vetoOverrideMock.isVetoOverridden(_proposalId), true);
   }
 
   function test_EmitsVetoOverriddenWhenProposalDoesNotExist(uint256 _proposalId) public {
     vm.expectEmit();
     emit GovernorVetoOverride.VetoOverridden(_proposalId);
-    vm.prank(councilMock.vetoOverrideRole());
-    councilMock.overrideVeto(_proposalId);
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
   }
 
   function testFuzz_RevertIf_CallerIsNotVetoOverrideRole(address _caller) public {
-    vm.assume(_caller != councilMock.vetoOverrideRole());
+    vm.assume(_caller != vetoOverrideMock.vetoOverrideRole());
     uint256 _proposalId = _createDefeatedProposal();
 
     vm.expectRevert();
     vm.prank(_caller);
-    councilMock.overrideVeto(_proposalId);
+    vetoOverrideMock.overrideVeto(_proposalId);
   }
 }
 
 contract State is GovernorVetoOverrideTest {
-  function test_ReturnsOriginalStateWhenStateIsPending() public {
+  function test_ReturnsOriginalStateWhenStateIsPending(uint48 _newTimestamp) public {
     uint256 _proposalId = _submitProposal(_buildEmptyProposal());
+    _newTimestamp = uint48(bound(_newTimestamp, block.timestamp, vetoOverrideMock.votingDelay()));
+    vm.warp(_newTimestamp);
 
-    vm.prank(councilMock.vetoOverrideRole());
-    councilMock.overrideVeto(_proposalId);
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
   }
 
-  function test_ReturnsOriginalStateWhenStateIsActive() public {
+  function test_ReturnsOriginalStateWhenStateIsActive(uint48 _newTimestamp) public {
     uint256 _proposalId = _submitProposal(_buildEmptyProposal());
-    vm.warp(block.timestamp + councilMock.votingDelay() + 1);
+    _newTimestamp = uint48(
+      bound(
+        _newTimestamp,
+        block.timestamp + vetoOverrideMock.votingDelay() + 1,
+        block.timestamp + vetoOverrideMock.votingDelay() + vetoOverrideMock.votingPeriod()
+      )
+    );
+    vm.warp(_newTimestamp);
 
-    vm.prank(councilMock.vetoOverrideRole());
-    councilMock.overrideVeto(_proposalId);
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Active);
+  }
+
+  function test_ReturnsOriginalStateWhenStateIsSucceeded(uint48 _newTimestamp) public {
+    uint256 _proposalId = _submitProposal(_buildEmptyProposal());
+    _newTimestamp = uint48(
+      bound(
+        _newTimestamp,
+        block.timestamp + vetoOverrideMock.votingDelay() + vetoOverrideMock.votingPeriod() + 1,
+        type(uint48).max
+      )
+    );
+    vm.warp(_newTimestamp);
+
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
   function testFuzz_ReturnsDefeatedWhenVetoIsNotOverridden(uint48 _newTimestamp) public {
@@ -159,27 +186,29 @@ contract State is GovernorVetoOverrideTest {
   ) public {
     uint256 _proposalId = _createDefeatedProposal();
 
-    vm.prank(councilMock.vetoOverrideRole());
-    councilMock.overrideVeto(_proposalId);
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
     _newTimestamp = uint48(
-      bound(_newTimestamp, block.timestamp, block.timestamp + councilMock.vetoOverrideDuration())
+      bound(
+        _newTimestamp, block.timestamp, block.timestamp + vetoOverrideMock.vetoOverrideDuration()
+      )
     );
     vm.warp(_newTimestamp);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
-  function test_StateReturnsDefeatedWhenVetoOverriddenAndOverrideDurationExpired(
-    uint48 _newTimestamp
-  ) public {
+  function test_ReturnsDefeatedWhenVetoOverriddenAndOverrideDurationExpired(uint48 _newTimestamp)
+    public
+  {
     uint256 _proposalId = _createDefeatedProposal();
 
-    vm.prank(councilMock.vetoOverrideRole());
-    councilMock.overrideVeto(_proposalId);
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
     _newTimestamp = uint48(
       bound(
         _newTimestamp,
-        councilMock.proposalDeadline(_proposalId) + councilMock.vetoOverrideDuration() + 1,
+        vetoOverrideMock.proposalDeadline(_proposalId) + vetoOverrideMock.vetoOverrideDuration() + 1,
         type(uint48).max
       )
     );
