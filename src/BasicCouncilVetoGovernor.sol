@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorVetoCountingSimple} from "./extensions/GovernorVetoCountingSimple.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {GovernorVetoOverride} from "./extensions/GovernorVetoOverride.sol";
 import {GovernorAdmin} from "./extensions/GovernorAdmin.sol";
@@ -19,6 +20,7 @@ contract BasicCouncilVetoGovernor is
   GovernorVetoGuardian,
   GovernorVetoOverride,
   GovernorAdmin,
+  GovernorSettings,
   GovernorTimelockControl
 {
   /// @notice Thrown when an operation is not supported
@@ -26,40 +28,58 @@ contract BasicCouncilVetoGovernor is
 
   address public immutable COUNCIL;
 
+  /**
+   * @notice Data structure for deploying the `CouncilVetoGovernor`.
+   * @param name The name of the council veto governor.
+   * @param token The token used to veto governance proposals.
+   * @param votingDelay The delay before voting on a proposal begins.
+   * @param votingPeriod The period of time voting will take place.
+   * @param proposalThreshold The number of tokens needed to create a proposal.
+   * @param vetoOverrideRole The address authorized to override vetoed proposals.
+   * @param vetoOverrideDuration Time window for overrides after proposal deadline.
+   * @param timelock The timelock contract used for managing proposals.
+   * @param governorAdmin The address authorized to change governance parameters.
+   * @param council The address of the council governor.
+   */
+  struct ConstructorParams {
+    string name;
+    IERC5805 token;
+    uint48 votingDelay;
+    uint32 votingPeriod;
+    uint256 proposalThreshold;
+    address vetoOverrideRole;
+    uint48 vetoOverrideDuration;
+    TimelockController timelock;
+    address governorAdmin;
+    address council;
+  }
+
   modifier onlyCouncil() {
     require(msg.sender == COUNCIL, "Only council");
     _;
   }
 
-  constructor(
-    IERC5805 _token,
-    address _council,
-    address _vetoGuardian,
-    address _vetoOverrideRole,
-    address _governorAdmin,
-    uint48 _vetoOverrideDuration,
-    TimelockController _timelock
-  )
-    Governor("BasicVetoGovernor")
-    GovernorVotes(_token)
-    GovernorVetoGuardian(_vetoGuardian)
-    GovernorVetoOverride(_vetoOverrideRole, _vetoOverrideDuration)
-    GovernorTimelockControl(_timelock)
-    GovernorAdmin(_governorAdmin)
+  constructor(ConstructorParams memory _params)
+    Governor(_params.name)
+    GovernorVotes(_params.token)
+    GovernorSettings(_params.votingDelay, _params.votingPeriod, _params.proposalThreshold)
+    GovernorVetoOverride(_params.vetoOverrideRole, _params.vetoOverrideDuration)
+    GovernorTimelockControl(_params.timelock)
+    GovernorAdmin(_params.governorAdmin)
   {
-    COUNCIL = _council;
+    COUNCIL = _params.council;
   }
 
-  function votingDelay() public pure override returns (uint256) {
-    return 1 hours;
+  function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
+    return super.votingDelay();
   }
 
-  function votingPeriod() public pure override returns (uint256) {
-    return 1 days;
+  function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
+    return super.votingPeriod();
   }
 
-  function proposalThreshold() public pure override returns (uint256) {
-    return 0;
+  function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
+    return super.proposalThreshold();
   }
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {

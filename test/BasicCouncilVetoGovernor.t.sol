@@ -81,17 +81,23 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     vm.prank(deployer);
     timelock = new TimelockController(TIMELOCK_MIN_DELAY, proposers, executors, address(0));
 
-    // 6. Deploy the Veto Governor, passing it the pre-computed council address
-    vm.prank(deployer);
-    vetoGovernor = new BasicCouncilVetoGovernor(
+    BasicCouncilVetoGovernor.ConstructorParams memory vetoGovernorParams = BasicCouncilVetoGovernor
+      .ConstructorParams(
+      "BasicCouncilVetoGovernor",
       daoToken,
       councilGovernorAddress,
-      vetoGuardian,
-      deployer, // Veto override role
-      deployer, // Governor admin
-      4 days, // Veto override duration
+      deployer, // The main DAO governor is the veto overrider
+      4 days,
+      deployer, // The main DAO governor is the governor admin
+      1 hours, // initialVotingDelay
+      1 days, // initialVotingPeriod
+      0, // initialProposalThreshold
       timelock
     );
+
+    // 6. Deploy the Veto Governor, passing it the pre-computed council address
+    vm.prank(deployer);
+    vetoGovernor = new BasicCouncilVetoGovernor(vetoGovernorParams);
 
     // 7. Deploy the Council Governor
     vm.prank(deployer);

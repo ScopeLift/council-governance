@@ -129,16 +129,22 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
     // Deploy Timelock, giving the *future* VetoGovernor the PROPOSER role
     timelock = new TimelockController(TIMELOCK_MIN_DELAY, proposers, executors, address(0));
 
-    // Deploy the Veto Governor, passing the pre-computed CouncilGovernor address
-    vetoGovernor = new BasicCouncilVetoGovernor(
+    BasicCouncilVetoGovernor.ConstructorParams memory vetoGovernorParams = BasicCouncilVetoGovernor
+      .ConstructorParams(
+      "BasicCouncilVetoGovernor",
       daoToken,
       predictedCouncilGovernorAddress,
       vetoGuardian,
       MAIN_DAO_GOVERNOR, // The main DAO governor is the veto overrider
-      MAIN_DAO_GOVERNOR, // The main DAO governor is the governor admin
       VETO_OVERRIDE_DURATION,
+      MAIN_DAO_GOVERNOR, // The main DAO governor is the governor admin
+      1 hours, // initialVotingDelay
+      1 days, // initialVotingPeriod
+      0, // initialProposalThreshold
       timelock
     );
+    // Deploy the Veto Governor, passing the pre-computed CouncilGovernor address
+    vetoGovernor = new BasicCouncilVetoGovernor(vetoGovernorParams);
 
     // Deploy the Council Governor, passing the now-deployed VetoGovernor address
     councilGovernor = new BasicCouncilGovernor(
