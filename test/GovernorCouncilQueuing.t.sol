@@ -106,12 +106,15 @@ contract GovernorCouncilQueuingTest is MockCallVetoGovernor {
     vm.label(address(councilMock), "councilMock");
   }
 
-  function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected) internal view {
-    assertEq(uint8(councilMock.state(proposalId)), uint8(expected));
+  function _assertProposalState(uint256 _proposalId, IGovernor.ProposalState _expected)
+    internal
+    view
+  {
+    assertEq(uint8(councilMock.state(_proposalId)), uint8(_expected));
   }
 
-  function _encodeStateBitmap(IGovernor.ProposalState proposalState) public pure returns (bytes32) {
-    return bytes32(1 << uint8(proposalState));
+  function _encodeStateBitmap(IGovernor.ProposalState _proposalState) public pure returns (bytes32) {
+    return bytes32(1 << uint8(_proposalState));
   }
 
   function _getNonTerminalVetoGovernorProposalState(uint8 _proposalStateIndex)
@@ -158,8 +161,8 @@ contract GovernorCouncilQueuingTest is MockCallVetoGovernor {
   function _passSubmittedProposal(uint256 _proposalId) public {
     uint256 _quorumVotesNeeded = councilMock.quorum(block.timestamp);
     uint256 _votesCast;
-    for (uint256 i = 0; i < councilMembers.length; i++) {
-      address _councilMember = councilMembers[i];
+    for (uint256 _i = 0; _i < councilMembers.length; _i++) {
+      address _councilMember = councilMembers[_i];
       vm.prank(_councilMember);
       councilMock.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.For));
       _votesCast += councilToken.balanceOf(_councilMember);
@@ -253,7 +256,7 @@ contract _checkVetoGovernorStateBitmap is GovernorCouncilQueuingTest {
   function test_CorrectlyHandlesNonTerminalStateBitmap(uint256 _councilMemberIndex, address _caller)
     public
   {
-    bytes32 nonTerminalBitmap = _encodeStateBitmap(IGovernor.ProposalState.Pending)
+    bytes32 _nonTerminalBitmap = _encodeStateBitmap(IGovernor.ProposalState.Pending)
       | _encodeStateBitmap(IGovernor.ProposalState.Active)
       | _encodeStateBitmap(IGovernor.ProposalState.Queued)
       | _encodeStateBitmap(IGovernor.ProposalState.Succeeded);
@@ -262,26 +265,26 @@ contract _checkVetoGovernorStateBitmap is GovernorCouncilQueuingTest {
     Proposal memory _proposal = _buildEmptyProposal();
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
 
-    IGovernor.ProposalState[] memory nonTerminalStates = new IGovernor.ProposalState[](4);
-    nonTerminalStates[0] = IGovernor.ProposalState.Pending;
-    nonTerminalStates[1] = IGovernor.ProposalState.Active;
-    nonTerminalStates[2] = IGovernor.ProposalState.Queued;
-    nonTerminalStates[3] = IGovernor.ProposalState.Succeeded;
+    IGovernor.ProposalState[] memory _nonTerminalStates = new IGovernor.ProposalState[](4);
+    _nonTerminalStates[0] = IGovernor.ProposalState.Pending;
+    _nonTerminalStates[1] = IGovernor.ProposalState.Active;
+    _nonTerminalStates[2] = IGovernor.ProposalState.Queued;
+    _nonTerminalStates[3] = IGovernor.ProposalState.Succeeded;
 
-    for (uint256 i = 0; i < nonTerminalStates.length; i++) {
-      _mockVetoGovernorState(_proposalId, nonTerminalStates[i]);
-      assertTrue(councilMock.exposed_checkVetoGovernorStateBitmap(_proposalId, nonTerminalBitmap));
+    for (uint256 _i = 0; _i < _nonTerminalStates.length; _i++) {
+      _mockVetoGovernorState(_proposalId, _nonTerminalStates[_i]);
+      assertTrue(councilMock.exposed_checkVetoGovernorStateBitmap(_proposalId, _nonTerminalBitmap));
     }
 
-    IGovernor.ProposalState[] memory terminalStates = new IGovernor.ProposalState[](4);
-    terminalStates[0] = IGovernor.ProposalState.Canceled;
-    terminalStates[1] = IGovernor.ProposalState.Defeated;
-    terminalStates[2] = IGovernor.ProposalState.Expired;
-    terminalStates[3] = IGovernor.ProposalState.Executed;
+    IGovernor.ProposalState[] memory _terminalStates = new IGovernor.ProposalState[](4);
+    _terminalStates[0] = IGovernor.ProposalState.Canceled;
+    _terminalStates[1] = IGovernor.ProposalState.Defeated;
+    _terminalStates[2] = IGovernor.ProposalState.Expired;
+    _terminalStates[3] = IGovernor.ProposalState.Executed;
 
-    for (uint256 i = 0; i < terminalStates.length; i++) {
-      _mockVetoGovernorState(_proposalId, terminalStates[i]);
-      assertFalse(councilMock.exposed_checkVetoGovernorStateBitmap(_proposalId, nonTerminalBitmap));
+    for (uint256 _i = 0; _i < _terminalStates.length; _i++) {
+      _mockVetoGovernorState(_proposalId, _terminalStates[_i]);
+      assertFalse(councilMock.exposed_checkVetoGovernorStateBitmap(_proposalId, _nonTerminalBitmap));
     }
   }
 }
@@ -406,9 +409,9 @@ contract Propose is GovernorCouncilQueuingTest {
     uint256 _councilMemberIndex,
     string memory _proposalDescription
   ) public {
-    address proposer = _selectCouncilMember(_councilMemberIndex);
+    address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal(_proposalDescription);
-    uint256 _proposalId = _submitProposal(proposer, _proposal);
+    uint256 _proposalId = _submitProposal(_proposer, _proposal);
 
     assertEq(councilMock.exposed_proposalDescription(_proposalId), _proposalDescription);
   }
