@@ -5,14 +5,18 @@ import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorVetoCountingSimple} from "./extensions/GovernorVetoCountingSimple.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
-import {GovernorPreventLateQuorum} from
-  "@openzeppelin/contracts/governance/extensions/GovernorPreventLateQuorum.sol";
+import {GovernorVetoOverride} from "./extensions/GovernorVetoOverride.sol";
+import {
+  GovernorTimelockControl,
+  TimelockController
+} from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
 contract BasicCouncilVetoGovernor is
   Governor,
   GovernorVotes,
   GovernorVetoCountingSimple,
-  GovernorPreventLateQuorum
+  GovernorVetoOverride,
+  GovernorTimelockControl
 {
   address public immutable COUNCIL;
 
@@ -21,20 +25,27 @@ contract BasicCouncilVetoGovernor is
     _;
   }
 
-  constructor(IERC5805 _token, address _council, uint48 _lateQuorumVoteExtension)
+  constructor(
+    IERC5805 _token,
+    address _council,
+    address _vetoOverrideRole,
+    uint48 _vetoOverrideDuration,
+    TimelockController _timelock
+  )
     Governor("BasicVetoGovernor")
     GovernorVotes(_token)
-    GovernorPreventLateQuorum(_lateQuorumVoteExtension)
+    GovernorVetoOverride(_vetoOverrideRole, _vetoOverrideDuration)
+    GovernorTimelockControl(_timelock)
   {
     COUNCIL = _council;
   }
 
   function votingDelay() public pure override returns (uint256) {
-    return 7200; // 1 day
+    return 1 hours;
   }
 
   function votingPeriod() public pure override returns (uint256) {
-    return 50_400; // 1 week
+    return 1 days;
   }
 
   function proposalThreshold() public pure override returns (uint256) {
@@ -42,11 +53,7 @@ contract BasicCouncilVetoGovernor is
   }
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
-    return 0;
-  }
-
-  function vetoQuorum(uint256 /*timepoint*/ ) public view virtual override returns (uint256) {
-    return 0;
+    return 10_000e18;
   }
 
   function propose(
@@ -67,6 +74,20 @@ contract BasicCouncilVetoGovernor is
     return super.execute(targets, values, calldatas, descriptionHash);
   }
 
+  function _executeOperations(
+    uint256 proposalId,
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+  ) internal override(Governor, GovernorTimelockControl) {
+    super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
+  }
+
+  function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
+    return super._executor();
+  }
+
   function cancel(
     address[] memory targets,
     uint256[] memory values,
@@ -76,16 +97,49 @@ contract BasicCouncilVetoGovernor is
     return super._cancel(targets, values, calldatas, descriptionHash);
   }
 
-  function proposalDeadline(uint256 proposalId)
-    public
-    view
-    override(Governor, GovernorPreventLateQuorum)
-    returns (uint256)
-  {
-    return super.proposalDeadline(proposalId);
+  function _cancel(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+  ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
+    return super._cancel(targets, values, calldatas, descriptionHash);
   }
 
-  function _tallyUpdated(uint256 proposalId) internal override(Governor, GovernorPreventLateQuorum) {
-    super._tallyUpdated(proposalId);
+  function state(uint256 proposalId)
+    public
+    view
+    override(Governor, GovernorTimelockControl, GovernorVetoOverride)
+    returns (ProposalState)
+  {
+    return GovernorVetoOverride.state(proposalId);
+  }
+
+  function _queueOperations(
+    uint256 proposalId,
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+  ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
+    return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+  }
+
+  function proposalNeedsQueuing(uint256 proposalId)
+    public
+    view
+    virtual
+    override(Governor, GovernorTimelockControl)
+    returns (bool)
+  {
+    return GovernorTimelockControl.proposalNeedsQueuing(proposalId);
+  }
+
+  function clock() public view override(Governor, GovernorVotes) returns (uint48) {
+    return uint48(block.timestamp);
+  }
+
+  function CLOCK_MODE() public pure override(Governor, GovernorVotes) returns (string memory) {
+    return "mode=timestamp";
   }
 }

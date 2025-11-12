@@ -100,7 +100,7 @@ abstract contract GovernorCouncilQueuing is Governor {
   ) internal virtual override returns (uint48) {
     councilVetoGovernor.propose(targets, values, calldatas, _proposalDescriptions[proposalId]);
     delete _proposalDescriptions[proposalId];
-    return 0;
+    return uint48(councilVetoGovernor.proposalDeadline(proposalId));
   }
 
   /**

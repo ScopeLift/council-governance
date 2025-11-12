@@ -16,6 +16,7 @@ contract CouncilERC20 is ERC20, ERC20Votes, Ownable {
 
   function mint(address account, uint256 tokenId) public onlyOwner {
     _mint(account, tokenId);
+    _delegate(account, account);
   }
 
   function burn(address account, uint256 tokenId) public onlyOwner {
@@ -23,7 +24,17 @@ contract CouncilERC20 is ERC20, ERC20Votes, Ownable {
   }
 
   function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
-    if (from != address(0) || to != address(0)) revert("Not allowed");
+    if (from != address(0) && to != address(0)) revert("Not allowed");
     ERC20Votes._update(from, to, value);
   }
+
+  function clock() public view override returns (uint48) {
+    return uint48(block.timestamp);
+  }
+
+  function CLOCK_MODE() public pure override returns (string memory) {
+    return "mode=timestamp";
+  }
+
+  // TODO: is delegation ok?
 }
