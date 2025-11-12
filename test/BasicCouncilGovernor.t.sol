@@ -49,26 +49,26 @@ abstract contract BasicCouncilGovernorTest is Test {
     daoToken = new MockERC20Votes();
 
     // 3. Create and fund council members
-    for (uint256 i = 0; i < COUNCIL_SIZE; i++) {
-      address member = makeAddr(string(abi.encodePacked("councilMember", vm.toString(i + 1))));
-      councilMembers.push(member);
+    for (uint256 _i = 0; _i < COUNCIL_SIZE; _i++) {
+      address _member = makeAddr(string(abi.encodePacked("councilMember", vm.toString(_i + 1))));
+      councilMembers.push(_member);
       vm.prank(deployer);
-      councilToken.mint(member, 1); // 1 address = 1 vote
+      councilToken.mint(_member, 1); // 1 address = 1 vote
     }
     skip(1);
-    uint256 nonce = vm.getNonce(address(deployer));
-    address vetoGovernorAddress = vm.computeCreateAddress(address(deployer), nonce + 1);
-    address councilGovernorAddress = vm.computeCreateAddress(address(deployer), nonce + 2);
+    uint256 _nonce = vm.getNonce(address(deployer));
+    address _vetoGovernorAddress = vm.computeCreateAddress(address(deployer), _nonce + 1);
+    address _councilGovernorAddress = vm.computeCreateAddress(address(deployer), _nonce + 2);
     // 4. Deploy Timelock and Veto Governor
-    address[] memory proposers = new address[](1);
-    address[] memory executors = new address[](1);
-    proposers[0] = vetoGovernorAddress;
-    executors[0] = vetoGovernorAddress;
+    address[] memory _proposers = new address[](1);
+    address[] memory _executors = new address[](1);
+    _proposers[0] = _vetoGovernorAddress;
+    _executors[0] = _vetoGovernorAddress;
 
     vm.prank(deployer);
-    timelock = new TimelockController(TIMELOCK_MIN_DELAY, proposers, executors, address(0));
+    timelock = new TimelockController(TIMELOCK_MIN_DELAY, _proposers, _executors, address(0));
 
-    BasicCouncilVetoGovernor.ConstructorParams memory vetoGovernorParams = BasicCouncilVetoGovernor
+    BasicCouncilVetoGovernor.ConstructorParams memory _vetoGovernorParams = BasicCouncilVetoGovernor
       .ConstructorParams(
       "BasicCouncilVetoGovernor",
       daoToken,
@@ -80,11 +80,11 @@ abstract contract BasicCouncilGovernorTest is Test {
       4 days,
       timelock,
       deployer, // The main DAO governor is the governor admin
-      councilGovernorAddress
+      _councilGovernorAddress
     );
 
     vm.prank(deployer);
-    vetoGovernor = new BasicCouncilVetoGovernor(vetoGovernorParams);
+    vetoGovernor = new BasicCouncilVetoGovernor(_vetoGovernorParams);
 
     // 5. Deploy the Council Governor
     vm.prank(deployer);
@@ -117,22 +117,22 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
   function test_HappyPath_CouncilProposesAndPasses() public {
     // Propose
     vm.prank(councilMembers[0]);
-    uint256 proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
 
     // Warp past voting delay to make proposal Active
     skip(councilGovernor.votingDelay() + 1);
 
     // Cast votes to meet quorum (4)
-    for (uint256 i = 0; i < councilGovernor.quorum(0); i++) {
-      vm.prank(councilMembers[i]);
-      councilGovernor.castVote(proposalId, 1); // 1 = For
+    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
+      vm.prank(councilMembers[_i]);
+      councilGovernor.castVote(_proposalId, 1); // 1 = For
     }
 
     // Warp past voting period to end the vote
     skip(councilGovernor.votingPeriod() + 1);
 
     // Assert state is Succeeded
-    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
   }
 
   /**
@@ -142,14 +142,14 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
   function test_HappyPath_SuccessfulProposalIsForwardedToVetoGovernor() public {
     // Propose and pass the council vote
     vm.prank(councilMembers[0]);
-    uint256 proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
     vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
-    for (uint256 i = 0; i < councilGovernor.quorum(0); i++) {
-      vm.prank(councilMembers[i]);
-      councilGovernor.castVote(proposalId, 1);
+    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
+      vm.prank(councilMembers[_i]);
+      councilGovernor.castVote(_proposalId, 1);
     }
     vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
-    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
 
     // Expect a `propose` call on the Veto Governor
     vm.expectCall(
@@ -161,7 +161,7 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     councilGovernor.queue(targets, values, calldatas, descriptionHash);
 
     // Assert the state is now `Queued` (which means "Forwarded" in this context)
-    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
   }
 
   /**
@@ -171,19 +171,19 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
   function test_HappyPath_SuperQuorumFastTracksProposal() public {
     // Propose
     vm.prank(councilMembers[0]);
-    uint256 proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
 
     // Warp past voting delay
     vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
 
     // Cast votes to meet superQuorum (7)
-    for (uint256 i = 0; i < councilGovernor.superQuorum(0); i++) {
-      vm.prank(councilMembers[i]);
-      councilGovernor.castVote(proposalId, 1); // 1 = For
+    for (uint256 _i = 0; _i < councilGovernor.superQuorum(0); _i++) {
+      vm.prank(councilMembers[_i]);
+      councilGovernor.castVote(_proposalId, 1); // 1 = For
     }
 
     // Assert state is *immediately* Succeeded, without warping past the voting period
-    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
 
     // Verify it can now be queued (forwarded)
     vm.expectCall(
