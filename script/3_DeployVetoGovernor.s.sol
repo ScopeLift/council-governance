@@ -19,11 +19,22 @@ contract DeployVetoGovernor is Script, BaseLogger, VetoGovernorDeployInput {
   {
     vm.startBroadcast(_deployer);
 
-    address _councilGovernorAddress = _computeCouncilGovernorAddress(_deployer);
 
-    vetoGovernor = new BasicCouncilVetoGovernor(
-      MAIN_DAO_TOKEN, _councilGovernorAddress, VETO_OVERRIDE_ROLE, VETO_OVERRIDE_DURATION, _timelock
+    BasicCouncilVetoGovernor.ConstructorParams memory _params = BasicCouncilVetoGovernor.ConstructorParams(
+      VETO_GOVERNOR_NAME,
+      MAIN_DAO_TOKEN,
+      INITIAL_VETO_GOVERNOR_VOTING_DELAY,
+      INITIAL_VETO_GOVERNOR_VOTING_PERIOD,
+      INITIAL_VETO_GOVERNOR_PROPOSAL_THRESHOLD,
+      VETO_OVERRIDE_ROLE,
+      VETO_OVERRIDE_DURATION,
+      VETO_GUARDIAN,
+      TimelockController(_timelock),
+      GOVERNOR_ADMIN,
+      _computeCouncilGovernorAddress(_deployer)
     );
+
+    vetoGovernor = new BasicCouncilVetoGovernor(_params);
 
     vm.stopBroadcast();
 
