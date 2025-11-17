@@ -14,7 +14,7 @@ contract CouncilERC20DeployInput is OptimisticGovernanceDeployInput {
   string SYMBOL;
   address ADMIN;
   uint256 MAX_TOKENS_PER_MEMBER;
-  address[] councilMembers;
+  address[] COUNCIL_MEMBERS;
 }
 
 contract TimelockDeployInput {
@@ -22,17 +22,18 @@ contract TimelockDeployInput {
 }
 
 contract VetoGovernorDeployInput is OptimisticGovernanceDeployInput {
-  string NAME;
-  uint48 INITIAL_COUNCIL_VETO_VOTING_DELAY;
-  uint32 INITIAL_COUNCIL_VETO_VOTING_PERIOD;
-  uint256 INITIAL_COUNCIL_VETO_PROPOSAL_THRESHOLD;
+  string VETO_GOVERNOR_NAME;
+  uint48 INITIAL_VETO_GOVERNOR_VOTING_DELAY;
+  uint32 INITIAL_VETO_GOVERNOR_VOTING_PERIOD;
+  uint256 INITIAL_VETO_GOVERNOR_PROPOSAL_THRESHOLD;
   address VETO_OVERRIDE_ROLE;
   uint48 VETO_OVERRIDE_DURATION;
   address VETO_GUARDIAN;
 }
 
 contract CouncilGovernorDeployInput is OptimisticGovernanceDeployInput {
-  uint48 INITIAL_COUNCIL_VOTING_DELAY;
-  uint32 INITIAL_COUNCIL_VOTING_PERIOD;
-  uint256 INITIAL_COUNCIL_PROPOSAL_THRESHOLD;
+  string COUNCIL_GOVERNOR_NAME;
+  uint48 INITIAL_COUNCIL_GOVERNOR_VOTING_DELAY;
+  uint32 INITIAL_COUNCIL_GOVERNOR_VOTING_PERIOD;
+  uint256 INITIAL_COUNCIL_GOVERNOR_PROPOSAL_THRESHOLD;
 }
