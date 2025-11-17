@@ -7,19 +7,18 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 import {TimelockDeployInput} from "script/DeployInput.sol";
 
 contract DeployTimelock is Script, BaseLogger, TimelockDeployInput {
-  function _computeVetoGovernorAddress() internal view returns (address) {
-    address deployer = tx.origin;
-    uint256 nextNonce = vm.getNonce(deployer) + 1;
-    return vm.computeCreateAddress(deployer, nextNonce);
+  function _computeVetoGovernorAddress(address _deployer) internal view returns (address) {
+    uint256 nextNonce = vm.getNonce(_deployer) + 1;
+    return vm.computeCreateAddress(_deployer, nextNonce);
   }
 
-  function run() public returns (TimelockController timelock) {
-    vm.startBroadcast();
+  function run(address _deployer) public returns (TimelockController timelock) {
+    vm.startBroadcast(_deployer);
 
     address[] memory _proposers = new address[](1);
     address[] memory _executors = new address[](1);
-    _proposers[0] = _computeVetoGovernorAddress();
-    _executors[0] = _computeVetoGovernorAddress();
+    _proposers[0] = _computeVetoGovernorAddress(_deployer);
+    _executors[0] = _computeVetoGovernorAddress(_deployer);
 
     timelock = new TimelockController(TIMELOCK_MIN_DELAY, _proposers, _executors, address(0));
 
