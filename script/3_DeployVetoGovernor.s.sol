@@ -9,8 +9,8 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 
 contract DeployVetoGovernor is Script, BaseLogger, VetoGovernorDeployInput {
   function _computeCouncilGovernorAddress(address _deployer) internal view returns (address) {
-    uint256 nextNonce = vm.getNonce(_deployer) + 1;
-    return vm.computeCreateAddress(_deployer, nextNonce);
+    uint256 _nextNonce = vm.getNonce(_deployer) + 1;
+    return vm.computeCreateAddress(_deployer, _nextNonce);
   }
 
   function run(address _deployer, TimelockController _timelock)
@@ -19,22 +19,11 @@ contract DeployVetoGovernor is Script, BaseLogger, VetoGovernorDeployInput {
   {
     vm.startBroadcast(_deployer);
 
-    BasicCouncilVetoGovernor.ConstructorParams memory params = BasicCouncilVetoGovernor
-      .ConstructorParams(
-      VETO_GOVERNOR_NAME,
-      MAIN_DAO_TOKEN,
-      INITIAL_VETO_GOVERNOR_VOTING_DELAY,
-      INITIAL_VETO_GOVERNOR_VOTING_PERIOD,
-      INITIAL_VETO_GOVERNOR_PROPOSAL_THRESHOLD,
-      VETO_OVERRIDE_ROLE,
-      VETO_OVERRIDE_DURATION,
-      VETO_GUARDIAN,
-      TimelockController(_timelock),
-      GOVERNOR_ADMIN,
-      _computeCouncilGovernorAddress(_deployer)
-    );
+    address _councilGovernorAddress = _computeCouncilGovernorAddress(_deployer);
 
-    vetoGovernor = new BasicCouncilVetoGovernor(params);
+    vetoGovernor = new BasicCouncilVetoGovernor(
+      MAIN_DAO_TOKEN, _councilGovernorAddress, VETO_OVERRIDE_ROLE, VETO_OVERRIDE_DURATION, _timelock
+    );
 
     vm.stopBroadcast();
 
