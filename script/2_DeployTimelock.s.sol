@@ -8,8 +8,8 @@ import {TimelockDeployInput} from "script/DeployInput.sol";
 
 contract DeployTimelock is Script, BaseLogger, TimelockDeployInput {
   function _computeVetoGovernorAddress(address _deployer) internal view returns (address) {
-    uint256 nextNonce = vm.getNonce(_deployer) + 1;
-    return vm.computeCreateAddress(_deployer, nextNonce);
+    uint256 _nextNonce = vm.getNonce(_deployer) + 1;
+    return vm.computeCreateAddress(_deployer, _nextNonce);
   }
 
   function run(address _deployer) public returns (TimelockController timelock) {
