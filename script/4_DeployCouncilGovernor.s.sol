@@ -8,24 +8,25 @@ import {BaseLogger} from "script/BaseLogger.sol";
 import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
-import {CouncilGovernorDeployInput} from "script/DeployInput.sol";
+import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.s.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 
-contract DeployCouncilGovernor is Script, BaseLogger, CouncilGovernorDeployInput {
+contract DeployCouncilGovernor is Script, BaseLogger {
   function run(
     address _deployer,
     CouncilERC20 _councilToken,
-    BasicCouncilVetoGovernor _vetoGovernor
+    BasicCouncilVetoGovernor _vetoGovernor,
+    DeploymentConfigurationBase.CouncilGovernorDeploymentConfiguration memory _config
   ) public returns (BasicCouncilGovernor councilGovernor) {
     vm.startBroadcast(_deployer);
 
     councilGovernor = new BasicCouncilGovernor(
       IERC5805(_councilToken),
       IGovernor(_vetoGovernor),
-      GOVERNOR_ADMIN,
-      INITIAL_COUNCIL_GOVERNOR_VOTING_DELAY,
-      INITIAL_COUNCIL_GOVERNOR_VOTING_PERIOD,
-      INITIAL_COUNCIL_GOVERNOR_PROPOSAL_THRESHOLD
+      _config.councilGovernorAdmin,
+      _config.councilGovernorInitialVotingDelay,
+      _config.councilGovernorInitialVotingPeriod,
+      _config.councilGovernorInitialProposalThreshold
     );
 
     vm.stopBroadcast();
