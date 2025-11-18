@@ -28,6 +28,7 @@ async function fetchProposals(afterCursor, attempt = 0) {
             chainId
             executableCalls {
               chainId
+              target
             }
           }
         }
@@ -73,6 +74,7 @@ async function fetchProposals(afterCursor, attempt = 0) {
 async function findCrossChainProposals() {
   const crossChain = [];
   const allProposalIds = [];
+  const targetMap = new Map(); // target -> Set(chainIds)
   let cursor = null;
   let fetched = 0;
 
@@ -83,7 +85,17 @@ async function findCrossChainProposals() {
     nodes.forEach((proposal) => {
       allProposalIds.push(proposal.id);
 
-      const nonMainnetCalls = (proposal.executableCalls || []).filter(
+      const calls = proposal.executableCalls || [];
+
+      calls.forEach((call) => {
+        if (!call?.target) return;
+        const normalizedTarget = call.target.toLowerCase();
+        const entry = targetMap.get(normalizedTarget) || new Set();
+        if (call.chainId) entry.add(call.chainId);
+        targetMap.set(normalizedTarget, entry);
+      });
+
+      const nonMainnetCalls = calls.filter(
         (call) => call.chainId && call.chainId !== PRIMARY_CHAIN,
       );
 
@@ -113,10 +125,19 @@ async function findCrossChainProposals() {
   }
 
   writeFileSync("crosschain-proposals.json", JSON.stringify(crossChain, null, 2));
+  const targetsPayload = Array.from(targetMap.entries()).map(([target, chainIds]) => ({
+    target,
+    chainIds: Array.from(chainIds),
+  }));
+  writeFileSync("executable-call-targets.json", JSON.stringify(targetsPayload, null, 2));
+
   console.log(`Fetched ${fetched} proposals. IDs:`);
 //   console.log(allProposalIds.join(", "));
   console.log(
     `Saved ${crossChain.length} cross-chain proposals to crosschain-proposals.json`,
+  );
+  console.log(
+    `Saved ${targetsPayload.length} unique executable call targets to executable-call-targets.json`,
   );
 }
 
