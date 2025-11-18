@@ -55,6 +55,8 @@ contract VetoGovernorDeployInput is OptimisticGovernanceDeployInput {
   address public constant VETO_OVERRIDE_ROLE = MAIN_DAO_GOVERNOR;
   // Veto governor override duration
   uint48 public constant VETO_OVERRIDE_DURATION = 4 days;
+  // Veto governor veto guardian
+  address public VETO_GUARDIAN;
 }
 
 contract CouncilGovernorDeployInput is OptimisticGovernanceDeployInput {

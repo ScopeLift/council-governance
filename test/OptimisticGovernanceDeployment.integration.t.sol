@@ -116,6 +116,7 @@ contract OptimisticGovernanceDeployment is Test {
     assertEq(councilToken.name(), councilERC20Input.NAME());
     assertEq(councilToken.symbol(), councilERC20Input.SYMBOL());
     assertEq(councilToken.owner(), councilERC20Input.MAIN_DAO_GOVERNOR());
+    assertEq(councilToken.MAX_TOKENS_PER_MEMBER(), councilERC20Input.MAX_TOKENS_PER_MEMBER());
     for (uint256 _i = 0; _i < councilERC20Input.COUNCIL_MEMBERS_LENGTH(); _i++) {
       assertEq(
         councilToken.balanceOf(councilERC20Input.COUNCIL_MEMBERS(_i)),
@@ -140,12 +141,16 @@ contract OptimisticGovernanceDeployment is Test {
     assertEq(vetoGovernor.proposalThreshold(), vetoInput.INITIAL_VETO_GOVERNOR_PROPOSAL_THRESHOLD());
     assertEq(vetoGovernor.vetoOverrideRole(), vetoInput.VETO_OVERRIDE_ROLE());
     assertEq(vetoGovernor.vetoOverrideDuration(), vetoInput.VETO_OVERRIDE_DURATION());
+    assertEq(vetoGovernor.vetoGuardian(), vetoInput.VETO_GUARDIAN());
     assertEq(address(vetoGovernor.timelock()), address(timelock));
+    assertEq(vetoGovernor.owner(), vetoInput.GOVERNOR_ADMIN());
 
     // Step 4: Deploy the council governor and ensure linkage to the veto governor.
     _step4_deployCouncilGovernor();
 
     // Verify Step 4
+    assertEq(vetoGovernor.COUNCIL(), address(councilGovernor));
+
     assertEq(councilGovernor.name(), councilInput.COUNCIL_GOVERNOR_NAME());
     assertEq(address(councilGovernor.token()), address(councilToken));
     assertEq(address(councilGovernor.councilVetoGovernor()), address(vetoGovernor));
@@ -155,6 +160,6 @@ contract OptimisticGovernanceDeployment is Test {
       councilGovernor.proposalThreshold(),
       councilInput.INITIAL_COUNCIL_GOVERNOR_PROPOSAL_THRESHOLD()
     );
-    assertEq(vetoGovernor.COUNCIL(), address(councilGovernor));
+    assertEq(councilGovernor.owner(), councilInput.GOVERNOR_ADMIN());
   }
 }
