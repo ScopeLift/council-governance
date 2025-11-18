@@ -38,6 +38,9 @@ contract DeployVetoGovernor is Script, BaseLogger {
     );
 
     vetoGovernor = new BasicCouncilVetoGovernor(_params);
+    _timelock.grantRole(_timelock.EXECUTOR_ROLE(), address(vetoGovernor));
+    _timelock.grantRole(_timelock.PROPOSER_ROLE(), address(vetoGovernor));
+    _timelock.renounceRole(_timelock.DEFAULT_ADMIN_ROLE(), _deployer);
 
     vm.stopBroadcast();
 
