@@ -1,0 +1,14 @@
+{
+  "name": "optimistic-governance-research",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "fetch:proposals": "node crosschain-proposals.mjs",
+    "filter:targets": "node filter-contract-targets.mjs"
+  },
+  "dependencies": {
+    "viem": "^2.19.7",
+    "dotenv": "^16.4.5"
+  }
+}
+
