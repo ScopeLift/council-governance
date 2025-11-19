@@ -1,4 +1,5 @@
 research/node_modules/
+research/package-lock.json
 # Compiler files
 cache/
 out/

@@ -1,5 +1,11 @@
-## Research Scripts
+## Research Script
 
-1. `npm run fetch:proposals` – pulls all Compound proposals via Tally, producing `crosschain-proposals.json` and `executable-call-targets.json`
-2. `npm run filter:targets` – reads `executable-call-targets.json`, checks bytecode via RPC, and writes unique contract targets to `executable-call-contracts.json`
+`npm run research`
+
+- Streams all Compound proposals from Tally, writing the following files into `research/output/`:
+  - `crosschain-proposals.json` (proposals touching known bridge contracts defined in `config.ts`)
+  - `executable-call-targets.json` (unique `target` addresses + chain coverage)
+  - `proposal-summary.json` (id → proposal title)
+  - `executable-call-contracts.json` (targets confirmed to have bytecode via RPC lookups)
+- Requires `TALLY_API_KEY` plus RPC URLs declared in `config.ts` (`RPC_EIP155_*` env vars).
 

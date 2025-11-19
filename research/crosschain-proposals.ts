@@ -1,14 +1,90 @@
-import { writeFileSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createPublicClient, http, isAddress } from "viem";
+import dotenv from "dotenv";
+import {
+  KNOWN_CROSSCHAIN_TARGETS,
+  DEFAULT_PRIMARY_CHAIN,
+  RPC_ENV_BY_CHAIN,
+} from "./config.js";
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const OUTPUT_DIR = path.join(__dirname, "output");
+mkdirSync(OUTPUT_DIR, { recursive: true });
 
 const API_URL = "https://api.tally.xyz/query";
 const API_KEY = process.env.TALLY_API_KEY;
 const ORGANIZATION_ID = "2206072050458560433";
-const PRIMARY_CHAIN = "eip155:1";
+const PRIMARY_CHAIN = DEFAULT_PRIMARY_CHAIN;
 const PAGE_LIMIT = 10;
 const EXPECTED_TOTAL = 453;
 const SORT = { sortBy: "id", isDescending: true };
 
 const RATE_LIMIT_DELAY_MS = 1500;
+
+const bridgeTargetMap = new Map();
+KNOWN_CROSSCHAIN_TARGETS.forEach((entry) => {
+  if (!entry?.address) return;
+  bridgeTargetMap.set(entry.address.toLowerCase(), entry);
+});
+
+const chainClients = new Map();
+
+function getClient(chainId) {
+  const envVar = RPC_ENV_BY_CHAIN[chainId];
+  if (!envVar) {
+    console.warn(`No RPC env configured for chainId ${chainId}. Skipping lookups.`);
+    return null;
+  }
+  const rpcUrl = process.env[envVar];
+  if (!rpcUrl) {
+    console.warn(`Missing RPC URL env ${envVar} for chainId ${chainId}. Skipping lookups.`);
+    return null;
+  }
+  if (chainClients.has(chainId)) return chainClients.get(chainId);
+
+  const client = createPublicClient({ transport: http(rpcUrl) });
+  chainClients.set(chainId, client);
+  return client;
+}
+
+async function detectContractTargets(targetsPayload) {
+  const results = [];
+  const cache = new Map();
+
+  for (const entry of targetsPayload) {
+    const { target, chainIds } = entry;
+    if (!isAddress(target)) {
+      console.warn(`Skipping invalid address ${target}`);
+      continue;
+    }
+
+    const chainsToCheck = chainIds?.length ? chainIds : [PRIMARY_CHAIN];
+    for (const chainId of chainsToCheck) {
+      const cacheKey = `${chainId}:${target.toLowerCase()}`;
+      if (cache.has(cacheKey)) continue;
+
+      const client = getClient(chainId);
+      if (!client) continue;
+
+      try {
+        const code = await client.getCode({ address: target });
+        cache.set(cacheKey, code);
+        if (code && code !== "0x") {
+          results.push({ target, chainId, code });
+        }
+      } catch (err) {
+        console.warn(`Failed getCode for ${target} on ${chainId}: ${err.message}`);
+      }
+    }
+  }
+
+  return results;
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -29,6 +105,9 @@ async function fetchProposals(afterCursor, attempt = 0) {
             executableCalls {
               chainId
               target
+            }
+            metadata {
+              title
             }
           }
         }
@@ -75,6 +154,7 @@ async function findCrossChainProposals() {
   const crossChain = [];
   const allProposalIds = [];
   const targetMap = new Map(); // target -> Set(chainIds)
+  const summaries = [];
   let cursor = null;
   let fetched = 0;
 
@@ -84,6 +164,8 @@ async function findCrossChainProposals() {
 
     nodes.forEach((proposal) => {
       allProposalIds.push(proposal.id);
+      const title = proposal.metadata?.title ?? null;
+      summaries.push({ id: proposal.id, title });
 
       const calls = proposal.executableCalls || [];
 
@@ -95,17 +177,25 @@ async function findCrossChainProposals() {
         targetMap.set(normalizedTarget, entry);
       });
 
-      const nonMainnetCalls = calls.filter(
-        (call) => call.chainId && call.chainId !== PRIMARY_CHAIN,
-      );
+      const matchedBridgeCalls = calls
+        .map((call) => {
+          if (!call?.target) return null;
+          const meta = bridgeTargetMap.get(call.target.toLowerCase());
+          if (!meta) return null;
+          return {
+            target: call.target,
+            callChainId: call.chainId,
+            bridge: meta.label,
+            destinationChains: meta.destinationChains,
+          };
+        })
+        .filter(Boolean);
 
-    //   console.log(`Check the executable calls chain ids: ${proposal.executableCalls.map((call) => call.chainId).join(", ")}`);
-
-      if (nonMainnetCalls.length > 0) {
+      if (matchedBridgeCalls.length > 0) {
         const record = {
           id: proposal.id,
           primaryChain: proposal.chainId,
-          crosschainCalls: nonMainnetCalls,
+          matchedBridgeCalls,
         };
         crossChain.push(record);
 
@@ -124,12 +214,20 @@ async function findCrossChainProposals() {
     cursor = nextCursor;
   }
 
-  writeFileSync("crosschain-proposals.json", JSON.stringify(crossChain, null, 2));
+  const writeOutput = (filename: string, data: unknown) => {
+    writeFileSync(path.join(OUTPUT_DIR, filename), JSON.stringify(data, null, 2));
+  };
+
+  writeOutput("crosschain-proposals.json", crossChain);
   const targetsPayload = Array.from(targetMap.entries()).map(([target, chainIds]) => ({
     target,
     chainIds: Array.from(chainIds),
   }));
-  writeFileSync("executable-call-targets.json", JSON.stringify(targetsPayload, null, 2));
+  writeOutput("executable-call-targets.json", targetsPayload);
+  writeOutput("proposal-summary.json", summaries);
+
+  const contractTargets = await detectContractTargets(targetsPayload);
+  writeOutput("executable-call-contracts.json", contractTargets);
 
   console.log(`Fetched ${fetched} proposals. IDs:`);
 //   console.log(allProposalIds.join(", "));
@@ -138,6 +236,9 @@ async function findCrossChainProposals() {
   );
   console.log(
     `Saved ${targetsPayload.length} unique executable call targets to executable-call-targets.json`,
+  );
+  console.log(
+    `Saved proposal summaries to proposal-summary.json and contract targets to executable-call-contracts.json`,
   );
 }
 

@@ -1,0 +1,1830 @@
+[
+  {
+    "id": "2728955430335154138",
+    "title": "# Update price feeds in cUSDCv3 and cWETHv3 on Linea with CAPO implementation."
+  },
+  {
+    "id": "2728948378334397860",
+    "title": "# Add USDC and USDT as collaterals into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2728943080936835057",
+    "title": "# Add USDC, USDT, WETH and weETH as collaterals into cWstETHv3 on Mainnet"
+  },
+  {
+    "id": "2728934191193393107",
+    "title": "# Add tETH as collaterals into cUSDCv3, cUSDTv3 and cWETHv3 on Arbitrum"
+  },
+  {
+    "id": "2722739000476435929",
+    "title": "# Update price feeds in cUSDCv3 on Arbitrum with CAPO implementation."
+  },
+  {
+    "id": "2722734946178303542",
+    "title": "# Update price feeds in cUSDSv3 on Mainnet with CAPO and Chainlink SVR implementation."
+  },
+  {
+    "id": "2722732184245896816",
+    "title": "# Update price feeds in cWstETHv3 on Mainnet with CAPO implementation."
+  },
+  {
+    "id": "2722725430695035985",
+    "title": "# Update price feeds in cWETHv3 on Mainnet with CAPO implementation."
+  },
+  {
+    "id": "2720698872774002606",
+    "title": "[Gauntlet] - Risk & Supply Cap Recommendations for Mainnet Stablecoin Comets"
+  },
+  {
+    "id": "2720146013074491152",
+    "title": "# USDT Reserve Reallocation"
+  },
+  {
+    "id": "2720050941498754416",
+    "title": "Compound Delegate Race (Cycle 2)"
+  },
+  {
+    "id": "2714069669924308981",
+    "title": "[Gauntlet] Risk Parameter Recommendations for deUSD & sdeUSD"
+  },
+  {
+    "id": "2709022549844428006",
+    "title": "# Add tBTC as collateral into cUSDCv3 on Arbitrum"
+  },
+  {
+    "id": "2703335595794499503",
+    "title": "# Update price feeds in cUSDCv3 on Mainnet with CAPO and Chainlink SVR implementation."
+  },
+  {
+    "id": "2700613343458100923",
+    "title": "Renewing the Community Multisig"
+  },
+  {
+    "id": "2699544043402036381",
+    "title": "Renewing the Community Multisig"
+  },
+  {
+    "id": "2699540321896760470",
+    "title": "[Gauntlet] Compound V2 Deprecation"
+  },
+  {
+    "id": "2698124180305479322",
+    "title": "# Add tBTC as collateral into cUSDTv3 on Arbitrum"
+  },
+  {
+    "id": "2697464343565436108",
+    "title": "[Gauntlet] Ethereum Top-up and Scroll USDC Risk Parameter Recommendations V1"
+  },
+  {
+    "id": "2693847461209835397",
+    "title": "[Gauntlet] Ethereum Top-up and Scroll USDC Risk Parameter Recommendations V2"
+  },
+  {
+    "id": "2692592392401323694",
+    "title": "# Add tBTC as collateral into cUSDCv3 on Arbitrum"
+  },
+  {
+    "id": "2687269111477569496",
+    "title": "# Update sFRAX CAPO snapshot value on Mainnet"
+  },
+  {
+    "id": "2687024790358721624",
+    "title": "Resubmission: Extension of the COMP Yield Strategy"
+  },
+  {
+    "id": "2686586099228214806",
+    "title": "Compound <> Gauntlet Year 5 Partnership"
+  },
+  {
+    "id": "2680091506248778845",
+    "title": "Renew Proposal Guardian Role for the Community Multisig"
+  },
+  {
+    "id": "2679135073646675138",
+    "title": "Recall of COMP Delegated via the Delegate Race"
+  },
+  {
+    "id": "2678028196938515701",
+    "title": "# [Gauntlet] Supply Cap & COMP Incentive Recommendations"
+  },
+  {
+    "id": "2677876955344275188",
+    "title": "# Update price feeds in cUSDTv3 on Mainnet with CAPO and Chainlink SVR implementation."
+  },
+  {
+    "id": "2677816448079889557",
+    "title": "# Initialize cWETHv3 on Linea network"
+  },
+  {
+    "id": "2675532325365745639",
+    "title": "Extension of the COMP Yield Strategy"
+  },
+  {
+    "id": "2668353949953688744",
+    "title": "# [Gauntlet] Risk Parameter Recommendations"
+  },
+  {
+    "id": "2663360925012067382",
+    "title": "# Deprecate wUSDM from Arbitrum and Optimism markets"
+  },
+  {
+    "id": "2659051287282189561",
+    "title": "# Deprecate wUSDM from cUSDTv3 on Ethereum"
+  },
+  {
+    "id": "2658678521928353250",
+    "title": "# Add rsETH as collateral into cUSDCv3 on Mainnet"
+  },
+  {
+    "id": "2658648498647336778",
+    "title": "# Add rsETH as collateral into cWETHv3 on Unichain"
+  },
+  {
+    "id": "2658540300418417881",
+    "title": "# [Gauntlet] Rewards Contract Top-Up for Arbitrum, Base, and Optimism (8/7/25)"
+  },
+  {
+    "id": "2654887269093082869",
+    "title": "Finalize Security Service Provider Engagement (2025)"
+  },
+  {
+    "id": "2647371932860679240",
+    "title": "# [Gauntlet] - Risk Recommendations "
+  },
+  {
+    "id": "2646353917666920001",
+    "title": "# Add sdeUSD as collateral into cUSDSv3 on Mainnet"
+  },
+  {
+    "id": "2639527673352685246",
+    "title": "Voting Service Provider RFP: Finalize Tally Enterprise Agreement (2025)"
+  },
+  {
+    "id": "2632891471652456303",
+    "title": "# [Gauntlet] - ezETH, tETH, and rsETH Risk Recommendations "
+  },
+  {
+    "id": "2627821316891215210",
+    "title": "# Add deUSD as collateral into cUSDSv3 on Mainnet"
+  },
+  {
+    "id": "2627817502549214213",
+    "title": "# Add sdeUSD as collateral into cUSDTv3 on Mainnet"
+  },
+  {
+    "id": "2627811059519456547",
+    "title": "# Add sdeUSD as collateral into cUSDCv3 on Mainnet"
+  },
+  {
+    "id": "2627804620390401437",
+    "title": "# Add wOETH as collaterals into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2627799300024829304",
+    "title": "# Add deUSD as collateral into cUSDTv3 on Mainnet"
+  },
+  {
+    "id": "2627772890413532782",
+    "title": "# Add pufETH as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2627633079136552747",
+    "title": "# OpenZeppelin Security Partnership - 2025 Early Termination"
+  },
+  {
+    "id": "2627487963038090573",
+    "title": "# [Gauntlet] - ezETH, tETH, and rsETH Risk Recommendations "
+  },
+  {
+    "id": "2626462847449695753",
+    "title": "# Add tBTC as collateral into cUSDCv3 on Base"
+  },
+  {
+    "id": "2622706848670680212",
+    "title": "# Add deUSD as collateral into cUSDCv3 on Mainnet"
+  },
+  {
+    "id": "2621314436899538223",
+    "title": "# OpenZeppelin Security Partnership - Annual Renewal 2025"
+  },
+  {
+    "id": "2620534290441569761",
+    "title": "# OpenZeppelin Security Partnership - Annual Renewal 2025\\n\\n\\n## Background\\n\\nOpenZeppelin has secured Compound since December 2021, establishing a proven track record of comprehensive protocol protection. In our current annual term (July 2024-June 2025), we’ve completed 40+ security audits, reviewed 180+ governance proposals, and identified 6 critical vulnerabilities while maintaining zero protocol losses due to security exploits.\\n\\nThroughout this partnership, we’ve maintained Compound’s ecosystem security while flexibly responding to incidents and adapting to the DAO’s evolving development needs. Our collaborative approach with key contributors has optimized processes and enabled early risk mitigation across protocol operations.\\n\\nThis renewal continues our [comprehensive security services](https://www.comp.xyz/t/openzeppelin-security-partnership-renewal-2025/6855#p-17213-services-2) with more detailed specifications of the coverage we’ve been providing to Compound, making our commitments more explicit.\\n\\n## Compensation Structure\\n\\nPreviously OpenZeppelin used the Vendor Payment Aera Vault adopted in [Proposal 249](https://www.tally.xyz/gov/compound/proposal/249). With the deprecation of the Vendor Payment Aera Vault, Woof! Software proposed a [USDC-price-adjusted COMP streaming mechanism](https://www.comp.xyz/t/payment-streamer-audit/6779). This approach provides several benefits: \\n\\n* Reduced governance overhead for voters \\n* Payment of USDC obligations using COMP \\n* DAO clawback of unvested assets \\n* DAO capture of net COMP appreciation\\n \\nOpenZeppelin will continue its annual renewal model for our Security Partnership adopting the same streaming approach. Our governance proposal will initiate a deposit of 110% of the 4M USDC equivalent in COMP, using a [30-day TWAP price at week of proposal submission](https://dune.com/idle.finance/twap-calculator?1.+End+Date_db9004=2025-06-20+00%3A00%3A00&2.+Rolling+Average+Timeframe_n71719=30&3.+Token_t1ab42=COMP), to be streamed over the course of a year starting at the beginning of Q3 2025.\\n\\nThe 10% buffer is designed to accommodate potential price fluctuations while balancing capital efficiency. **OpenZeppelin will only receive the prorated portion of the $4M annual value based on actual service duration**.\\n\\nGovernance may initiate early termination through a subsequent on-chain governance proposal with at least three months advance notice. Unvested funds can be transferred to the DAO by anyone 10 days or more after the term ends or after the notice period expires.\\n\\nThis proposal grants COMP from the Comptroller to the [payment streamer contract](https://etherscan.io/address/0xf6e94c13f07a50b3aafe55e5785edc2be6c9620c#code), created by the [Streamer Factory](https://etherscan.io/tx/0x76338697eb4da86a002d438058668c1f411bb3c47275f90c8cc1ec137342f584) ([Audit Report](https://www.comp.xyz/t/compound-streamer-audit/6925)), and initializes the stream.\\n\\nMore detail in this [forum post](https://www.comp.xyz/t/openzeppelin-security-partnership-renewal-2025/6855).\\n\\nBy approving this proposal, you agree that any services provided by OpenZeppelin shall be governed by the [Terms of Service](https://docs.google.com/document/d/1eDcvirf0bdzpjIkfxQHm7fcV05O1IcLXL-Dl-U52Y4k) that were updated as of Sep 19th, 2023.\\n"
+  },
+  {
+    "id": "2617361749942207550",
+    "title": "# [Gauntlet] - COMP Rewards Recommendation (Part-2)"
+  },
+  {
+    "id": "2613455301419992168",
+    "title": "Proposal to Create the Compound Foundation"
+  },
+  {
+    "id": "2612755362343815128",
+    "title": "# [Gauntlet] - Supply Cap Recommendations (6/10/25)"
+  },
+  {
+    "id": "2611286795911955847",
+    "title": "# [Gauntlet] - Supply Cap Recommendations"
+  },
+  {
+    "id": "2608904753102455927",
+    "title": "Unichain Growth Campaign"
+  },
+  {
+    "id": "2607700999925662879",
+    "title": "[WOOF!] Top up Reward contract on Polygon"
+  },
+  {
+    "id": "2601860977443997162",
+    "title": "# [Gauntlet] - Supply Cap Recommendations"
+  },
+  {
+    "id": "2597357765051549390",
+    "title": "# [Gauntlet] - COMP Rewards Recommendations (Part - 1)"
+  },
+  {
+    "id": "2595086476563711761",
+    "title": "# WOOF! <> Compound 2025"
+  },
+  {
+    "id": "2591756778655975211",
+    "title": "# Initialize cWRONv3 on Ronin"
+  },
+  {
+    "id": "2585724005717640312",
+    "title": "# [Gauntlet] Supply Cap Recommendations (04/28/25) pushed by WOOF!"
+  },
+  {
+    "id": "2583647758413989865",
+    "title": "# Initialize cWETHv3 on Unichain"
+  },
+  {
+    "id": "2582936221885924413",
+    "title": "# Add weETH as collateral into the cUSDCv3 on Mainnet"
+  },
+  {
+    "id": "2582885892326688141",
+    "title": "# Add weETH as collateral into cUSDSv3 on Mainnet"
+  },
+  {
+    "id": "2582834238835394437",
+    "title": "# Add SKY as collateral into cUSDSv3 on Mainnet"
+  },
+  {
+    "id": "2582320649447933166",
+    "title": "# [Gauntlet] - Stablecoin IR curve recommendations (4/21/25)"
+  },
+  {
+    "id": "2582314881281688877",
+    "title": "# [Gauntlet] Rewards Contract Top-Up for Ethereum, Arbitrum, Base and Optimism (4/18/25)"
+  },
+  {
+    "id": "2579963392173279019",
+    "title": "A Growth-Earmarked Treasury Strategy for Compound"
+  },
+  {
+    "id": "2572790498691384779",
+    "title": "# Update tETH price feed on WETH Mainnet market"
+  },
+  {
+    "id": "2572734829330171880",
+    "title": "# Update tETH price feed on WETH Mainnet market"
+  },
+  {
+    "id": "2572189035095131714",
+    "title": "# [Gauntlet] - Supply Cap Recommendations (4/14/25)"
+  },
+  {
+    "id": "2572179524116547358",
+    "title": "# [Gauntlet] - USDbC Deprecation Recommendations"
+  },
+  {
+    "id": "2571356673117521417",
+    "title": "# Initialize cWRONv3 on Ronin"
+  },
+  {
+    "id": "2565591712009291057",
+    "title": "# [Gauntlet] Risk Parameter Recommendations (02/2025) - V3 Ethereum USDS & V3 Arbitrum USDC/USDT & V3 Polygon USDC/USDT"
+  },
+  {
+    "id": "2564997514155525518",
+    "title": "Formalizing the Community Multisig"
+  },
+  {
+    "id": "2559797485321062263",
+    "title": "2025 Compound Growth Program Renewal V4 [AlphaGrowth]"
+  },
+  {
+    "id": "2556128111049573907",
+    "title": "# [Gauntlet] - Interest Rate Curve Recommendations (03/25)"
+  },
+  {
+    "id": "2555279108296672973",
+    "title": "# [Gauntlet] - Cap recommendations  (03/24/25)"
+  },
+  {
+    "id": "2551326242318059303",
+    "title": "# Initialize cWETHv3 on Ronin"
+  },
+  {
+    "id": "2548348251413677715",
+    "title": "# Add wsuperOETHb as collateral into cWETHv3 on Base"
+  },
+  {
+    "id": "2547832645765564048",
+    "title": "# Add tETH as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2546231635477530486",
+    "title": "Renew Proposal Guardian Role for the Community Multisig"
+  },
+  {
+    "id": "2545300509107947098",
+    "title": "# [Gauntlet] - Rewards Top Up for Ethereum, Base and Optimism (10/3/25)"
+  },
+  {
+    "id": "2542400561257383310",
+    "title": "2025 Compound Growth Program - Roadmap & Renewal - [AlphaGrowth] V3"
+  },
+  {
+    "id": "2542361128667711292",
+    "title": "# Add weETH as collateral into cUSDTv3 on Mainnet"
+  },
+  {
+    "id": "2541108846043072370",
+    "title": "# Initialize cWETHv3 on Ronin"
+  },
+  {
+    "id": "2541051654191449518",
+    "title": "# Compound <> Morpho <> Polygon Collaboration"
+  },
+  {
+    "id": "2537243261878142158",
+    "title": "# Initialize cUSDCv3 on Unichain"
+  },
+  {
+    "id": "2535066071963010444",
+    "title": "# Add weETH as collateral into cUSDCv3 on Mainnet"
+  },
+  {
+    "id": "2535062255129593439",
+    "title": "# Add wsuperOETHb as collateral into cWETHv3 on Base"
+  },
+  {
+    "id": "2533076216341070920",
+    "title": "Delegate Compensation Program Pilot"
+  },
+  {
+    "id": "2532983053760857113",
+    "title": "# Alternate Governance track for Market Updates - Mantle"
+  },
+  {
+    "id": "2532315265216022316",
+    "title": "# Add tETH as collateral into cWstETHv3 on Mainnet"
+  },
+  {
+    "id": "2532270712421352807",
+    "title": "# Add tETH as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2525850368823264804",
+    "title": "# Initialize cWBTCv3 on Ethereum Mainnet"
+  },
+  {
+    "id": "2525640993605158060",
+    "title": "# Update USDC, USDT, WETH and USDC.e Comets on Arbitrum to support more collaterals"
+  },
+  {
+    "id": "2525280986753664063",
+    "title": "# Update AERO, USDC, WETH and USDbC Comets on Base to support more collaterals"
+  },
+  {
+    "id": "2525263461634540901",
+    "title": "# Update USDC Comet on Scroll to support more collaterals"
+  },
+  {
+    "id": "2525167213271319801",
+    "title": "# Initialize cUSDTv3 on Linea network"
+  },
+  {
+    "id": "2525143273090057406",
+    "title": "# Initialize cUSDTv3 on Linea network"
+  },
+  {
+    "id": "2525137015247210045",
+    "title": "## Proposal summary"
+  },
+  {
+    "id": "2522449548882740884",
+    "title": "# Update USDe Comet on Mantle to support more collaterals"
+  },
+  {
+    "id": "2522442940152809314",
+    "title": "# Update USDC, USDT and WETH Comets on Optimism to support more collaterals"
+  },
+  {
+    "id": "2522435828693600032",
+    "title": "# Update WETH and wstETH Comets on Mainnet to support more collaterals"
+  },
+  {
+    "id": "2522196254478304325",
+    "title": "# Initialize cUSDSv3 on Base"
+  },
+  {
+    "id": "2522160166569248502",
+    "title": "# Initialize cUSDSv3 on Base"
+  },
+  {
+    "id": "2515589464286300040",
+    "title": "# Compound Governor Contracts Upgrade "
+  },
+  {
+    "id": "2515556445408199769",
+    "title": "# Update USDC, USDT and USDS Comets on Mainnet to support more collaterals"
+  },
+  {
+    "id": "2514905156449994302",
+    "title": "This proposal will upgrade Compound's GovernorBravoDelegator and GovernorBravoDelegate contracts. We'll use the latest contracts from OpenZeppelin(OZ) library with some modifications to preserve many of the existing features of the Governors including:"
+  },
+  {
+    "id": "2514563756722227089",
+    "title": "Compound Safe Harbor"
+  },
+  {
+    "id": "2511361969391404753",
+    "title": "# [Gauntlet] - IR Curve and Incentive Recommendations for Stablecoin and WETH Comets - Part 8"
+  },
+  {
+    "id": "2510630330461849576",
+    "title": "# [Gauntlet] - Cap recommendations  (01/21/25)"
+  },
+  {
+    "id": "2500492061183051512",
+    "title": "# [Gauntlet] - IR Curve and Incentive Recommendations for Stablecoin and WETH Comets - Part 7"
+  },
+  {
+    "id": "2499740958711612443",
+    "title": "# [Gauntlet] - IR Curve and Incentive Recommendations for Stablecoin and WETH Comets - Part 6 & Cap recommendations"
+  },
+  {
+    "id": "2487317824855344256",
+    "title": ""
+  },
+  {
+    "id": "2485900977052321092",
+    "title": ""
+  },
+  {
+    "id": "2485239070775575980",
+    "title": "# [Gauntlet] - IR Curve and Incentive Recommendations for Stablecoin and WETH Comets - Part 3"
+  },
+  {
+    "id": "2485237935276819827",
+    "title": "# [Gauntlet] - IR Curve and Incentive Recommendations for Stablecoin and WETH Comets - Part 4"
+  },
+  {
+    "id": "2484499454472750659",
+    "title": "2025 Compound Growth Program - Roadmap & Renewal"
+  },
+  {
+    "id": "2480010404927899268",
+    "title": ""
+  },
+  {
+    "id": "2480007156565280656",
+    "title": "# [Gauntlet] - IR Curve and Incentive Recommendations for Stablecoin and WETH Comets along with Rewards Top-up recommendations"
+  },
+  {
+    "id": "2479445763772384711",
+    "title": "# [Gauntlet] - IR Curve and Incentive Recommendations for Stablecoin and WETH Comets - Part 1"
+  },
+  {
+    "id": "2474206749989537761",
+    "title": "# [Gauntlet] Supply Cap Recommendations (11/27/24)"
+  },
+  {
+    "id": "2472722234020463781",
+    "title": "# Compound Sandbox: Development Proposal"
+  },
+  {
+    "id": "2471289014179595330",
+    "title": "# Add mETH as collateral into cUSDTv3 on Mainnet"
+  },
+  {
+    "id": "2471216684229199814",
+    "title": "# Alternate Governance track for Market Updates - Optimism"
+  },
+  {
+    "id": "2471208587116939002",
+    "title": "DoDAO has been examining various areas where improvements can be made to governance in Compound through tooling or automation. A significant issue raised repeatedly by many members concerns the time and effort required to apply Market Updates."
+  },
+  {
+    "id": "2469991065810109791",
+    "title": "# [Gauntlet] Rewards Contract Top-Up for Ethereum and Base (11/26/24)"
+  },
+  {
+    "id": "2469893282776221549",
+    "title": "# Add wUSDM as collateral into cUSDCv3 on Arbitrum"
+  },
+  {
+    "id": "2467142274954298493",
+    "title": "Renewing the Compound Governance Working Group (GWG)"
+  },
+  {
+    "id": "2467028254343563255",
+    "title": "# Return Accidentally Sent Funds #4"
+  },
+  {
+    "id": "2464964547019015621",
+    "title": "# [Gauntlet] Risk Parameter Recommendations for LINK and UNI (Oct 2024) - Part Two"
+  },
+  {
+    "id": "2462556000972965720",
+    "title": "# Add wUSDM as collateral into cUSDCv3 on Optimism"
+  },
+  {
+    "id": "2461456737824147165",
+    "title": "# Add sUSDS as collateral into cUSDSv3 on Mainnet"
+  },
+  {
+    "id": "2460586039597598596",
+    "title": "# [Gauntlet] Supply Cap Recommendations (11/11/24)"
+  },
+  {
+    "id": "2459746156603770167",
+    "title": "# [Gauntlet] Supply Cap Recommendations (11/11/24)"
+  },
+  {
+    "id": "2456076105723938282",
+    "title": "# Add sFRAX as collateral into cUSDTv3 on Ethereum"
+  },
+  {
+    "id": "2456066095396685645",
+    "title": "# Add wUSDM as collateral into cUSDTv3 on Optimism"
+  },
+  {
+    "id": "2454215261700491029",
+    "title": "# [Gauntlet] Supply Cap Recommendations (11/4/24)"
+  },
+  {
+    "id": "2454198974823793863",
+    "title": "# Add ETHx as collaterals into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2453232538747930198",
+    "title": "# Aera <> Compound Extension Part 2"
+  },
+  {
+    "id": "2451903217328457467",
+    "title": "# Add wUSDM as collateral into cUSDTv3 on Ethereum"
+  },
+  {
+    "id": "2451864088850990199",
+    "title": "# Initialize cUSDEv3 on Mantle"
+  },
+  {
+    "id": "2449078420148061269",
+    "title": "# [Gauntlet] - Incentive Recommendations and Rewards Top Up (2024-10-24)"
+  },
+  {
+    "id": "2449077719615407872",
+    "title": "# [Gauntlet] Supply Cap Recommendations - Part 1 (10/24)"
+  },
+  {
+    "id": "2446635621360338229",
+    "title": "Compound Bug Bounty Program with Immunefi"
+  },
+  {
+    "id": "2443912391642056054",
+    "title": "# Aera <> Compound Extension"
+  },
+  {
+    "id": "2443831401267594959",
+    "title": "# [Gauntlet] Compound v2 Deprecation (10/07/2024)"
+  },
+  {
+    "id": "2443743054109083539",
+    "title": "# [Gauntlet] Risk Parameter Recommendations for LINK and UNI (Oct 2024)"
+  },
+  {
+    "id": "2440938918355404774",
+    "title": "# Initialize cUSDSv3 on Ethereum Mainnet"
+  },
+  {
+    "id": "2440190757886231706",
+    "title": "# [Gauntlet] - Supply Cap Recommendations (2024-10-15) - Part 1"
+  },
+  {
+    "id": "2439663593961031337",
+    "title": "# Aera <> Compound Extension"
+  },
+  {
+    "id": "2439426864733750582",
+    "title": "# Aera Extension"
+  },
+  {
+    "id": "2436603135314102147",
+    "title": "# [Gauntlet] - Incentive Recommendations and Rewards Top Up (2024-10-8"
+  },
+  {
+    "id": "2435065389273580637",
+    "title": "# Initialize cAEROv3 on Base network"
+  },
+  {
+    "id": "2434437060623337105",
+    "title": "# Compound v3 Base USDbC Collateral Factor Reduction & Interest Rate Recommendations (September 2024)"
+  },
+  {
+    "id": "2433758928991946371",
+    "title": "# Add tBTC as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2433749422719371180",
+    "title": "# Add tBTC as collateral into cUSDTv3 on Mainnet"
+  },
+  {
+    "id": "2433673772734088569",
+    "title": "# Add tBTC as collateral into cUSDCv3 on Mainnet"
+  },
+  {
+    "id": "2429419969738441936",
+    "title": "# [Gauntlet] - WETH Comet Recommendations (2024-09-27)"
+  },
+  {
+    "id": "2429419021431473241",
+    "title": "# [Gauntlet] - Supply Cap Recommendations (2024-09-30)"
+  },
+  {
+    "id": "2428663527817348565",
+    "title": "# Update price feed in cWstETHv3 on Ethereum"
+  },
+  {
+    "id": "2424944172533285979",
+    "title": "# Add rswETH as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2424303984899524244",
+    "title": "# [Gauntlet] - wstETH v3 USDC Supply Cap (2024-09-20)"
+  },
+  {
+    "id": "2423937754078381306",
+    "title": "# Add cbBTC as collateral into cWETHv3 on Base"
+  },
+  {
+    "id": "2420534465689289830",
+    "title": "# Add cbBTC as collateral into cWETHv3 on Ethereum"
+  },
+  {
+    "id": "2420511444412924930",
+    "title": "# Add cbBTC as collateral into cUSDTv3 on Ethereum"
+  },
+  {
+    "id": "2420421822739645770",
+    "title": "# Add cbBTC as collateral into cUSDCv3 on Ethereum"
+  },
+  {
+    "id": "2420389839502312860",
+    "title": "# Add cbBTC as collateral into cUSDCv3 on Base"
+  },
+  {
+    "id": "2418537003697046821",
+    "title": "# [Gauntlet] - Supply Cap Recommendations (2024-09-16)"
+  },
+  {
+    "id": "2414282902159230042",
+    "title": "# [Gauntlet' - Supply Cap Recommendations (2024-09-10)"
+  },
+  {
+    "id": "2414222086420563158",
+    "title": "# [Gauntlet] - WBTC Risk Recommendations - part 2 (2024-09-10) "
+  },
+  {
+    "id": "2413981540007544272",
+    "title": "Upgrade Compound v2 Oracle To Disable UAV"
+  },
+  {
+    "id": "2413663252497041377",
+    "title": " Compound Grants Program (CGP) Renewal"
+  },
+  {
+    "id": "2413228303558116470",
+    "title": "# [Gauntlet] - Supply Cap Recommendations - (2024-09-05)"
+  },
+  {
+    "id": "2413181662562092890",
+    "title": "# Initialize cwstETHv3 on Ethereum Mainnet"
+  },
+  {
+    "id": "2412584150570632313",
+    "title": "# Gauntlet <> Compound Renewal 2024"
+  },
+  {
+    "id": "2409233559232447837",
+    "title": "#  [Gauntlet] - WBTC v3 & v2 Mainnet Risk Recommendations"
+  },
+  {
+    "id": "2409103693296174566",
+    "title": "# [Gauntlet] - Supply Cap Recommendations (2024-09-03)"
+  },
+  {
+    "id": "2408888883912639881",
+    "title": "# Add wrsETH as collateral into cWETHv3 on Optimism"
+  },
+  {
+    "id": "2408732979049268511",
+    "title": "# Add wrsETH as collateral into cWETHv3 on Base"
+  },
+  {
+    "id": "2404045975376102871",
+    "title": "# [Gauntlet] - Risk Recommendations (2024-08-27)"
+  },
+  {
+    "id": "2403873357746406984",
+    "title": "# [Gauntlet] Stablecoin IR Recommendations"
+  },
+  {
+    "id": "2403872800054969847",
+    "title": "# [Gauntlet] Stablecoin IR Recommendations - Mainnet"
+  },
+  {
+    "id": "2403135679295915447",
+    "title": "# Finalize Delegate Race (Cycle 1)"
+  },
+  {
+    "id": "2403113167853978877",
+    "title": "# Add weETH as collateral into cWETHv3 on Base"
+  },
+  {
+    "id": "2402945753048680233",
+    "title": "# Add ezETH as collateral into cUSDCv3 on Arbitrum"
+  },
+  {
+    "id": "2402881217188856955",
+    "title": "# Add weETH as collateral into cWETHv3 on Optimism"
+  },
+  {
+    "id": "2398944844891293327",
+    "title": "# [Gauntlet]- Supply Cap Recommendations (2024-08-20)"
+  },
+  {
+    "id": "2398943740019344553",
+    "title": "# [Gauntlet] - Arbitrum USDT Risk and IO Recommendations (2024-08-20)"
+  },
+  {
+    "id": "2398871500489753827",
+    "title": "# Add ezETH as collateral into cWETHv3 on Optimism"
+  },
+  {
+    "id": "2398240166234818291",
+    "title": "# Add ezETH as collateral into cWETHv3 on Arbitrum"
+  },
+  {
+    "id": "2394075784936424823",
+    "title": "# [Gauntlet] - IO and Risk Recommendations for BASE, Mainnet, and Arbitrum (2024-08-12)"
+  },
+  {
+    "id": "2394074898369611664",
+    "title": "# [Gauntlet] Risk Recommendations for LRTs on WETH Comets"
+  },
+  {
+    "id": "2393481200694986182",
+    "title": "# Update Price Feeds on Arbitrum for LSTs"
+  },
+  {
+    "id": "2391193293611337089",
+    "title": "Add Proposal Guardian to Governor Bravo"
+  },
+  {
+    "id": "2388974989408732388",
+    "title": "# [Gauntlet] Risk and IO Parameter Recommendations - (2024-08-06)"
+  },
+  {
+    "id": "2388974090158343422",
+    "title": "# [Gauntlet] Arbitrum USDC Interest Rate Funds"
+  },
+  {
+    "id": "2388817600793544171",
+    "title": "# Compound v2 Deprecation Phase 13"
+  },
+  {
+    "id": "2388663930563069087",
+    "title": "# Update Price Feeds on Arbitrum for LSTs"
+  },
+  {
+    "id": "2388065187585328528",
+    "title": "# Add USDC as collateral into cWETHv3 on Base"
+  },
+  {
+    "id": "2388047657156216488",
+    "title": "# Add wstETH as collateral into cWETHv3 on Base"
+  },
+  {
+    "id": "2388035426884519247",
+    "title": "# Add USDT and USDC as collateral into cWETHv3 on Optimism"
+  },
+  {
+    "id": "2387831939085108805",
+    "title": "# Add USDT and USDC as collateral into cWETHv3 on Arbitrum"
+  },
+  {
+    "id": "2383796101359601603",
+    "title": "# [Gauntlet] COMP Recommendations - Ethereum v2, USDC and USDT Comet on Mainnet"
+  },
+  {
+    "id": "2383795649247184288",
+    "title": "# [Gauntlet] Rewards Contract Top-Up for Arb and IR Recs for USDT Mainnet and USDC Arbitrum Comets"
+  },
+  {
+    "id": "2383654141709780754",
+    "title": "# Add rsETH as collateral into cWETHv3 on Arbitrum"
+  },
+  {
+    "id": "2383495794293474865",
+    "title": "# Add wstETH as collateral into cUSDCv3 on Base"
+  },
+  {
+    "id": "2382272051483247938",
+    "title": "# Risk Recommendations"
+  },
+  {
+    "id": "2382170644780418208",
+    "title": "# Precautionary Transfer of Timelock Admin"
+  },
+  {
+    "id": "2378826210739225710",
+    "title": "# Trust Setup for DAO investment into GoldCOMP"
+  },
+  {
+    "id": "2378418436192601418",
+    "title": "# [Gauntlet] - Risk and IO Recommendations for Arb USDT, Arb WETH, Polygon USDT, Mainnet WETH, and BASE USDC"
+  },
+  {
+    "id": "2378418032641836492",
+    "title": "# [Gauntlet] Stablecoin IR recommendations"
+  },
+  {
+    "id": "2377855607823664822",
+    "title": "# Add wstETH as collateral into cUSDCv3 on Ethereum"
+  },
+  {
+    "id": "2377530813068609495",
+    "title": "# Add ezETH as collateral into cWETHv3 on Base"
+  },
+  {
+    "id": "2377011428679747203",
+    "title": "# Add wstETH as collateral into cUSDCv3 on Optimism"
+  },
+  {
+    "id": "2376279394160215534",
+    "title": "# Add wstETH as collateral into cUSDTv3 on Optimism"
+  },
+  {
+    "id": "2373402432815236265",
+    "title": "# [Gauntlet] - Arbitrum USDC - Risk, Incentive, and Interest Rate Curve Recommendations"
+  },
+  {
+    "id": "2373401794869986453",
+    "title": "# [Gauntlet] Optimism Comet Risk Recommendations"
+  },
+  {
+    "id": "2372916321563182929",
+    "title": "# Initialize cWETHv3 on Optimism"
+  },
+  {
+    "id": "2372432343777413098",
+    "title": "# Trust Setup for DAO investment into GoldCOMP"
+  },
+  {
+    "id": "2371876029808510728",
+    "title": "# Add wstETH as collateral into cUSDCv3 on Arbitrum"
+  },
+  {
+    "id": "2371324869817140361",
+    "title": "# Update rsETH and weETH price feeds in cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2367793373357541243",
+    "title": "# Add ezETH as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2367670994673337508",
+    "title": "# Add WBTC as collateral into cWETHv3 on Arbitrum"
+  },
+  {
+    "id": "2367601215983847230",
+    "title": "# [Gauntlet] -  WETH Arbitrum v3 Global Param Updates"
+  },
+  {
+    "id": "2363199670643066349",
+    "title": "# Add WBTC as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2362783676938323481",
+    "title": "# [Gauntlet] Polygon USDC.e and Scroll USDC - Risk and Incentive Recommendations"
+  },
+  {
+    "id": "2362684550393366469",
+    "title": "# [Gauntlet] - WETH Arbitrum v3 Global Param Updates"
+  },
+  {
+    "id": "2362664698635093677",
+    "title": "# [Gauntlet] Polygon USDC.e and Scroll USDC - Risk and Incentive Recommendations"
+  },
+  {
+    "id": "2361296123303298174",
+    "title": "# Add osETH as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2360892300269192966",
+    "title": "# Initialize cUSDTv3 on Ethereum Mainnet"
+  },
+  {
+    "id": "2359027577756059391",
+    "title": "# [Gauntlet] - WETH Arbitrum v3 Global Param Updates"
+  },
+  {
+    "id": "2358416214444737743",
+    "title": "# [Gauntlet] Scroll Risk Recommendations"
+  },
+  {
+    "id": "2356109609892054234",
+    "title": "# Initialize cUSDTv3 on Polygon"
+  },
+  {
+    "id": "2356084149896348677",
+    "title": "# Add weETH as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2356045287555860380",
+    "title": "# Add rsETH as collateral into cWETHv3 on Mainnet"
+  },
+  {
+    "id": "2355922724280338340",
+    "title": "# Initialize cUSDTv3 on Arbitrum"
+  },
+  {
+    "id": "2355830124466668717",
+    "title": "# OpenZeppelin Security Partnership - Annual Renewal 2024"
+  },
+  {
+    "id": "2353212730653017126",
+    "title": "# [Gauntlet] Optimism USDC Risk Recommendations - 06-17-24"
+  },
+  {
+    "id": "2353212727297574908",
+    "title": "# Initialize cWETHv3 on Arbitrum"
+  },
+  {
+    "id": "2344491301518444174",
+    "title": "# Initialize cUSDTv3 on Optimism"
+  },
+  {
+    "id": "2342535739876575195",
+    "title": "# [Gauntlet]  Interest Rate and Rewards Recommendation for WETH Comet on BASE (06/03/2024)"
+  },
+  {
+    "id": "2342535327895258833",
+    "title": "# [Gauntlet] Rewards Contract Top-Up for BASE, Ethereum, and Arbitrum (06/03/24)"
+  },
+  {
+    "id": "2340168357216519878",
+    "title": "# Establish the Compound Governance Support Working Group (GSWG)"
+  },
+  {
+    "id": "2337156894231102955",
+    "title": "# [Gauntlet] Rewards Contract Top-Up for BASE, Ethereum, and Arbitrum (05/27/24)"
+  },
+  {
+    "id": "2332157818586531534",
+    "title": "# [Gauntlet] - Compound v2 Deprecation Phase 12 (05/20/2024)"
+  },
+  {
+    "id": "2331317163614274800",
+    "title": "# Compound Growth Program: 12 Month Term"
+  },
+  {
+    "id": "2327853752461035305",
+    "title": "# BASE Comet USDbC IO Recommendations  (2024-05-14)"
+  },
+  {
+    "id": "2327270418047567029",
+    "title": "# Aera for Compound Service Provider Payments"
+  },
+  {
+    "id": "2325657682498815469",
+    "title": "# Compound Growth Program: 12 Month Term"
+  },
+  {
+    "id": "2321723548684519134",
+    "title": "# Treasury to Invest 5% of COMP holdings into goldCOMP Vault"
+  },
+  {
+    "id": "2321266312052999647",
+    "title": "# Compound Growth Program 12-Month Term"
+  },
+  {
+    "id": "2317634463665751551",
+    "title": "# [Gauntlet] -  BASE and Ethereum v3 WETH Comet Risk Recommendations on (2024-04-29)"
+  },
+  {
+    "id": "2317633908138575358",
+    "title": "# [Gauntlet] BASE and Ethereum v3 WETH Comet IO Recommendations (2024-04-29)"
+  },
+  {
+    "id": "2311972060278031600",
+    "title": "# [Gauntlet] Compound v2 Deprecation Phase 11 (2024-04-22)"
+  },
+  {
+    "id": "2311971651987703023",
+    "title": "# [Gauntlet] Ethereum v3 USDC Comet Recommendations (2024-04-18)"
+  },
+  {
+    "id": "2307376010640753750",
+    "title": "# [Gauntlet] Arbitrum v3 - Risk Recommendations (2024-04-15)"
+  },
+  {
+    "id": "2307375124090717269",
+    "title": "# [Gauntlet] Compound v2 Deprecation Phase 11 (2024-04-15)"
+  },
+  {
+    "id": "2301927321302468562",
+    "title": "# [Gauntlet] Ethereum v3 WETH - Interest Rate Curve Recommendations (04/08/2024)"
+  },
+  {
+    "id": "2301891682217494481",
+    "title": "# Initialize cUSDCv3 on Optimism"
+  },
+  {
+    "id": "2300532109866960818",
+    "title": "# OpenZeppelin Security Partnership - 2024 Q2 Compensation"
+  },
+  {
+    "id": "2296742330062866150",
+    "title": "# [Gauntlet] Base V3 WETH Comets - Interest Rate Curve & Reward Recommendations (04/01/24)"
+  },
+  {
+    "id": "2296740901709416165",
+    "title": "# [Gauntlet] Polygon USDC.e Risk Recommendations (04/01/2024)"
+  },
+  {
+    "id": "2291788887464347117",
+    "title": "# Simple Summary"
+  },
+  {
+    "id": "2289389028627187123",
+    "title": "# Initialize cUSDCv3 on Scroll"
+  },
+  {
+    "id": "2289321861042931122",
+    "title": "# OpenZeppelin Security Partnership - 2024 Q2 Compensation"
+  },
+  {
+    "id": "2287944437281588596",
+    "title": "# [Gauntlet] Arbitrum USDC Comets - Interest Rate Curve "
+  },
+  {
+    "id": "2286526591561368903",
+    "title": "# [Gauntlet] 2024-03-18: Compound v2 Deprecation (Phase 10) - Part 2"
+  },
+  {
+    "id": "2286526591259379014",
+    "title": "# [Gauntlet] USDC Comets - Interest Rate Curve & Reward Recommendations (3/18/24) - Part 2"
+  },
+  {
+    "id": "2284416497784718597",
+    "title": "# Add wstETH as Collateral to cUSDCv3 Mainnet"
+  },
+  {
+    "id": "2284338418466948355",
+    "title": "# [Gauntlet] 2024-03-11: Compound V2 Deprecation (Phase 10) - Part 1"
+  },
+  {
+    "id": "2282279636102546617",
+    "title": "# [Gauntlet] USDC Comets - Interest Rate Curve & Reward Recommendations (3/11/24)"
+  },
+  {
+    "id": "2281735950813889702",
+    "title": "# Initialize cUSDCv3 on Base"
+  },
+  {
+    "id": "2281624612217291920",
+    "title": "# Aera Pilot Update"
+  },
+  {
+    "id": "2277303628693768154",
+    "title": "# [Gauntlet] Polygon Rewards Contract Top-Up Recommendations (03/04/24)"
+  },
+  {
+    "id": "2276508521732245417",
+    "title": "# [Gauntlet] 2024-03-04: Compound V2 Deprecation (Phase 10) - Part 1"
+  },
+  {
+    "id": "2275896042023028614",
+    "title": "# Initialize cUSDCv3 on Scroll"
+  },
+  {
+    "id": "2271393617731913453",
+    "title": "# [Gauntlet] 2023-02-26: Ethereum v3 USDC - targetReserves Recommendations"
+  },
+  {
+    "id": "2266903183630534118",
+    "title": "# [Gauntlet] 2024-02-19: BASE v3 & Arbitrum v3 - Risk Recommendations"
+  },
+  {
+    "id": "2266899572083131877",
+    "title": "# [Gauntlet] Ethereum v3 USDC - Risk Recommendations (02/19/2024)"
+  },
+  {
+    "id": "2261330370030994730",
+    "title": "# [Gauntlet] 2024-02-12: Compound v2 Deprecation (Phase 9)"
+  },
+  {
+    "id": "2256181268955792498",
+    "title": "# [Gauntlet] 2024-02-05: Base Rewards Contract Top-Up Recommendations"
+  },
+  {
+    "id": "2256180748283282545",
+    "title": "# [Gauntlet] 2024-02-05: Ethereum v3 USDC - Risk Recommendations"
+  },
+  {
+    "id": "2251034109860120494",
+    "title": "# [Gauntlet] 2024-01-29: Compound v2 Deprecation (Phase 8)"
+  },
+  {
+    "id": "2240980359137199503",
+    "title": "# [Gauntlet] 2023-01-14: Compound v2 Deprecation (Phase 7)"
+  },
+  {
+    "id": "2240979652959012238",
+    "title": "# [Gauntlet] 2024-01-14: Polygon v3 USDC.e - Risk Recommendations"
+  },
+  {
+    "id": "2231867162035749948",
+    "title": "# 2023-12-24: Ethereum v3 USDC, Polygon v3 USDC.e - Interest Rate Curves"
+  },
+  {
+    "id": "2231479257182241844",
+    "title": "#  2023-12-24: Compound v2 deprecation (Phase 6)"
+  },
+  {
+    "id": "2225576757413545955",
+    "title": "# [Gauntlet] 2023-12-24: Ethereum v3 USDC, Polygon v3 USDC.e - Interest Rate Curve Recommendations"
+  },
+  {
+    "id": "2225574455873112034",
+    "title": "# [Gauntlet] 2023-12-24: Compound v2 Deprecation (Phase 6)"
+  },
+  {
+    "id": "2219113556970833763",
+    "title": "# [Gauntlet] 2023-12-15: Arbitrum v3 USDC Native, Arbitrum v3 USDC.e, & Base v3 USDbC - Interest Rate Curve Recommendations"
+  },
+  {
+    "id": "2219104442051987298",
+    "title": "# [GAUNTLET] 2023-12-16: Polygon Rewards Contract Top-Up Recommendations "
+  },
+  {
+    "id": "2215618435805611725",
+    "title": "# [Gauntlet] 2023-12-11: Polygon v3 USDC.e - Interest Rate Curve Recommendations"
+  },
+  {
+    "id": "2215547761883875007",
+    "title": "# [Gauntlet] 2023-12-11: Ethereum v3 USDC Reward Recommendations"
+  },
+  {
+    "id": "2213942943629182598",
+    "title": "Comet Vulnerability Disclosure (Patched) - Bug Bounty Program Reward"
+  },
+  {
+    "id": "2210591960299734543",
+    "title": "Comet Vulnerability Disclosure (Patched) - Bug Bounty Program Reward"
+  },
+  {
+    "id": "2210532634470123022",
+    "title": "# [Gauntlet] 2023-12-04: Ethereum v3 WETH Interest Rate Curve Recommendations"
+  },
+  {
+    "id": "2210494092901615113",
+    "title": "# [Gauntlet] 2023-12-04: Compound v2 Deprecation (Phase 5)"
+  },
+  {
+    "id": "2209780087287448998",
+    "title": "# Compound Growth Program"
+  },
+  {
+    "id": "2208162094245741980",
+    "title": "# OpenZeppelin Security Partnership - 2024 Q1 Compensation"
+  },
+  {
+    "id": "2205464663766861052",
+    "title": "# [Gauntlet] 2023-11-27: Arbitrum Native USDC - Risk Recommendations"
+  },
+  {
+    "id": "2203940363339564255",
+    "title": "# Compound Governor Bravo Update"
+  },
+  {
+    "id": "2200306446447412333",
+    "title": "# [Gauntlet] 2023-11-20: Base v3 WETH Interest Rate Curve Recommendations"
+  },
+  {
+    "id": "2195416299947952118",
+    "title": "# Top-up COMP Rewards on Compound V3 mainnet contract"
+  },
+  {
+    "id": "2195212798584162288",
+    "title": "# [Gauntlet] 2023-11-13: Compound v2 Deprecation (Phase 4)"
+  },
+  {
+    "id": "2193118185413150673",
+    "title": "# Add rETH as Collateral to wETHv3 Mainnet"
+  },
+  {
+    "id": "2191620525803964317",
+    "title": "Compound Growth Program"
+  },
+  {
+    "id": "2185798857185559931",
+    "title": "# [Gauntlet] 2023-10-30: Compound v2 Deprecation (Phase 3)"
+  },
+  {
+    "id": "2184672252375598409",
+    "title": "CGP 2.0 Updates and Renewal"
+  },
+  {
+    "id": "2175067396979557389",
+    "title": "# [Gauntlet] Arbitrum v3 USDC Native - Risk Recommendations (2023-10-16)"
+  },
+  {
+    "id": "2175027538550588425",
+    "title": "# Aera Pilot Proposal"
+  },
+  {
+    "id": "2170021573510039338",
+    "title": "# [Gauntlet] 2023-10-09: Compound v2 Deprecation (Phase 2)"
+  },
+  {
+    "id": "2157539528196228556",
+    "title": "# OpenZeppelin Security Partnership - 2023 Q4 Compensation  "
+  },
+  {
+    "id": "2156916741085595068",
+    "title": "\"# OpenZeppelin Security Partnership - 2023 Q4 Compensation  ## Background Starting on Dec 21st, 2021, OpenZeppelin was [selected](https://compound.finance/governance/proposals/76) to offer the Compound DAO security services including continuous audit, security advisory, and monitoring. At the start of every quarter, OpenZeppelin creates a proposal to perform the next service fee payment.  ## Compensation Structure We receive our quarterly payments in a lump-sum of COMP. Based on the last week's average price, this would be $39.76 per COMP for a total quarterly payment of 25,148 COMP equaling $1M per the original agreement. This COMP will be transferred from the Comptroller using `_grantComp`. More details in this [forum post](https://www.comp.xyz/t/openzeppelin-security-updates-for-q3-2023-q4-compensation-proposal/4679).  By approving this proposal, you agree that any services provided by OpenZeppelin shall be governed by the [Terms of Service available here](https://docs.google.com/document/d/1eDcvirf0bdzpjIkfxQHm7fcV05O1IcLXL-Dl-U52Y4k/edit?usp=sharing) that were updated as of Sep 19th, 2023.\""
+  },
+  {
+    "id": "2154871034673628540",
+    "title": "# [Gauntlet] Arbitrum v3 USDC Reward Recommendations (2023-09-18)"
+  },
+  {
+    "id": "2154798417539237240",
+    "title": "# Gauntlet <> Compound Renewal 2023"
+  },
+  {
+    "id": "2149771571978306801",
+    "title": "# [Gauntlet] 2023-09-11: Compound v2 Deprecation (Phase 1)"
+  },
+  {
+    "id": "2144307695534998668",
+    "title": "# Add stMATIC as Collateral to USDCv3 Polygon Market"
+  },
+  {
+    "id": "2136597140892288720",
+    "title": "# Initialize native USDC market cUSDCv3 on Arbitrum"
+  },
+  {
+    "id": "2134992316941731319",
+    "title": "# [Gauntlet] 2023-08-21: Polygon USDC - Risk Parameter Updates"
+  },
+  {
+    "id": "2129444135986267547",
+    "title": "# [Gauntlet] 2023-08-14: Ethereum WETH - Risk Parameter, IR Curve, & Incentive Updates"
+  },
+  {
+    "id": "2129204850850792854",
+    "title": "CGP 2.0 Updates and Renewal"
+  },
+  {
+    "id": "2127186823405897084",
+    "title": "# Initialize cWETHv3 on Base"
+  },
+  {
+    "id": "2124303350823388468",
+    "title": "# [Gauntlet] 2023-08-07: Arbitrum USDC - Reward Updates"
+  },
+  {
+    "id": "2123450016344311070",
+    "title": "# Add MaticX as Collateral to USDCv3 Polygon Market"
+  },
+  {
+    "id": "2122119158341567768",
+    "title": "# Initialize cUSDbCv3 on Base"
+  },
+  {
+    "id": "2114135654718768252",
+    "title": "# [Gauntlet] 2023-07-24 Pause supply for Compound v2 Tail Assets"
+  },
+  {
+    "id": "2114127962205848699",
+    "title": "# [Gauntlet] 2023-07-24 Increase supply cap for WETH, WBTC, UNI, LINK on Ethereum Compound v3 USDC"
+  },
+  {
+    "id": "2104096106865493938",
+    "title": "# Gauntlet Recommendations: Ethereum Compound v3 USDC - Interest Rate Curve & Incentive Changes"
+  },
+  {
+    "id": "2104031389224535985",
+    "title": "# Compound V2->V3 Migration Proposal Phase 4"
+  },
+  {
+    "id": "2092338299673773780",
+    "title": "# OpenZeppelin Security Partnership - 2023 Q3 Compensation "
+  },
+  {
+    "id": "2090810699562354359",
+    "title": "# Top-up COMP Rewards on Compound V3 mainnet contract"
+  },
+  {
+    "id": "2072718963808142431",
+    "title": "# Gauntlet <> Compound Incentive Optimization"
+  },
+  {
+    "id": "2068563241323201545",
+    "title": "# Interest Rate Curve Updates for Ethereum Compound v3 USDC"
+  },
+  {
+    "id": "2059104944278996644",
+    "title": "# Risk Parameter Updates for Polygon Compound v3 USDC (5/9/23)"
+  },
+  {
+    "id": "2057771229862954595",
+    "title": "# Initialize cUSDCv3 on Arbitrum"
+  },
+  {
+    "id": "2052702508136007163",
+    "title": "# Refresh Polygon COMP"
+  },
+  {
+    "id": "2044543007113348377",
+    "title": "# Refresh Polygon COMP"
+  },
+  {
+    "id": "2030607561618622239",
+    "title": "# OpenZeppelin Security Partnership - 2023 Q2 Compensation "
+  },
+  {
+    "id": "2029394261828437739",
+    "title": "# Compound V2 -> V3 Migration (Phase 2)"
+  },
+  {
+    "id": "2027014176240567831",
+    "title": "# Certora <> Compound Formal Verification"
+  },
+  {
+    "id": "2016365318674318501",
+    "title": "# Resume cUSDC minting"
+  },
+  {
+    "id": "2013394796491572331",
+    "title": "# Risk Parameter Updates for V2 and V3 WETH Comet"
+  },
+  {
+    "id": "2007678461803496452",
+    "title": "### Compound V2 -> V3 Migration Phase 1"
+  },
+  {
+    "id": "2007526266390971394",
+    "title": "# Initialize cUSDCv3 on Polygon"
+  },
+  {
+    "id": "2006030814579525609",
+    "title": "# CGP Hackathon Sponsorships in 2023"
+  },
+  {
+    "id": "1997295561060910903",
+    "title": "# Increase cbETH Supply Cap in cWETHv3"
+  },
+  {
+    "id": "1992451282807293628",
+    "title": "# Initialize ENS subdomain for official Comet deployments"
+  },
+  {
+    "id": "1987301678927316510",
+    "title": "# Risk Parameter Updates for 3 Compound V2 Assets"
+  },
+  {
+    "id": "1985205520289498615",
+    "title": "# Increase cbETH Supply Cap in cWETHv3"
+  },
+  {
+    "id": "1982306967137289648",
+    "title": "# Risk Parameter Updates for 1 Collateral Asset on the Comet USDC Market"
+  },
+  {
+    "id": "1977900893592356185",
+    "title": "# Initialize cWETHv3 on Ethereum"
+  },
+  {
+    "id": "1972799291382564107",
+    "title": "# Compound UAV v3 Upgrade"
+  },
+  {
+    "id": "1968480691993707747",
+    "title": "# Risk Parameter Updates for 2 Assets on USDC Comet Market"
+  },
+  {
+    "id": "1961940494925694112",
+    "title": "# Risk Parameter Updates for 5 Collateral Assets"
+  },
+  {
+    "id": "1951814999240344591",
+    "title": "# Risk Parameter Updates for USDC Comet Market"
+  },
+  {
+    "id": "1950123759734097918",
+    "title": "# OpenZeppelin Security Partnership - 2023 Q1 Compensation"
+  },
+  {
+    "id": "1949454502763431921",
+    "title": "# Reserve Maintenance"
+  },
+  {
+    "id": "1943109733686708128",
+    "title": "# Increase WETH Supply Cap in cUSDCv3"
+  },
+  {
+    "id": "1941395734167291785",
+    "title": "# CGP 2.0 by Questbook"
+  },
+  {
+    "id": "1938219602437736267",
+    "title": "# Borrow Caps for Compound V2 Assets"
+  },
+  {
+    "id": "1932287104797116155",
+    "title": "# CGP 2.0 by Questbook"
+  },
+  {
+    "id": "1920672338605508151",
+    "title": "# Risk Parameter Updates for 1 Collateral Asset"
+  },
+  {
+    "id": "1916173180016264708",
+    "title": "# Liquidation Event Handling And Collateral Reserves"
+  },
+  {
+    "id": "1912687036951692755",
+    "title": "# Pause Supply for Compound Assets"
+  },
+  {
+    "id": "1911138627379791279",
+    "title": "# Adjust cCOMP and cUNI Parameters"
+  },
+  {
+    "id": "1905479633491461465",
+    "title": "# Risk Parameter Changes for FEI: Part 2"
+  },
+  {
+    "id": "1898867669709358328",
+    "title": "# Increase Compound III Supply Caps"
+  },
+  {
+    "id": "1893728739846522030",
+    "title": "# Increase Compound III Supply Caps"
+  },
+  {
+    "id": "1893676598624781485",
+    "title": "# OpenZeppelin Security Partnership - 2022 Q4 Adjustment"
+  },
+  {
+    "id": "1890195820578341970",
+    "title": "# Gauntlet <> Compound Renewal"
+  },
+  {
+    "id": "1878611488365610437",
+    "title": "# Initialize Compound III COMP Distribution"
+  },
+  {
+    "id": "1878578519668164036",
+    "title": "# Risk Parameter Changes for FEI"
+  },
+  {
+    "id": "1878547084425037251",
+    "title": "# cETH Risk Mitigation"
+  },
+  {
+    "id": "1876986921641575841",
+    "title": "# Unpause Seize"
+  },
+  {
+    "id": "1876986921222145440",
+    "title": "# Unpause Seize"
+  },
+  {
+    "id": "1876301438208968086",
+    "title": "# Oracle Update"
+  },
+  {
+    "id": "1874931138783348105",
+    "title": "# Risk Parameter Updates for 1 Collateral Asset"
+  },
+  {
+    "id": "1870667112649852245",
+    "title": "# Compound Oracle Upgrade v3"
+  },
+  {
+    "id": "1867672272345498936",
+    "title": "The first proposed Compound III market is USDC on Ethereum; the contracts have been tested, audited, and deployed to production, with help and input from OpenZeppelin, Chainsecurity, Certora, Gauntlet, Chainlink, and many members of the community."
+  },
+  {
+    "id": "1853295640872748170",
+    "title": "# Enable Sending ETH from Timelock (Revised)"
+  },
+  {
+    "id": "1852699615032247421",
+    "title": "# Enable Sending ETH from Timelock"
+  },
+  {
+    "id": "1840158514220107531",
+    "title": "# End Getty's Contributor Grant"
+  },
+  {
+    "id": "1834428518012814989",
+    "title": "# Return Accidentally Sent Funds #3"
+  },
+  {
+    "id": "1829305830978094668",
+    "title": "# Risk Parameter Updates for 2 Collateral Assets"
+  },
+  {
+    "id": "1827641317744707140",
+    "title": "# OpenZeppelin Security Partnership - 2022 Q3 Adjustment"
+  },
+  {
+    "id": "1819089416950384109",
+    "title": "# Reserve Factor Decreases for 10 Assets"
+  },
+  {
+    "id": "1814049853303424402",
+    "title": "# Risk Parameter Updates for 5 Collateral Assets"
+  },
+  {
+    "id": "1803887551249908845",
+    "title": "# Risk Parameter Updates for 5 Collateral Assets"
+  },
+  {
+    "id": "1793854573908068320",
+    "title": "# Risk Parameter Updates for 7 Collateral Assets"
+  },
+  {
+    "id": "1793774384326903775",
+    "title": "# Grant request for launching Compound with Aztec Connect"
+  },
+  {
+    "id": "1787880326970738594",
+    "title": "# Update High-TVL cToken Implementations"
+  },
+  {
+    "id": "1783667454568826717",
+    "title": "# Risk Parameter Updates for MKR and AAVE"
+  },
+  {
+    "id": "1782033891717023547",
+    "title": "# OpenZeppelin Security Partnership - 2022 Q2 Adjustment V4"
+  },
+  {
+    "id": "1777796239123810038",
+    "title": "# Update Mid-TVL cToken Implementations"
+  },
+  {
+    "id": "1777102258274567917",
+    "title": "# COMP Rewards Adjustments - Kickstart Rewards: Step Two"
+  },
+  {
+    "id": "1771924194674607746",
+    "title": "# OpenZeppelin Security Partnership - 2022 Q2 Adjustment V3"
+  },
+  {
+    "id": "1768457736527283777",
+    "title": "# Risk Parameter Updates for YFI and SUSHI"
+  },
+  {
+    "id": "1766901112469718577",
+    "title": "# Reduce MKR Borrow Limit"
+  },
+  {
+    "id": "1765514262043690517",
+    "title": "# Update Low-TVL cToken Implementations"
+  },
+  {
+    "id": "1763950263711827459",
+    "title": "# OpenZeppelin Security Partnership - 2022 Q2 Adjustment V2"
+  },
+  {
+    "id": "1761625364628506090",
+    "title": "# OpenZeppelin Security Partnership - 2022 Q2 Adjustment"
+  },
+  {
+    "id": "1757374199162209707",
+    "title": "# Contribute funding to the Nomic Foundation"
+  },
+  {
+    "id": "1756754575840249254",
+    "title": "# COMP Rewards Adjustments - Kickstart Rewards: Step One"
+  },
+  {
+    "id": "1753997273047500145",
+    "title": "# PROPOSAL: Should Compound governance contribute funding to the Nomic Foundation?"
+  },
+  {
+    "id": "1753375243822433629",
+    "title": "# Risk Parameter Updates for ZRX, MKR, and SUSHI"
+  },
+  {
+    "id": "1751243221243004237",
+    "title": "# Lower Proposal Threshold to 25K COMP"
+  },
+  {
+    "id": "1751087583128978749",
+    "title": "# Lower Proposal Threshold to 10K COMP"
+  },
+  {
+    "id": "1750340411039155512",
+    "title": "# Oracle Update"
+  },
+  {
+    "id": "1746493002387293456",
+    "title": "# Add Market: MATIC & Update Price Oracle"
+  },
+  {
+    "id": "1746492922678740239",
+    "title": "# Risk Parameter Updates for UNI, LINK, MKR, AAVE, YFI, and SUSHI"
+  },
+  {
+    "id": "1746492904643233038",
+    "title": "# TrueUSD Market Upgrades"
+  },
+  {
+    "id": "1746492898863482125",
+    "title": "# Add Market: FEI"
+  },
+  {
+    "id": "1746492886733554956",
+    "title": "# Dynamic Risk Parameters - Quarterly Update"
+  },
+  {
+    "id": "1746492880685368587",
+    "title": "# Risk Parameter Updates for ETH"
+  },
+  {
+    "id": "1746492877749355786",
+    "title": "# Update cSUSHI cToken Implementation"
+  },
+  {
+    "id": "1746492874511353097",
+    "title": "# Migrate Contributor Streams to Sablier"
+  },
+  {
+    "id": "1746492870317049096",
+    "title": "# Risk Parameter Updates for ETH"
+  },
+  {
+    "id": "1746492856433902855",
+    "title": "# Continuous Security Engineering for Compound"
+  },
+  {
+    "id": "1746492856375182598",
+    "title": "# OpenZeppelin Continuous Audit & Security Services Proposal"
+  },
+  {
+    "id": "1746492856224187653",
+    "title": "# Decentralized long-term security for Compound"
+  },
+  {
+    "id": "1746492855318217988",
+    "title": "# Risk Parameter Updates for WBTC, BAT, and LINK"
+  },
+  {
+    "id": "1746492854496134403",
+    "title": "# Add Market: USDP"
+  },
+  {
+    "id": "1746492845771982082",
+    "title": "# Risk Parameter Updates for WBTC, UNI, and COMP"
+  },
+  {
+    "id": "1746492837450482945",
+    "title": "# Risk Parameter Updates for DAI, BAT, ZRX, and ETH"
+  },
+  {
+    "id": "1746492837215601920",
+    "title": "# Security Solutions For Compound Governance"
+  },
+  {
+    "id": "1746492830798316799",
+    "title": "# Risk Parameter Updates for LINK, MKR, SUSHI, and YFI"
+  },
+  {
+    "id": "1746492825043731710",
+    "title": "# End cCOMP Borrow Rewards"
+  },
+  {
+    "id": "1746492823600891133",
+    "title": "# [Temp. Check] Should Compound retroactively distribute COMP tokens to early users?"
+  },
+  {
+    "id": "1746492822929802492",
+    "title": "# Risk Parameter Updates for AAVE, LINK, MKR, SUSHI, USDC, and YFI"
+  },
+  {
+    "id": "1746492785776657659",
+    "title": "# Correct Over-Accrued COMP"
+  },
+  {
+    "id": "1746492763085473018",
+    "title": "# Fix COMP Accrual Bug"
+  },
+  {
+    "id": "1746492761256756473",
+    "title": "# Temporarily Disable COMP Rewards"
+  },
+  {
+    "id": "1746492735042356472",
+    "title": "# Split COMP rewards distribution and bug fixes"
+  },
+  {
+    "id": "1746492733784065271",
+    "title": "# Dynamic Risk Parameters"
+  },
+  {
+    "id": "1746492719254996214",
+    "title": "# Address Whitelist for Submitting Proposals "
+  },
+  {
+    "id": "1746492717912818933",
+    "title": "# Distribute DAI to Users Affected in the DAI Liquidations"
+  },
+  {
+    "id": "1746492620135204084",
+    "title": "# Return Accidentally Sent Funds"
+  },
+  {
+    "id": "1746492616586822899",
+    "title": "# Set Pause Guardian to Community Multi-Sig"
+  },
+  {
+    "id": "1746492607392908530",
+    "title": "# Add Collateral Factors for MKR, SUSHI, AAVE, YFI, & LINK"
+  },
+  {
+    "id": "1746492607283856625",
+    "title": "# Add Collateral Factors for MKR, SUSHI, AAVE, & YFI"
+  },
+  {
+    "id": "1746492577462355184",
+    "title": "# Add AAVE, SUSHI, YFI"
+  },
+  {
+    "id": "1746492574341793007",
+    "title": "# Add MKR Support"
+  },
+  {
+    "id": "1746492407744038126",
+    "title": "# Lower Proposal Threshold to 65,000 COMP"
+  },
+  {
+    "id": "1746492407106503916",
+    "title": "# Contributor Grant: Getty Hill"
+  },
+  {
+    "id": "1746492393047196907",
+    "title": "# Close Deprecated Markets, Gas Savings"
+  },
+  {
+    "id": "1746492385799439594",
+    "title": "# Update and Standardize cToken Implementation"
+  },
+  {
+    "id": "1746492379591869673",
+    "title": "# Update and Standardize cToken Implementation"
+  },
+  {
+    "id": "1746492378685900008",
+    "title": "# Oracle Improvement"
+  },
+  {
+    "id": "1746492349208331491",
+    "title": "# Add LINK Support"
+  },
+  {
+    "id": "1746492348772123874",
+    "title": "# Add TUSD Support"
+  },
+  {
+    "id": "1746492333873956064",
+    "title": "# Legacy market maintenance: WBTC and REP"
+  },
+  {
+    "id": "1746492320880002271",
+    "title": "# Governance Analysis Period"
+  }
+]

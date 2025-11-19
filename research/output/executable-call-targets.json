@@ -1,6 +1,6 @@
 [
   {
-    "target": "0x4dbd4fc535ac27206064b68ffcf827b0a60bab3f",
+    "target": "0xd19d4b5d358258f05d7b411e21a1460d11b0876f",
     "chainIds": [
       "eip155:1"
     ]
@@ -13,6 +13,12 @@
   },
   {
     "target": "0x1ec63b5883c3481134fd50d5daebc83ecd2e8779",
+    "chainIds": [
+      "eip155:1"
+    ]
+  },
+  {
+    "target": "0x4dbd4fc535ac27206064b68ffcf827b0a60bab3f",
     "chainIds": [
       "eip155:1"
     ]
@@ -163,12 +169,6 @@
   },
   {
     "target": "0x309a862bbc1a00e45506cb8a802d1ff10004c8c0",
-    "chainIds": [
-      "eip155:1"
-    ]
-  },
-  {
-    "target": "0xd19d4b5d358258f05d7b411e21a1460d11b0876f",
     "chainIds": [
       "eip155:1"
     ]
