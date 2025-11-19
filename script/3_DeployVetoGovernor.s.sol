@@ -9,7 +9,8 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 
 contract DeployVetoGovernor is Script, BaseLogger {
   function _computeCouncilGovernorAddress(address _deployer) internal view returns (address) {
-    uint256 _nextNonce = vm.getNonce(_deployer) + 1;
+    // We need to account for timelock param adjustment after deployment, which takes 3 transactions.
+    uint256 _nextNonce = vm.getNonce(_deployer) + 4;
     return vm.computeCreateAddress(_deployer, _nextNonce);
   }
 
@@ -34,7 +35,7 @@ contract DeployVetoGovernor is Script, BaseLogger {
       _config.vetoGuardian,
       TimelockController(_timelock),
       _config.vetoGovernorAdmin,
-      _computeCouncilGovernorAddress(_deployer)
+      _predictedCouncilGovernorAddress
     );
 
     vetoGovernor = new BasicCouncilVetoGovernor(_params);
