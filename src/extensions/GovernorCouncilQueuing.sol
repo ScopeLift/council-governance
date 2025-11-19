@@ -52,15 +52,13 @@ abstract contract GovernorCouncilQueuing is Governor {
   /// @notice Returns the current state of a proposal, considering both council and veto governor
   /// states.
   /// @dev Overridden version of {Governor-state} function that implements dual governor logic.
-  ///   For non-queued proposals
-  ///     - Returns the council governor's state directly.
-  ///   For queued proposals, determines the final state based on the veto governor's status:
-  ///     - Returns Queued if veto governor proposal is in non-terminal state
-  ///     - Returns Executed if veto governor proposal is Executed (fallback for non-council
-  /// exection)
-  ///     - Returns Canceled if veto governor proposal failed (Canceled/Defeated/Expired)
-  /// @param _proposalId the ID of the proposal to check
-  /// @return The current state of the proposal considering both governors
+  /// For non-queued proposals, returns the council governor's state directly.
+  /// For queued proposals, determines the final state based on the veto governor's status:
+  /// - Returns Queued if veto governor proposal is in non-terminal state.
+  /// - Returns Executed if veto governor proposal is Executed (fallback for non-council exection).
+  /// - Returns Canceled if veto governor proposal failed (Canceled/Defeated/Expired).
+  /// @param _proposalId the ID of the proposal to check.
+  /// @return The current state of the proposal considering both governors.
   function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
     ProposalState _currentState = super.state(_proposalId);
 
@@ -91,11 +89,11 @@ abstract contract GovernorCouncilQueuing is Governor {
 
   /// @notice Creates a proposal on the council governor.
   /// @dev Extends {Governor-propose} to store the proposal description for later use when queuing.
-  /// @param _targets Array of target addresses for the proposal calls
-  /// @param _values Array of values for the proposal calls
+  /// @param _targets Array of target addresses for the proposal calls.
+  /// @param _values Array of values for the proposal calls.
   /// @param _calldatas Array of call data for the proposal calls
   /// @param _description Human-readable description of the proposal.
-  /// @return _proposalId The unique identifier of the created proposal
+  /// @return _proposalId The unique identifier of the created proposal.
   function propose(
     address[] memory _targets,
     uint256[] memory _values,
@@ -126,9 +124,9 @@ abstract contract GovernorCouncilQueuing is Governor {
 
   /// @notice Checks if the {CouncilVetoGovernor}'s proposal state matches any of the allowed
   /// states.
-  /// @dev Checks if the veto governor's proposal state matches any of the allowed states.
-  ///      Used in state() to determine council governor's proposal state based on veto governor's
-  /// status.  /// @param _proposalId The ID of the proposal to check on the {CouncilVetoGovernor}.
+  /// @dev Used in state() to determine council governor's proposal state based on veto governor's
+  /// status.
+  /// @param _proposalId The ID of the proposal to check on the {CouncilVetoGovernor}.
   /// @param _allowedStates Bitmap where each bit represents an allowed proposal state.
   /// @return True if the {CouncilVetoGovernor}'s proposal state is in the allowed state bitmap,
   /// false otherwise.
@@ -144,13 +142,12 @@ abstract contract GovernorCouncilQueuing is Governor {
 
   /// @notice Queues a successful proposal to the veto governor.
   /// @dev Extends {Governor-_queueOperations} to forward the proposal to the veto governor and
-  /// clean
-  ///      up stored description.
+  /// clean up stored description.
   /// @param _proposalId The proposal ID to queue.
-  /// @param _targets Array of target addresses for the proposal calls
-  /// @param _values Array of values for the proposal calls
-  /// @param _calldatas Array of call data for the proposal calls
-  /// @return The veto governor's deadline for this proposal
+  /// @param _targets Array of target addresses for the proposal calls.
+  /// @param _values Array of values for the proposal calls.
+  /// @param _calldatas Array of call data for the proposal calls.
+  /// @return Veto governor's deadline for this proposal.
   function _queueOperations(
     uint256 _proposalId,
     address[] memory _targets,
@@ -169,10 +166,10 @@ abstract contract GovernorCouncilQueuing is Governor {
   /// @notice Executes a proposal through the veto governor.
   /// @dev Extends {Governor-_executeOperations} to execute a forwarded proposal on the veto
   /// governor.
-  /// @param _targets Array of target addresses for the proposal calls
-  /// @param _values Array of values for the proposal calls
-  /// @param _calldatas Array of call data for the proposal calls
-  /// @param _descriptionHash Hash of the proposal description
+  /// @param _targets Array of target addresses for the proposal calls.
+  /// @param _values Array of values for the proposal calls.
+  /// @param _calldatas Array of call data for the proposal calls.
+  /// @param _descriptionHash Hash of the proposal description.
   function _executeOperations(
     uint256, /*_proposalId*/
     address[] memory _targets,
@@ -188,11 +185,11 @@ abstract contract GovernorCouncilQueuing is Governor {
   /// canceled through this mechanism.
   /// @dev Overridden version of the {Governor-_cancel} function to cancel a proposal and clean up
   /// associated storage.
-  /// @param _targets Array of target addresses for the proposal calls
-  /// @param _values Array of values for the proposal calls
-  /// @param _calldatas Array of call data for the proposal calls
-  /// @param _descriptionHash Hash of the proposal description
-  /// @return _proposalId The ID of the proposal to be canceled
+  /// @param _targets Array of target addresses for the proposal calls.
+  /// @param _values Array of values for the proposal calls.
+  /// @param _calldatas Array of call data for the proposal calls.
+  /// @param _descriptionHash Hash of the proposal description.
+  /// @return _proposalId The ID of the proposal to be canceled.
   function _cancel(
     address[] memory _targets,
     uint256[] memory _values,
@@ -209,8 +206,8 @@ abstract contract GovernorCouncilQueuing is Governor {
     return address(councilVetoGovernor);
   }
 
-  /// @notice Internal function to update the veto governor and emit the change event
-  /// @param _newCouncilVetoGovernor The new veto governor contract
+  /// @notice Internal function to update the veto governor and emit the change event.
+  /// @param _newCouncilVetoGovernor The new veto governor contract.
   function _updateCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) private {
     emit CouncilVetoGovernorChange(address(councilVetoGovernor), address(_newCouncilVetoGovernor));
     councilVetoGovernor = _newCouncilVetoGovernor;
