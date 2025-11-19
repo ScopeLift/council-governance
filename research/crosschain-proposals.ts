@@ -57,7 +57,7 @@ async function detectContractTargets(targetsPayload) {
   const cache = new Map();
 
   for (const entry of targetsPayload) {
-    const { target, chainIds } = entry;
+    const { target, chainIds, proposals } = entry;
     if (!isAddress(target)) {
       console.warn(`Skipping invalid address ${target}`);
       continue;
@@ -75,7 +75,7 @@ async function detectContractTargets(targetsPayload) {
         const code = await client.getCode({ address: target });
         cache.set(cacheKey, code);
         if (code && code !== "0x") {
-          results.push({ target, chainId, code });
+          results.push({ target, chainId, code, proposals: proposals || [] });
         }
       } catch (err) {
         console.warn(`Failed getCode for ${target} on ${chainId}: ${err.message}`);
@@ -101,6 +101,7 @@ async function fetchProposals(afterCursor, attempt = 0) {
         nodes {
           ... on Proposal {
             id
+            onchainId
             chainId
             executableCalls {
               chainId
@@ -153,7 +154,7 @@ async function fetchProposals(afterCursor, attempt = 0) {
 async function findCrossChainProposals() {
   const crossChain = [];
   const allProposalIds = [];
-  const targetMap = new Map(); // target -> Set(chainIds)
+  const targetMap = new Map(); // target -> { chainIds: Set, proposals: Set<{id, onchainId}> }
   const summaries = [];
   let cursor = null;
   let fetched = 0;
@@ -165,15 +166,20 @@ async function findCrossChainProposals() {
     nodes.forEach((proposal) => {
       allProposalIds.push(proposal.id);
       const title = proposal.metadata?.title ?? null;
-      summaries.push({ id: proposal.id, title });
+      summaries.push({ 
+        id: proposal.id, 
+        onchainId: proposal.onchainId ?? null,
+        title 
+      });
 
       const calls = proposal.executableCalls || [];
 
       calls.forEach((call) => {
         if (!call?.target) return;
         const normalizedTarget = call.target.toLowerCase();
-        const entry = targetMap.get(normalizedTarget) || new Set();
-        if (call.chainId) entry.add(call.chainId);
+        const entry = targetMap.get(normalizedTarget) || { chainIds: new Set(), proposals: new Set() };
+        if (call.chainId) entry.chainIds.add(call.chainId);
+        entry.proposals.add(JSON.stringify({ id: proposal.id, onchainId: proposal.onchainId ?? null }));
         targetMap.set(normalizedTarget, entry);
       });
 
@@ -194,6 +200,7 @@ async function findCrossChainProposals() {
       if (matchedBridgeCalls.length > 0) {
         const record = {
           id: proposal.id,
+          onchainId: proposal.onchainId ?? null,
           primaryChain: proposal.chainId,
           matchedBridgeCalls,
         };
@@ -219,9 +226,10 @@ async function findCrossChainProposals() {
   };
 
   writeOutput("crosschain-proposals.json", crossChain);
-  const targetsPayload = Array.from(targetMap.entries()).map(([target, chainIds]) => ({
+  const targetsPayload = Array.from(targetMap.entries()).map(([target, entry]) => ({
     target,
-    chainIds: Array.from(chainIds),
+    chainIds: Array.from(entry.chainIds),
+    proposals: Array.from(entry.proposals).map((str) => JSON.parse(str)),
   }));
   writeOutput("executable-call-targets.json", targetsPayload);
   writeOutput("proposal-summary.json", summaries);
