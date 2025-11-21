@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
+import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 
 /// @title GovernorVetoGuardian
 /// @author [ScopeLift](https://scopelift.co)
@@ -12,7 +12,7 @@ abstract contract GovernorVetoGuardian is Governor {
   mapping(uint256 => bool) public guardianVetoed;
 
   constructor(address _vetoGuardian) {
-    vetoGuardian = _vetoGuardian;
+    _setVetoGuardian(_vetoGuardian);
   }
 
   /// @notice Emitted when the veto guardian address is modified.
@@ -22,53 +22,56 @@ abstract contract GovernorVetoGuardian is Governor {
   event ProposalVetoedByGuardian(uint256 indexed proposalId);
 
   /// @notice Thrown when any address other than the veto guardian calls the function.
-  error GovernorVetoGuardian_Unauthorized(address caller);
+  error GovernorVetoGuardian_Unauthorized();
 
-  /// @notice Thrown when any guardian tries to veto a proposal that is not pending or active.
-  error GovernorVetoGuardian_UnexpectedProposalState();
-
+  /// @notice Restricts the function to the current veto guardian.
+  /// @dev Reverts with `GovernorVetoGuardian_Unauthorized` when the caller is not `vetoGuardian`.
   modifier onlyVetoGuardian() {
-    if (_msgSender() != vetoGuardian) revert GovernorVetoGuardian_Unauthorized(_msgSender());
+    if (_msgSender() != vetoGuardian) revert GovernorVetoGuardian_Unauthorized();
     _;
   }
 
-  /// @notice Treats vetoed proposals as Defeated unless they have already been queued or executed.
+  /// @notice Treats vetoed proposals as `Defeated` unless the state is `Queued` or `Executed`.
   /// @dev The guardian flag is ignored once queue succeeds, so veto overrides can still promote
   /// the proposal.
-  function state(uint256 proposalId) public view virtual override returns (ProposalState) {
-    ProposalState currentState = super.state(proposalId);
+  function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
+    ProposalState _currentState = super.state(_proposalId);
 
-    // Unfortunately we cannot use _validateStateBitmap here because it returns `ProposalState`
-    // rather than boolean. Current implementation is the most readable.
-    // Veto override modules evaluate after this, so queued/executed proposals are treated as
-    // already rescued.
     if (
-      guardianVetoed[proposalId] && currentState != ProposalState.Queued
-        && currentState != ProposalState.Executed
+      guardianVetoed[_proposalId] && _currentState != ProposalState.Queued
+        && _currentState != ProposalState.Executed
     ) return ProposalState.Defeated;
-    return currentState;
+    return _currentState;
   }
 
-  /// @notice Set the veto guardian address. Can only be called by the main DAO governor.
+  /// @notice Allows the guardian to veto proposals while they are `Pending` or `Active`.
+  /// Vetoed proposals evaluates to `Defeated`.
+  /// @dev This status can later be cleared by a veto override module.
+  /// @param _proposalId is the proposalId to be vetoed by the guardian.
+  function vetoByGuardian(uint256 _proposalId) external onlyVetoGuardian {
+    _validateStateBitmap(
+      _proposalId,
+      _encodeStateBitmap(IGovernor.ProposalState.Pending)
+        | _encodeStateBitmap(IGovernor.ProposalState.Active)
+    );
+
+    guardianVetoed[_proposalId] = true;
+    emit ProposalVetoedByGuardian(_proposalId);
+  }
+
+  /// @notice Set the veto guardian address. Can only be called by the governance.
   /// @dev Passing address(0) effectively removes the guardian. Callers must ensure that is
   /// acceptable.
-  function setVetoGuardian(address newVetoGuardian) external virtual onlyGovernance {
-    address oldVetoGuardian = vetoGuardian;
-    vetoGuardian = newVetoGuardian;
-    emit VetoGuardianModified(oldVetoGuardian, newVetoGuardian);
+  /// @param _vetoGuardian Address of the new veto guardian.
+  function setVetoGuardian(address _vetoGuardian) external virtual onlyGovernance {
+    _setVetoGuardian(_vetoGuardian);
   }
 
-  /// @notice Allows the guardian to veto proposals while they are `Pending` or `Active`; vetoed
-  /// proposals evaluates to `Defeated`.
-  /// @dev This status can later be cleared by a veto override module.
-  /// @param proposalId is the proposalId to be vetoed by the guardian.
-  function vetoByGuardian(uint256 proposalId) external onlyVetoGuardian {
-    ProposalState current = state(proposalId);
-    if (current != ProposalState.Pending && current != ProposalState.Active) {
-      revert GovernorVetoGuardian_UnexpectedProposalState();
-    }
-
-    guardianVetoed[proposalId] = true;
-    emit ProposalVetoedByGuardian(proposalId);
+  /// @notice Internal method to set the veto guardian address.
+  /// @param _vetoGuardian Address of the new veto guardian.
+  function _setVetoGuardian(address _vetoGuardian) internal virtual {
+    address _oldVetoGuardian = vetoGuardian;
+    vetoGuardian = _vetoGuardian;
+    emit VetoGuardianModified(_oldVetoGuardian, _vetoGuardian);
   }
 }
