@@ -1,82 +1,212 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {BasicCouncilVetoGovernorTest} from "./BasicCouncilVetoGovernor.t.sol";
-import {GovernorVetoGuardian} from "../src/extensions/GovernorVetoGuardian.sol";
+import {Test, stdStorage, StdStorage} from "forge-std/Test.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
-contract GovernorVetoGuardianTest is BasicCouncilVetoGovernorTest {
-  function _forwardProposalThatUpdatesVetoGuardian(
-    address _newVetoGuardian,
-    string memory _description
-  ) internal returns (uint256 proposalId) {
-    targets[0] = address(vetoGovernor);
-    calldatas[0] = abi.encodeCall(GovernorVetoGuardian.setVetoGuardian, _newVetoGuardian);
+import {GovernorVetoGuardian} from "src/extensions/GovernorVetoGuardian.sol";
+import {GovernorVetoGuardianMock} from "test/mock/GovernorVetoGuardianMock.sol";
 
-    proposalId = _proposeAndForwardToVetoGovernor(_description);
+using stdStorage for StdStorage;
+
+contract GovernorVetoGuardianTest is Test {
+  address public vetoGuardian = makeAddr("vetoGuardian");
+  GovernorVetoGuardianMock public vetoGovernor;
+
+  address[] internal targets;
+  uint256[] internal values;
+  bytes[] internal calldatas;
+
+  struct Proposal {
+    address[] targets;
+    uint256[] values;
+    bytes[] calldatas;
+    string description;
   }
 
-  function _warpPastVotingPeriod() internal {
-    vm.warp(block.timestamp + vetoGovernor.votingDelay() + vetoGovernor.votingPeriod() + 1);
+  function setUp() public {
+    vetoGovernor = new GovernorVetoGuardianMock(vetoGuardian);
+  }
+
+  function _buildEmptyProposal(string memory _description)
+    internal
+    returns (Proposal memory _proposal)
+  {
+    targets = new address[](1);
+    values = new uint256[](1);
+    calldatas = new bytes[](1);
+    _proposal = Proposal(targets, values, calldatas, _description);
+  }
+
+  function _buildEmptyProposal() internal returns (Proposal memory _proposal) {
+    _proposal = _buildEmptyProposal("Empty proposal");
+  }
+
+  function _submitProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    vm.prank(_proposer);
+    _proposalId = vetoGovernor.propose(
+      _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
+    );
+  }
+
+  function _submitAndCancelProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposal(_proposer, _proposal);
+    vm.prank(_proposer);
+    vetoGovernor.cancel(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+  }
+
+  function _submitProposalAndWarpPastVotingDelay(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposal(_proposer, _proposal);
+    vm.warp(block.timestamp + vetoGovernor.votingDelay() + 1);
+  }
+
+  function _submitAndPassProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+  }
+
+  function _submitAndFailProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    vetoGovernor.setDefeated(_proposalId);
+  }
+
+  function _passAndQueueProposal(address _proposer, address _caller, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitAndPassProposal(_proposer, _proposal);
+
+    vm.prank(_caller);
+    vetoGovernor.queue(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+  }
+
+  function _passQueueAndExecuteProposal(
+    address _proposer,
+    address _caller,
+    Proposal memory _proposal
+  ) public returns (uint256 _proposalId) {
+    _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+
+    vm.warp(block.timestamp + 1 days + 1);
+    vetoGovernor.execute(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
   }
 
   function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected) internal view {
     assertEq(uint8(vetoGovernor.state(proposalId)), uint8(expected));
   }
+
+  function _encodeStateBitmap(IGovernor.ProposalState proposalState)
+    internal
+    pure
+    returns (bytes32)
+  {
+    return bytes32(1 << uint8(proposalState));
+  }
 }
 
-contract SetVetoGuardian is GovernorVetoGuardianTest {
-  // TODO: This test should pass only when called by the main DAO, and fail when called by the
-  // council.
-  function testFuzz_CouncilSetsVetoGuardian(address _newVetoGuardian) public {
-    string memory _description = "Set new veto guardian";
-    bytes32 _descriptionHash = keccak256(bytes(_description));
+contract State is GovernorVetoGuardianTest {
+  function testFuzz_StateIsDefeatedWhenPendingProposalIsVetoed(address _proposer) public {
+    uint256 _proposalId = _submitProposal(_proposer, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
 
-    _forwardProposalThatUpdatesVetoGuardian(_newVetoGuardian, _description);
-    _warpPastVotingPeriod();
-    vetoGovernor.queue(targets, values, calldatas, _descriptionHash);
-    skip(timelock.getMinDelay() + 1);
-
-    councilGovernor.execute(targets, values, calldatas, _descriptionHash);
-
-    assertEq(vetoGovernor.vetoGuardian(), _newVetoGuardian);
+    stdstore.target(address(vetoGovernor)).sig("guardianVetoed(uint256)").with_key(_proposalId)
+      .checked_write(true);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
 
-  function test_SetsTheSameVetoGuardian() public {
-    string memory _description = "Set the same veto guardian";
-    bytes32 _descriptionHash = keccak256(bytes(_description));
+  function testFuzz_StateIsDefeatedWhenActiveProposalIsVetoed(address _proposer) public {
+    uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Active);
 
-    _forwardProposalThatUpdatesVetoGuardian(vetoGuardian, _description);
-    _warpPastVotingPeriod();
-    vetoGovernor.queue(targets, values, calldatas, _descriptionHash);
-    skip(timelock.getMinDelay() + 1);
-
-    councilGovernor.execute(targets, values, calldatas, _descriptionHash);
-
-    assertEq(vetoGovernor.vetoGuardian(), vetoGuardian);
+    stdstore.target(address(vetoGovernor)).sig("guardianVetoed(uint256)").with_key(_proposalId)
+      .checked_write(true);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
 
-  function testFuzz_Emit_VetoGuardianSet(address _newVetoGuardian) public {
-    vm.assume(_newVetoGuardian != vetoGuardian);
+  function testFuzz_StateIsDefeatedWhenCanceledProposalIsVetoed(address _proposer) public {
+    uint256 _proposalId = _submitAndCancelProposal(_proposer, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
 
-    address _oldVetoGuardian = vetoGuardian;
-    string memory _description = "Emit veto guardian set";
-    bytes32 _descriptionHash = keccak256(bytes(_description));
+    stdstore.target(address(vetoGovernor)).sig("guardianVetoed(uint256)").with_key(_proposalId)
+      .checked_write(true);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+  }
 
-    _forwardProposalThatUpdatesVetoGuardian(_newVetoGuardian, _description);
-    _warpPastVotingPeriod();
-    vetoGovernor.queue(targets, values, calldatas, _descriptionHash);
-    skip(timelock.getMinDelay() + 1);
+  function testFuzz_StateIsDefeatedWhenSucceededProposalIsVetoed(address _proposer) public {
+    uint256 _proposalId = _submitAndPassProposal(_proposer, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
 
-    vm.expectEmit();
-    emit GovernorVetoGuardian.VetoGuardianModified(_oldVetoGuardian, _newVetoGuardian);
-    councilGovernor.execute(targets, values, calldatas, _descriptionHash);
+    stdstore.target(address(vetoGovernor)).sig("guardianVetoed(uint256)").with_key(_proposalId)
+      .checked_write(true);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+  }
+
+  function testFuzz_StateIsDefeatedWhenDefeatedProposalIsVetoed(address _proposer) public {
+    uint256 _proposalId = _submitAndFailProposal(_proposer, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+
+    stdstore.target(address(vetoGovernor)).sig("guardianVetoed(uint256)").with_key(_proposalId)
+      .checked_write(true);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+  }
+
+  function testFuzz_StateIsQueuedWhenQueuedProposalIsVetoed(address _proposer, address _caller)
+    public
+  {
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+
+    stdstore.target(address(vetoGovernor)).sig("guardianVetoed(uint256)").with_key(_proposalId)
+      .checked_write(true);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+  }
+
+  function testFuzz_StateIsExecutedWhenExecutedProposalIsVetoed(address _proposer, address _caller)
+    public
+  {
+    uint256 _proposalId = _passQueueAndExecuteProposal(_proposer, _caller, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
+
+    stdstore.target(address(vetoGovernor)).sig("guardianVetoed(uint256)").with_key(_proposalId)
+      .checked_write(true);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
   }
 }
 
 contract VetoByGuardian is GovernorVetoGuardianTest {
-  function test_VetoGuardianVetoesPendingProposal() public {
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Proposal vetoed");
+  function testFuzz_VetoGuardianVetoesPendingProposal(address _proposer) public {
+    uint256 proposalId = _submitProposal(_proposer, _buildEmptyProposal());
     _assertProposalState(proposalId, IGovernor.ProposalState.Pending);
 
     vm.prank(vetoGuardian);
@@ -86,9 +216,8 @@ contract VetoByGuardian is GovernorVetoGuardianTest {
     _assertProposalState(proposalId, IGovernor.ProposalState.Defeated);
   }
 
-  function test_VetoGuardianVetoesActiveProposal() public {
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Proposal vetoed");
-    skip(vetoGovernor.votingDelay() + 1);
+  function testFuzz_VetoGuardianVetoesActiveProposal(address _proposer) public {
+    uint256 proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _buildEmptyProposal());
     _assertProposalState(proposalId, IGovernor.ProposalState.Active);
 
     vm.prank(vetoGuardian);
@@ -98,35 +227,8 @@ contract VetoByGuardian is GovernorVetoGuardianTest {
     _assertProposalState(proposalId, IGovernor.ProposalState.Defeated);
   }
 
-  function test_ProposalVetoedByGuardianIsOverriddenAndExecuted() public {
-    string memory _description = "Veto overridden";
-    bytes32 _descriptionHash = keccak256(bytes(_description));
-    uint256 proposalId = _proposeAndForwardToVetoGovernor(_description);
-
-    skip(vetoGovernor.votingDelay() + 1);
-    vm.prank(vetoGuardian);
-    vetoGovernor.vetoByGuardian(proposalId);
-    skip(vetoGovernor.votingPeriod() + 1);
-
-    assertEq(vetoGovernor.guardianVetoed(proposalId), true);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Defeated);
-
-    vm.prank(deployer);
-    vetoGovernor.overrideVeto(proposalId);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Succeeded);
-
-    vetoGovernor.queue(targets, values, calldatas, _descriptionHash);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Queued);
-
-    skip(timelock.getMinDelay() + 1);
-    councilGovernor.execute(targets, values, calldatas, _descriptionHash);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Executed);
-
-    assertEq(vetoGovernor.guardianVetoed(proposalId), true);
-  }
-
-  function test_Emit_ProposalVetoedByGuardian() public {
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Emit proposal vetoed");
+  function testFuzz_Emit_ProposalVetoedByGuardian(address _proposer) public {
+    uint256 proposalId = _submitProposal(_proposer, _buildEmptyProposal());
     _assertProposalState(proposalId, IGovernor.ProposalState.Pending);
 
     vm.expectEmit();
@@ -136,143 +238,164 @@ contract VetoByGuardian is GovernorVetoGuardianTest {
     vetoGovernor.vetoByGuardian(proposalId);
   }
 
-  function testFuzz_RevertIf_OldVetoGuardianVetoesProposal(address _newVetoGuardian) public {
-    vm.assume(_newVetoGuardian != vetoGuardian);
-
-    address _oldVetoGuardian = vetoGuardian;
-    string memory _description = "Set veto guardian";
-    bytes32 _descriptionHash = keccak256(bytes(_description));
-
-    _forwardProposalThatUpdatesVetoGuardian(_newVetoGuardian, _description);
-    skip(vetoGovernor.votingDelay() + vetoGovernor.votingPeriod() + 1);
-    vetoGovernor.queue(targets, values, calldatas, _descriptionHash);
-    skip(timelock.getMinDelay() + 1);
-    councilGovernor.execute(targets, values, calldatas, _descriptionHash);
-    assertEq(vetoGovernor.vetoGuardian(), _newVetoGuardian);
-
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Old guardian vetoes");
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        GovernorVetoGuardian.GovernorVetoGuardian_Unauthorized.selector, _oldVetoGuardian
-      )
-    );
-    vm.prank(_oldVetoGuardian);
-    vetoGovernor.vetoByGuardian(proposalId);
-  }
-
-  function test_RevertIf_OldGuardianVetoesAfterRemoval() public {
-    address oldGuardian = vetoGuardian;
-    string memory _description = "Remove veto guardian";
-    bytes32 _descriptionHash = keccak256(bytes(_description));
-
-    _forwardProposalThatUpdatesVetoGuardian(address(0), _description);
-    skip(vetoGovernor.votingDelay() + vetoGovernor.votingPeriod() + 1);
-    vetoGovernor.queue(targets, values, calldatas, _descriptionHash);
-    skip(timelock.getMinDelay() + 1);
-    councilGovernor.execute(targets, values, calldatas, _descriptionHash);
-
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Old guardian vetoes");
-
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        GovernorVetoGuardian.GovernorVetoGuardian_Unauthorized.selector, oldGuardian
-      )
-    );
-    vm.prank(oldGuardian);
-    vetoGovernor.vetoByGuardian(proposalId);
-    assertEq(vetoGovernor.isVetoOverridden(proposalId), false);
-  }
-
-  // TODO: name it such that it excludes DAO veto
-  function testFuzz_RevertIf_NonVetoGuardianVetoesProposal(address _nonVetoGuardian) public {
+  function testFuzz_RevertIf_NonVetoGuardianVetoesProposal(
+    address _proposer,
+    address _nonVetoGuardian
+  ) public {
     vm.assume(_nonVetoGuardian != vetoGuardian);
 
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Vetoed by non veto guardian");
-    skip(vetoGovernor.votingDelay() + 1);
-
+    uint256 proposalId = _submitProposal(_proposer, _buildEmptyProposal());
     vm.expectRevert(
-      abi.encodeWithSelector(
-        GovernorVetoGuardian.GovernorVetoGuardian_Unauthorized.selector, _nonVetoGuardian
-      )
+      abi.encodeWithSelector(GovernorVetoGuardian.GovernorVetoGuardian_Unauthorized.selector)
     );
     vm.prank(_nonVetoGuardian);
     vetoGovernor.vetoByGuardian(proposalId);
   }
 
-  // TODO: current cancel fails, merge `feat/council-cancel`
-  function test_RevertIf_VetoGuardianVetoesCanceledProposal() public {
-    string memory _description = "Canceled proposal is not forwarded";
-    bytes32 _descriptionHash = keccak256(bytes(_description));
-    vm.prank(councilMembers[0]);
-    uint256 proposalId = councilGovernor.propose(targets, values, calldatas, _description);
+  function testFuzz_RevertIf_OldVetoGuardianVetoesProposal(
+    address _proposer,
+    address _newVetoGuardian
+  ) public {
+    vm.assume(_newVetoGuardian != vetoGuardian);
 
-    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
-    vm.prank(councilMembers[0]);
-    councilGovernor.cancel(targets, values, calldatas, _descriptionHash);
-
-    vm.expectRevert(
-      abi.encodeWithSelector(IGovernor.GovernorNonexistentProposal.selector, proposalId)
+    address _oldVetoGuardian = vetoGuardian;
+    stdstore.target(address(vetoGovernor)).sig(vetoGovernor.vetoGuardian.selector).checked_write(
+      address(_newVetoGuardian)
     );
-    vm.prank(vetoGuardian);
+    assertEq(vetoGovernor.vetoGuardian(), _newVetoGuardian);
+
+    uint256 proposalId = _submitProposal(_proposer, _buildEmptyProposal());
+    vm.expectRevert(
+      abi.encodeWithSelector(GovernorVetoGuardian.GovernorVetoGuardian_Unauthorized.selector)
+    );
+    vm.prank(_oldVetoGuardian);
     vetoGovernor.vetoByGuardian(proposalId);
   }
 
-  function test_RevertIf_VetoGuardianVetoesSucceededProposal() public {
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Not Vetoed");
-    skip(vetoGovernor.votingDelay() + vetoGovernor.votingPeriod() + 1);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Succeeded);
-
-    vm.expectRevert(GovernorVetoGuardian.GovernorVetoGuardian_UnexpectedProposalState.selector);
-    vm.prank(vetoGuardian);
-    vetoGovernor.vetoByGuardian(proposalId);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Succeeded);
-  }
-
-  function test_RevertIf_VetoGuardianVetoesQueuedProposal() public {
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Already Queued");
-    skip(vetoGovernor.votingDelay() + vetoGovernor.votingPeriod() + 1);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Succeeded);
-
-    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Already Queued")));
-    _assertProposalState(proposalId, IGovernor.ProposalState.Queued);
-
-    vm.expectRevert(GovernorVetoGuardian.GovernorVetoGuardian_UnexpectedProposalState.selector);
-    vm.prank(vetoGuardian);
-    vetoGovernor.vetoByGuardian(proposalId);
-  }
-
-  function test_RevertIf_VetoGuardianVetoesExecutedProposal() public {
-    string memory _description = "Already Executed";
-    bytes32 _descriptionHash = keccak256(bytes(_description));
-    uint256 proposalId = _proposeAndForwardToVetoGovernor(_description);
-    skip(vetoGovernor.votingDelay() + vetoGovernor.votingPeriod() + 1);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Succeeded);
-
-    vetoGovernor.queue(targets, values, calldatas, _descriptionHash);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Queued);
-
-    skip(timelock.getMinDelay() + 1);
-    councilGovernor.execute(targets, values, calldatas, _descriptionHash);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Executed);
-
-    vm.expectRevert(GovernorVetoGuardian.GovernorVetoGuardian_UnexpectedProposalState.selector);
-    vm.prank(vetoGuardian);
-    vetoGovernor.vetoByGuardian(proposalId);
-  }
-
-  function test_RevertIf_VetoGuardianVetoesTheSameProposalTwice() public {
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Already Vetoed");
-
-    vm.prank(vetoGuardian);
-    vetoGovernor.vetoByGuardian(proposalId);
-    _assertProposalState(proposalId, IGovernor.ProposalState.Defeated);
+  function testFuzz_RevertIf_VetoGuardianVetoesCanceledProposal(address _proposer) public {
+    uint256 _proposalId = _submitAndCancelProposal(_proposer, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        GovernorVetoGuardian.GovernorVetoGuardian_UnexpectedProposalState.selector
+        IGovernor.GovernorUnexpectedProposalState.selector,
+        _proposalId,
+        IGovernor.ProposalState.Canceled,
+        _encodeStateBitmap(IGovernor.ProposalState.Pending)
+          | _encodeStateBitmap(IGovernor.ProposalState.Active)
       )
     );
     vm.prank(vetoGuardian);
-    vetoGovernor.vetoByGuardian(proposalId);
+    vetoGovernor.vetoByGuardian(_proposalId);
+  }
+
+  function testFuzz_RevertIf_VetoGuardianVetoesSucceededProposal(address _proposer) public {
+    uint256 _proposalId = _submitAndPassProposal(_proposer, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IGovernor.GovernorUnexpectedProposalState.selector,
+        _proposalId,
+        IGovernor.ProposalState.Succeeded,
+        _encodeStateBitmap(IGovernor.ProposalState.Pending)
+          | _encodeStateBitmap(IGovernor.ProposalState.Active)
+      )
+    );
+    vm.prank(vetoGuardian);
+    vetoGovernor.vetoByGuardian(_proposalId);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
+  }
+
+  function testFuzz_RevertIf_VetoGuardianVetoesQueuedProposal(address _proposer, address _caller)
+    public
+  {
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IGovernor.GovernorUnexpectedProposalState.selector,
+        _proposalId,
+        IGovernor.ProposalState.Queued,
+        _encodeStateBitmap(IGovernor.ProposalState.Pending)
+          | _encodeStateBitmap(IGovernor.ProposalState.Active)
+      )
+    );
+    vm.prank(vetoGuardian);
+    vetoGovernor.vetoByGuardian(_proposalId);
+  }
+
+  function testFuzz_RevertIf_VetoGuardianVetoesExecutedProposal(address _proposer, address _caller)
+    public
+  {
+    uint256 _proposalId = _passQueueAndExecuteProposal(_proposer, _caller, _buildEmptyProposal());
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IGovernor.GovernorUnexpectedProposalState.selector,
+        _proposalId,
+        IGovernor.ProposalState.Executed,
+        _encodeStateBitmap(IGovernor.ProposalState.Pending)
+          | _encodeStateBitmap(IGovernor.ProposalState.Active)
+      )
+    );
+    vm.prank(vetoGuardian);
+    vetoGovernor.vetoByGuardian(_proposalId);
+  }
+
+  function testFuzz_RevertIf_VetoGuardianVetoesTheSameProposalTwice(address _proposer) public {
+    uint256 _proposalId = _submitProposal(_proposer, _buildEmptyProposal());
+
+    vm.prank(vetoGuardian);
+    vetoGovernor.vetoByGuardian(_proposalId);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IGovernor.GovernorUnexpectedProposalState.selector,
+        _proposalId,
+        IGovernor.ProposalState.Defeated,
+        _encodeStateBitmap(IGovernor.ProposalState.Pending)
+          | _encodeStateBitmap(IGovernor.ProposalState.Active)
+      )
+    );
+    vm.prank(vetoGuardian);
+    vetoGovernor.vetoByGuardian(_proposalId);
+  }
+}
+
+contract _SetVetoGuardian is GovernorVetoGuardianTest {
+  function testFuzz_SetsNewVetoGuardian(address _caller, address _newVetoGuardian) public {
+    vm.prank(_caller);
+    vetoGovernor.exposed_SetVetoGuardian(_newVetoGuardian);
+
+    assertEq(vetoGovernor.vetoGuardian(), _newVetoGuardian);
+  }
+
+  function testFuzz_SetsVetoGuardianToAddressZero(address _caller) public {
+    vm.prank(_caller);
+    vetoGovernor.exposed_SetVetoGuardian(address(0));
+
+    assertEq(vetoGovernor.vetoGuardian(), address(0));
+  }
+
+  function testFuzz_SetsTheSameVetoGuardian(address _caller) public {
+    address _oldVetoGuardian = vetoGovernor.vetoGuardian();
+
+    vm.prank(_caller);
+    vetoGovernor.exposed_SetVetoGuardian(vetoGovernor.vetoGuardian());
+
+    assertEq(vetoGovernor.vetoGuardian(), _oldVetoGuardian);
+  }
+
+  function testFuzz_Emit_VetoGuardianModified(address _caller, address _newVetoGuardian) public {
+    address _oldVetoGuardian = vetoGovernor.vetoGuardian();
+
+    vm.expectEmit();
+    emit GovernorVetoGuardian.VetoGuardianModified(_oldVetoGuardian, _newVetoGuardian);
+    vm.prank(_caller);
+    vetoGovernor.exposed_SetVetoGuardian(_newVetoGuardian);
   }
 }
