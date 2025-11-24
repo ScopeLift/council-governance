@@ -3,6 +3,7 @@
 pragma solidity ^0.8.30;
 
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
+
 /**
  * @title GovernorVetoOverride
  * @author [ScopeLift](https://scopelift.co)
@@ -12,7 +13,6 @@ import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
  * proposal's voting deadline. Intended to be used with {GovernorVetoCountingSimple} or similar veto
  * mechanisms where proposals can be defeated through inverse quorum (veto votes).
  */
-
 abstract contract GovernorVetoOverride is Governor {
   /**
    * @notice Tracks whether a proposal's veto has been overridden.
