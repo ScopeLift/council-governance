@@ -6,6 +6,7 @@ import {GovernorVetoCountingSimple} from "./extensions/GovernorVetoCountingSimpl
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {GovernorVetoOverride} from "./extensions/GovernorVetoOverride.sol";
+import {GovernorVetoGuardian} from "./extensions/GovernorVetoGuardian.sol";
 import {
   GovernorTimelockControl,
   TimelockController
@@ -15,6 +16,7 @@ contract BasicCouncilVetoGovernor is
   Governor,
   GovernorVotes,
   GovernorVetoCountingSimple,
+  GovernorVetoGuardian,
   GovernorVetoOverride,
   GovernorTimelockControl
 {
@@ -31,12 +33,14 @@ contract BasicCouncilVetoGovernor is
   constructor(
     IERC5805 _token,
     address _council,
+    address _vetoGuardian,
     address _vetoOverrideRole,
     uint48 _vetoOverrideDuration,
     TimelockController _timelock
   )
     Governor("BasicVetoGovernor")
     GovernorVotes(_token)
+    GovernorVetoGuardian(_vetoGuardian)
     GovernorVetoOverride(_vetoOverrideRole, _vetoOverrideDuration)
     GovernorTimelockControl(_timelock)
   {
@@ -123,10 +127,10 @@ contract BasicCouncilVetoGovernor is
   function state(uint256 proposalId)
     public
     view
-    override(Governor, GovernorTimelockControl, GovernorVetoOverride)
+    override(Governor, GovernorTimelockControl, GovernorVetoGuardian, GovernorVetoOverride)
     returns (ProposalState)
   {
-    return GovernorVetoOverride.state(proposalId);
+    return super.state(proposalId);
   }
 
   function _queueOperations(

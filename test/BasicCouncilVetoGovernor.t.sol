@@ -24,6 +24,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
   address internal deployer = makeAddr("deployer");
   address internal nonCouncilProposer = makeAddr("nonCouncilProposer");
   address[] internal councilMembers;
+  address internal vetoGuardian = makeAddr("vetoGuardian");
   address internal whale1 = makeAddr("whale1");
   address internal whale2 = makeAddr("whale2");
 
@@ -85,6 +86,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     vetoGovernor = new BasicCouncilVetoGovernor(
       daoToken,
       councilGovernorAddress,
+      vetoGuardian,
       deployer, // Veto override role
       4 days, // Veto override duration
       timelock

@@ -5,6 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 import {StdAssertions} from "forge-std/StdAssertions.sol";
 import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
+import {GovernorVetoGuardian} from "src/extensions/GovernorVetoGuardian.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
 import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
@@ -42,6 +43,7 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
   TimelockController public timelock;
   BasicCouncilVetoGovernor public vetoGovernor;
   BasicCouncilGovernor public councilGovernor;
+  address public vetoGuardian = makeAddr("VetoGuardian");
 
   /**
    * @notice Main entry point for the deployment script.
@@ -131,6 +133,7 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
     vetoGovernor = new BasicCouncilVetoGovernor(
       daoToken,
       predictedCouncilGovernorAddress,
+      vetoGuardian,
       MAIN_DAO_GOVERNOR, // The main DAO governor is the veto overrider
       VETO_OVERRIDE_DURATION,
       timelock
