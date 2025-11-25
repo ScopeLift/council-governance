@@ -117,6 +117,14 @@ contract GovernorCouncilQueuingMock is
     _cancel(targets, values, calldatas, descriptionHash);
   }
 
+  function exposed_executor() public returns (address) {
+    return _executor();
+  }
+
+  function exposed_updateCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) public {
+    _updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+  }
+
   function exposed_checkVetoGovernorStateBitmap(uint256 proposalId, bytes32 allowedStates)
     public
     view

@@ -208,7 +208,7 @@ abstract contract GovernorCouncilQueuing is Governor {
 
   /// @notice Internal function to update the veto governor and emit the change event.
   /// @param _newCouncilVetoGovernor The new veto governor contract.
-  function _updateCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) private {
+  function _updateCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) internal {
     emit CouncilVetoGovernorChange(address(councilVetoGovernor), address(_newCouncilVetoGovernor));
     councilVetoGovernor = _newCouncilVetoGovernor;
   }
