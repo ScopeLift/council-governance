@@ -42,7 +42,7 @@ abstract contract BasicCouncilGovernorTest is Test {
 
     // 2. Deploy tokens
     vm.prank(deployer);
-    councilToken = new CouncilERC20("Council Token", "CT", deployer);
+    councilToken = new CouncilERC20("Council Token", "CT", deployer, 1);
     vm.prank(deployer);
     daoToken = new MockERC20Votes();
 
