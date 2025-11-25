@@ -204,4 +204,42 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     vm.prank(nonCouncilMember);
     councilGovernor.propose(targets, values, calldatas, description);
   }
+
+  function test_CancelsAPendingProposal() public {
+    vm.prank(councilMembers[0]);
+    uint256 proposalId = councilGovernor.propose(targets, values, calldatas, description);
+
+    skip(1);
+
+    vm.prank(councilMembers[0]);
+    councilGovernor.cancel(targets, values, calldatas, descriptionHash);
+
+    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Canceled));
+  }
+
+  function test_RevertsIf_CancelsAForwardedProposal() public {
+    vm.prank(councilMembers[0]);
+    uint256 proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
+    for (uint256 i = 0; i < councilGovernor.quorum(0); i++) {
+      vm.prank(councilMembers[i]);
+      councilGovernor.castVote(proposalId, 1);
+    }
+    vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
+
+    // Queue the proposal, which triggers the forwarding
+    councilGovernor.queue(targets, values, calldatas, descriptionHash);
+
+    // Assert the state is now `Queued` (which means "Forwarded" in this context)
+    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
+    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IGovernor.GovernorUnableToCancel.selector, proposalId, councilMembers[0]
+      )
+    );
+    vm.prank(councilMembers[0]);
+    councilGovernor.cancel(targets, values, calldatas, descriptionHash);
+  }
 }

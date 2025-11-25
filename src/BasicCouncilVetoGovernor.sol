@@ -18,6 +18,9 @@ contract BasicCouncilVetoGovernor is
   GovernorVetoOverride,
   GovernorTimelockControl
 {
+  /// @notice Thrown when an operation is not supported
+  error CouncilVetoGovernor_OperationNotSupported();
+
   address public immutable COUNCIL;
 
   modifier onlyCouncil() {
@@ -88,15 +91,26 @@ contract BasicCouncilVetoGovernor is
     return super._executor();
   }
 
+  /**
+   * @notice Cancel is disabled.
+   * @notice By design, a proposal queued to the veto governor cannot be canceled. Proposal can
+   * only be rejected through veto votes, or through the veto guardian.
+   * @dev This function always reverts to prevent confusion between cancellation and veto
+   * operations, which serve different purposes in the governance flow.
+   */
   function cancel(
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
-  ) public override onlyCouncil returns (uint256) {
-    return super._cancel(targets, values, calldatas, descriptionHash);
+    address[] memory, /* targets */
+    uint256[] memory, /* values */
+    bytes[] memory, /* calldadtas */
+    bytes32 /* descriptionHash */
+  ) public pure override returns (uint256) {
+    revert CouncilVetoGovernor_OperationNotSupported();
   }
 
+  /// @inheritdoc GovernorTimelockControl
+  /// @dev We override this function to resolve ambiguity between inherited contracts.
+  /// @notice This internal function maintains the inheritance chain but should not be called
+  /// because the public cancel function is disabled.
   function _cancel(
     address[] memory targets,
     uint256[] memory values,

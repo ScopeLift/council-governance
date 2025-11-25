@@ -120,15 +120,17 @@ abstract contract GovernorCouncilQueuing is Governor {
   }
 
   /**
-   * @dev Overridden version of the {Governor-_cancel} function to cancel the proposal if it has
-   * already
-   * been queued.
+   * @dev Overridden version of the {Governor-_cancel} function to cancel the proposal and clean up
+   * associated storage.
+   * @notice This function can only cancel proposals that are in the `Pending` state on the council
+   * governor. Once a proposal has been queued (forwarded to the veto governor), it cannot be
+   * canceled through this mechanism.
+   * @param targets Array of target addresses for the proposal calls
+   * @param values Array of values for the proposal calls
+   * @param calldatas Array of call data for the proposal calls
+   * @param descriptionHash Hash of the proposal description
+   * @return proposalId The ID of the proposal to be canceled
    */
-  // This function can reenter through the external call to the veto governor, but we assume the
-  // veto governor
-  // is trusted and
-  // well behaved (according to BasicCouncilVetoGovernor) and this will not happen.
-  // slither-disable-next-line reentrancy-no-eth
   function _cancel(
     address[] memory targets,
     uint256[] memory values,
@@ -136,8 +138,7 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes32 descriptionHash
   ) internal virtual override returns (uint256) {
     uint256 proposalId = super._cancel(targets, values, calldatas, descriptionHash);
-
-    councilVetoGovernor.cancel(targets, values, calldatas, descriptionHash);
+    delete _proposalDescriptions[proposalId];
 
     return proposalId;
   }
