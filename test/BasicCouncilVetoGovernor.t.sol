@@ -32,7 +32,6 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
   address[] internal targets;
   uint256[] internal values;
   bytes[] internal calldatas;
-  bytes32 internal descriptionHash;
 
   // === Constants ===
   uint256 constant COUNCIL_SIZE = 7;
@@ -230,16 +229,16 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
   }
 
   function test_RevertIf_CancelAPendingProposal() public {
-    uint256 proposalId = _proposeAndForwardToVetoGovernor("Overridden");
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor("Overridden");
 
-    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Pending));
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        BasicCouncilVetoGovernor.CouncilVetoGovernor_OperationNotSupported.selector
+        IGovernor.GovernorUnableToCancel.selector, _proposalId, councilMembers[0]
       )
     );
     vm.prank(councilMembers[0]);
-    vetoGovernor.cancel(targets, values, calldatas, descriptionHash);
+    vetoGovernor.cancel(targets, values, calldatas, keccak256(bytes("Overridden")));
   }
 }
