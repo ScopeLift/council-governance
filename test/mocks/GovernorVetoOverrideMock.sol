@@ -14,10 +14,8 @@ import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
 /// Test imports
 import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
 
-/**
- * @title GovernorVetoOverrideMock
- * @dev Mock implementation of GovernorVetoOverride for testing purposes.
- */
+/// @title GovernorVetoOverrideMock
+/// @dev Mock implementation of GovernorVetoOverride for testing purposes.
 contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
   MockERC20Votes public daoToken;
   mapping(uint256 => bool) internal _defeated;
