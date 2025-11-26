@@ -113,7 +113,7 @@ contract GovernorVetoGuardianTest is Test {
   ) public returns (uint256 _proposalId) {
     _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
 
-    vm.warp(block.timestamp + 1 days + 1);
+    vm.warp(block.timestamp + 1);
     vetoGovernor.execute(
       _proposal.targets,
       _proposal.values,
