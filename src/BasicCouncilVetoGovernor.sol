@@ -155,13 +155,20 @@ contract BasicCouncilVetoGovernor is
     return super._cancel(targets, values, calldatas, descriptionHash);
   }
 
+  /// @notice Returns the proposal state after applying the guardian and override extensions.
+  /// @dev The override order is deliberate:
+  /// 1. {GovernorVetoGuardian} marks guardian-vetoed proposals as `Defeated`.
+  /// 2. {GovernorVetoOverride} can promote vetoed proposals back to `Succeeded`
+  /// if the override role intervenes.
+  /// @param proposalId Proposal identifier to evaluate.
+  /// @return proposalState The current state after guardian and override logic.
   function state(uint256 proposalId)
     public
     view
     override(Governor, GovernorTimelockControl, GovernorVetoGuardian, GovernorVetoOverride)
     returns (ProposalState)
   {
-    return super.state(proposalId);
+    return GovernorVetoOverride.state(proposalId);
   }
 
   function _queueOperations(
