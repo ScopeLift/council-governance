@@ -94,6 +94,7 @@ contract GovernorCouncilQueuingTest is MockCallVetoGovernor {
   bytes32 internal constant ALL_PROPOSAL_STATES_BITMAP =
     bytes32((2 ** (uint8(type(IGovernor.ProposalState).max) + 1)) - 1);
   uint256 constant COUNCIL_SIZE = 7;
+  uint256 constant MAX_TOKENS_PER_MEMBER = 1;
 
   GovernorCouncilQueuingMock internal councilMock;
 
@@ -106,7 +107,7 @@ contract GovernorCouncilQueuingTest is MockCallVetoGovernor {
   bytes[] internal calldatas;
 
   function setUp() public {
-    councilToken = new CouncilERC20("CouncilERC20", "CERC", admin);
+    councilToken = new CouncilERC20("CouncilERC20", "CERC", admin, MAX_TOKENS_PER_MEMBER);
     _createCouncilMembers();
     councilMock = new GovernorCouncilQueuingMock(
       1 days, // _initialVotingDelay
