@@ -136,6 +136,7 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
       1 hours, // initialVotingDelay
       1 days, // initialVotingPeriod
       0, // initialProposalThreshold
+      vetoGuardian,
       MAIN_DAO_GOVERNOR, // The main DAO governor is the veto overrider
       VETO_OVERRIDE_DURATION,
       timelock,

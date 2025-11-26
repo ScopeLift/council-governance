@@ -88,6 +88,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
       1 hours, // initialVotingDelay
       1 days, // initialVotingPeriod
       0, // initialProposalThreshold
+      vetoGuardian,
       deployer, // The main DAO governor is the veto overrider
       4 days,
       timelock,

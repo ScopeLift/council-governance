@@ -7,6 +7,7 @@ import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/Gover
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {GovernorVetoOverride} from "./extensions/GovernorVetoOverride.sol";
+import {GovernorVetoGuardian} from "./extensions/GovernorVetoGuardian.sol";
 import {GovernorAdmin} from "./extensions/GovernorAdmin.sol";
 import {
   GovernorTimelockControl,
@@ -35,6 +36,7 @@ contract BasicCouncilVetoGovernor is
    * @param votingDelay The delay before voting on a proposal begins.
    * @param votingPeriod The period of time voting will take place.
    * @param proposalThreshold The number of tokens needed to create a proposal.
+   * @param vetoGuardian The address authorized to veto proposals.
    * @param vetoOverrideRole The address authorized to override vetoed proposals.
    * @param vetoOverrideDuration Time window for overrides after proposal deadline.
    * @param timelock The timelock contract used for managing proposals.
@@ -47,6 +49,7 @@ contract BasicCouncilVetoGovernor is
     uint48 votingDelay;
     uint32 votingPeriod;
     uint256 proposalThreshold;
+    address vetoGuardian;
     address vetoOverrideRole;
     uint48 vetoOverrideDuration;
     TimelockController timelock;
@@ -62,6 +65,7 @@ contract BasicCouncilVetoGovernor is
   constructor(ConstructorParams memory _params)
     Governor(_params.name)
     GovernorVotes(_params.token)
+    GovernorVetoGuardian(_params.vetoGuardian)
     GovernorSettings(_params.votingDelay, _params.votingPeriod, _params.proposalThreshold)
     GovernorVetoOverride(_params.vetoOverrideRole, _params.vetoOverrideDuration)
     GovernorTimelockControl(_params.timelock)
