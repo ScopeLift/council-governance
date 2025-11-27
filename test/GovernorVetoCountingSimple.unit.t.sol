@@ -324,6 +324,6 @@ contract CountVote is GovernorVetoCountingSimple_Test {
     vm.assume(_support != 0);
 
     vm.expectRevert(IGovernor.GovernorInvalidVoteType.selector);
-    governorVetoCountingSimple.countVote(_proposalId, _account, 1, _weight, "");
+    governorVetoCountingSimple.countVote(_proposalId, _account, _support, _weight, "");
   }
 }
