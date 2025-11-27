@@ -86,7 +86,14 @@ contract BasicCouncilVetoGovernor is
     return super.proposalThreshold();
   }
 
-  function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
+  function quorum(
+    uint256 /*timepoint*/
+  )
+    public
+    pure
+    override
+    returns (uint256)
+  {
     return 10_000e18;
   }
 
@@ -138,7 +145,12 @@ contract BasicCouncilVetoGovernor is
     uint256[] memory, /* values */
     bytes[] memory, /* calldadtas */
     bytes32 /* descriptionHash */
-  ) public pure override returns (uint256) {
+  )
+    public
+    pure
+    override
+    returns (uint256)
+  {
     revert CouncilVetoGovernor_OperationNotSupported();
   }
 

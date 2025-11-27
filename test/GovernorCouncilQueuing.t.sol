@@ -5,8 +5,9 @@ pragma solidity ^0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorCouncilQueuingMock} from "test/mocks/GovernorCouncilQueuingMock.sol";
-import {GovernorCountingSimple} from
-  "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import {
+  GovernorCountingSimple
+} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
 import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol";
 
@@ -155,7 +156,11 @@ contract GovernorCouncilQueuingTest is MockCallVetoGovernor {
     assertEq(uint8(councilMock.state(_proposalId)), uint8(_expected));
   }
 
-  function _encodeStateBitmap(IGovernor.ProposalState _proposalState) public pure returns (bytes32) {
+  function _encodeStateBitmap(IGovernor.ProposalState _proposalState)
+    public
+    pure
+    returns (bytes32)
+  {
     return bytes32(1 << uint8(_proposalState));
   }
 
@@ -267,9 +272,9 @@ contract GovernorCouncilQueuingTest is MockCallVetoGovernor {
 }
 
 contract State is GovernorCouncilQueuingTest {
-  function testFuzz_CouncilProposalStateIsPendingWhenProposalIsPendingOnTheCouncil(
-    uint256 _councilMemberIndex
-  ) public {
+  function testFuzz_CouncilProposalStateIsPendingWhenProposalIsPendingOnTheCouncil(uint256 _councilMemberIndex)
+    public
+  {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
 
@@ -278,9 +283,9 @@ contract State is GovernorCouncilQueuingTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
   }
 
-  function testFuzz_CouncilProposalStateIsActiveWhenProposalIsActiveOnTheCouncil(
-    uint256 _councilMemberIndex
-  ) public {
+  function testFuzz_CouncilProposalStateIsActiveWhenProposalIsActiveOnTheCouncil(uint256 _councilMemberIndex)
+    public
+  {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
 
@@ -289,18 +294,18 @@ contract State is GovernorCouncilQueuingTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Active);
   }
 
-  function testFuzz_CouncilProposalStateIsCanceledWhenProposalIsCanceledOnTheCouncil(
-    uint256 _councilMemberIndex
-  ) public {
+  function testFuzz_CouncilProposalStateIsCanceledWhenProposalIsCanceledOnTheCouncil(uint256 _councilMemberIndex)
+    public
+  {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     uint256 _proposalId = _submitAndCancelProposal(_proposer, _buildEmptyProposal());
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
   }
 
-  function testFuzz_CouncilProposalStateIsDefeatedWhenProposalIsDefeatedOnTheCouncil(
-    uint256 _councilMemberIndex
-  ) public {
+  function testFuzz_CouncilProposalStateIsDefeatedWhenProposalIsDefeatedOnTheCouncil(uint256 _councilMemberIndex)
+    public
+  {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
 
@@ -309,9 +314,9 @@ contract State is GovernorCouncilQueuingTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
 
-  function testFuzz_CouncilProposalStateIsSucceededWhenProposalIsSucceededOnTheCouncil(
-    uint256 _councilMemberIndex
-  ) public {
+  function testFuzz_CouncilProposalStateIsSucceededWhenProposalIsSucceededOnTheCouncil(uint256 _councilMemberIndex)
+    public
+  {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
 

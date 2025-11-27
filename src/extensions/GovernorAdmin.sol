@@ -13,7 +13,6 @@ import {Ownable} from "@openzeppelin/contracts/Access/Ownable.sol";
  * parameters while preventing the council from manipulating these settings.
  */
 abstract contract GovernorAdmin is Governor, Ownable {
-
   constructor(address _governorAdmin) Ownable(_governorAdmin) {}
 
   /// @dev Ensures the caller is the degisnated admin before executing governance-retricted logic.

@@ -122,7 +122,10 @@ contract GovernorVetoGuardianTest is Test {
     );
   }
 
-  function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected) internal view {
+  function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected)
+    internal
+    view
+  {
     assertEq(uint8(vetoGovernor.state(proposalId)), uint8(expected));
   }
 
@@ -259,9 +262,8 @@ contract VetoByGuardian is GovernorVetoGuardianTest {
     vm.assume(_newVetoGuardian != vetoGuardian);
 
     address _oldVetoGuardian = vetoGuardian;
-    stdstore.target(address(vetoGovernor)).sig(vetoGovernor.vetoGuardian.selector).checked_write(
-      address(_newVetoGuardian)
-    );
+    stdstore.target(address(vetoGovernor)).sig(vetoGovernor.vetoGuardian.selector)
+      .checked_write(address(_newVetoGuardian));
     assertEq(vetoGovernor.vetoGuardian(), _newVetoGuardian);
 
     uint256 proposalId = _submitProposal(_proposer, _buildEmptyProposal());

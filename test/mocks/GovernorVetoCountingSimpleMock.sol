@@ -19,7 +19,14 @@ contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
     return 1 days;
   }
 
-  function quorum(uint256 /* timepoint */ ) public pure override returns (uint256) {
+  function quorum(
+    uint256 /* timepoint */
+  )
+    public
+    pure
+    override
+    returns (uint256)
+  {
     return 100; // Return a fixed quorum value for unit tests
   }
 
@@ -31,7 +38,13 @@ contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
     return "mode=timestamp";
   }
 
-  function _getVotes(address, /* account */ uint256, /* timepoint */ bytes memory /* params */ )
+  function _getVotes(
+    address,
+    /* account */
+    uint256,
+    /* timepoint */
+    bytes memory /* params */
+  )
     internal
     pure
     override

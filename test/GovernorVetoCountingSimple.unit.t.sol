@@ -108,7 +108,7 @@ contract ProposalVotes is GovernorVetoCountingSimple_Test {
   ) public {
     // Bound number of voters to a reasonable range
     _numVoters = bound(_numVoters, 2, 10);
-    
+
     // Resize weights array to match _numVoters if needed
     if (_weights.length != _numVoters) {
       uint256[] memory _newWeights = new uint256[](_numVoters);
@@ -124,10 +124,10 @@ contract ProposalVotes is GovernorVetoCountingSimple_Test {
     // Generate unique voters and bound weights to prevent overflow
     for (uint256 _i = 0; _i < _numVoters; _i++) {
       address _voter = makeAddr(string(abi.encodePacked("voter", _i)));
-      
+
       // Bound each weight to prevent overflow when summing
       _weights[_i] = bound(_weights[_i], 0, type(uint256).max / _numVoters);
-      
+
       // Cast vote and verify accumulation
       castVoteOnProposal(_proposalId, _voter, _weights[_i]);
       _totalVotes += _weights[_i];

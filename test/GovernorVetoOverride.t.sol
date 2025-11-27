@@ -3,8 +3,9 @@ pragma solidity ^0.8.30;
 
 /// External imports
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
-import {GovernorCountingSimple} from
-  "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import {
+  GovernorCountingSimple
+} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
 /// Internal imports
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
@@ -66,7 +67,10 @@ contract GovernorVetoOverrideTest is Test {
     vm.warp(block.timestamp + vetoOverrideMock.votingDelay() + vetoOverrideMock.votingPeriod() + 1);
   }
 
-  function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected) internal view {
+  function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected)
+    internal
+    view
+  {
     assertEq(uint8(vetoOverrideMock.state(proposalId)), uint8(expected));
   }
 }
@@ -146,7 +150,9 @@ contract OverrideVeto is GovernorVetoOverrideTest {
     vetoOverrideMock.overrideVeto(_proposalId);
   }
 
-  function testFuzz_RevertIf_CallerIsNotVetoOverrideRole(address _proposer, address _caller) public {
+  function testFuzz_RevertIf_CallerIsNotVetoOverrideRole(address _proposer, address _caller)
+    public
+  {
     vm.assume(_caller != vetoOverrideMock.vetoOverrideRole());
     uint256 _proposalId = _createDefeatedProposal(_proposer);
 
@@ -247,7 +253,8 @@ contract State is GovernorVetoOverrideTest {
     _newTimestamp = uint48(
       bound(
         _newTimestamp,
-        vetoOverrideMock.proposalDeadline(_proposalId) + vetoOverrideMock.vetoOverrideDuration() + 1,
+        vetoOverrideMock.proposalDeadline(_proposalId) + vetoOverrideMock.vetoOverrideDuration()
+          + 1,
         type(uint48).max
       )
     );
