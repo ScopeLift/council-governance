@@ -2,7 +2,7 @@
 pragma solidity 0.8.30;
 
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
-import {Ownable} from "@openzeppelin/contracts/Access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title GovernorAdmin

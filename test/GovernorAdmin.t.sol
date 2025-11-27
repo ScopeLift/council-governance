@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {BasicCouncilGovernorTest} from "./BasicCouncilGovernor.t.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
-import {Ownable} from "@openzeppelin/contracts/Access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GovernorAdminTest is BasicCouncilGovernorTest {
   function _proposeForwardAndQueueToVetoGovernor(string memory _description)
