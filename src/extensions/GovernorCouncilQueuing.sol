@@ -30,7 +30,7 @@ abstract contract GovernorCouncilQueuing is Governor {
 
   /// @notice Mapping of proposal IDs to their descriptions.
   /// @dev Veto governor needs the description to create the proposal.
-  mapping(uint256 proposalId => string) internal _proposalDescriptions;
+  mapping(uint256 proposalId => string) internal proposalDescriptions;
 
   /// @notice The council veto governor instance.
   IGovernor public councilVetoGovernor;
@@ -99,7 +99,7 @@ abstract contract GovernorCouncilQueuing is Governor {
     string memory _description
   ) public virtual override returns (uint256 _proposalId) {
     _proposalId = super.propose(_targets, _values, _calldatas, _description);
-    _proposalDescriptions[_proposalId] = _description;
+    proposalDescriptions[_proposalId] = _description;
   }
 
   /// @notice Updates the veto governor used for proposal queuing and exeuction.
@@ -154,9 +154,9 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes32 /* _descriptionHash */
   ) internal virtual override returns (uint48) {
     // Forward the proposal to the veto governor
-    councilVetoGovernor.propose(_targets, _values, _calldatas, _proposalDescriptions[_proposalId]);
+    councilVetoGovernor.propose(_targets, _values, _calldatas, proposalDescriptions[_proposalId]);
     // Clean up the stored description
-    delete _proposalDescriptions[_proposalId];
+    delete proposalDescriptions[_proposalId];
     // Return the veto governor's deadline for this proposal
     return uint48(councilVetoGovernor.proposalDeadline(_proposalId));
   }
@@ -195,7 +195,7 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes32 _descriptionHash
   ) internal virtual override returns (uint256 _proposalId) {
     _proposalId = super._cancel(_targets, _values, _calldatas, _descriptionHash);
-    delete _proposalDescriptions[_proposalId];
+    delete proposalDescriptions[_proposalId];
   }
 
   /// @inheritdoc Governor

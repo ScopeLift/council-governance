@@ -88,23 +88,23 @@ abstract contract GovernorVetoOverride is Governor {
   /// @notice Overrides the veto for a specific proposal.
   /// @dev Only callable by the veto override role. Can be called on any proposal ID, regardless of
   /// its current state.
-  /// @param proposalId The ID of the proposal to override.
-  function overrideVeto(uint256 proposalId) public virtual onlyVetoOverrideRole {
-    isVetoOverridden[proposalId] = true;
-    emit VetoOverridden(proposalId);
+  /// @param _proposalId The ID of the proposal to override.
+  function overrideVeto(uint256 _proposalId) public virtual onlyVetoOverrideRole {
+    isVetoOverridden[_proposalId] = true;
+    emit VetoOverridden(_proposalId);
   }
 
   /// @notice Returns the current state of a proposal, accounting for veto overrides.
   /// @dev If a proposal is `Defeated`, overridden, and within the override window, it returns
   /// `Succeeded` instead of `Defeated`. Override window is measured from the proposal's voting
   /// deadline.
-  /// @param proposalId The ID of the proposal to check.
+  /// @param _proposalId The ID of the proposal to check.
   /// @return ProposalState The current state of the proposal.
-  function state(uint256 proposalId) public view virtual override returns (ProposalState) {
-    ProposalState _state = super.state(proposalId);
+  function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
+    ProposalState _state = super.state(_proposalId);
     if (
-      isVetoOverridden[proposalId] && _state == ProposalState.Defeated
-        && clock() - proposalDeadline(proposalId) < vetoOverrideDuration
+      isVetoOverridden[_proposalId] && _state == ProposalState.Defeated
+        && clock() - proposalDeadline(_proposalId) < vetoOverrideDuration
     ) return ProposalState.Succeeded;
     return _state;
   }

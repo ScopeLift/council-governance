@@ -5,7 +5,6 @@ import {Script, console} from "forge-std/Script.sol";
 import {StdAssertions} from "forge-std/StdAssertions.sol";
 import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
-import {GovernorVetoGuardian} from "src/extensions/GovernorVetoGuardian.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
 import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
@@ -69,8 +68,8 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
     console.log("--------------------------");
     console.log("Deployer Address:\t\t\t", msg.sender);
     console.log("\n Council Member Accounts:");
-    for (uint256 i = 0; i < councilMembers.length; i++) {
-      console.log(councilMembers[i]);
+    for (uint256 _i = 0; _i < councilMembers.length; _i++) {
+      console.log(councilMembers[_i]);
     }
     console.log("\n Test Voter Accounts:");
     console.log(testVoter1);
@@ -89,11 +88,11 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
 
     // Mint one "council seat" token to each member
     // In a real scenario, this would be called by the Main DAO Governor
-    for (uint256 i = 0; i < councilMembers.length; i++) {
-      councilToken.mint(councilMembers[i], 1);
+    for (uint256 _i = 0; _i < councilMembers.length; _i++) {
+      councilToken.mint(councilMembers[_i], 1);
 
       // let's also transfer a bit of ETH their way...
-      payable(councilMembers[i]).transfer(0.0001 ether);
+      payable(councilMembers[_i]).transfer(0.0001 ether);
     }
 
     // Deploy and fund a mock DAO token for veto testing
@@ -115,21 +114,21 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
     console.log("Pre-computing governor addresses and deploying Timelock & Governors...");
 
     // Pre-compute the addresses for the governor contracts
-    uint256 nonce = vm.getNonce(_deployer);
+    uint256 _nonce = vm.getNonce(_deployer);
     // timelock is nonce + 0
-    address predictedVetoGovernorAddress = vm.computeCreateAddress(_deployer, nonce + 1);
-    address predictedCouncilGovernorAddress = vm.computeCreateAddress(_deployer, nonce + 2);
+    address _predictedVetoGovernorAddress = vm.computeCreateAddress(_deployer, _nonce + 1);
+    address _predictedCouncilGovernorAddress = vm.computeCreateAddress(_deployer, _nonce + 2);
 
     // Configure Timelock roles
-    address[] memory proposers = new address[](1);
-    proposers[0] = predictedVetoGovernorAddress;
-    address[] memory executors = new address[](1);
-    executors[0] = predictedVetoGovernorAddress;
+    address[] memory _proposers = new address[](1);
+    _proposers[0] = _predictedVetoGovernorAddress;
+    address[] memory _executors = new address[](1);
+    _executors[0] = _predictedVetoGovernorAddress;
 
     // Deploy Timelock, giving the *future* VetoGovernor the PROPOSER role
-    timelock = new TimelockController(TIMELOCK_MIN_DELAY, proposers, executors, address(0));
+    timelock = new TimelockController(TIMELOCK_MIN_DELAY, _proposers, _executors, address(0));
 
-    BasicCouncilVetoGovernor.ConstructorParams memory vetoGovernorParams =
+    BasicCouncilVetoGovernor.ConstructorParams memory _vetoGovernorParams =
       BasicCouncilVetoGovernor.ConstructorParams(
         "BasicCouncilVetoGovernor",
         daoToken,
@@ -141,11 +140,11 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
         VETO_OVERRIDE_DURATION,
         timelock,
         MAIN_DAO_GOVERNOR, // The main DAO governor is the governor admin
-        predictedCouncilGovernorAddress
+        _predictedCouncilGovernorAddress
       );
 
     // Deploy the Veto Governor, passing the pre-computed CouncilGovernor address
-    vetoGovernor = new BasicCouncilVetoGovernor(vetoGovernorParams);
+    vetoGovernor = new BasicCouncilVetoGovernor(_vetoGovernorParams);
 
     // Deploy the Council Governor, passing the now-deployed VetoGovernor address
     councilGovernor = new BasicCouncilGovernor(
@@ -158,7 +157,7 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
     );
 
     // Sanity check: ensure predicted addresses match actual addresses
-    assertEq(address(vetoGovernor), predictedVetoGovernorAddress);
-    assertEq(address(councilGovernor), predictedCouncilGovernorAddress);
+    assertEq(address(vetoGovernor), _predictedVetoGovernorAddress);
+    assertEq(address(councilGovernor), _predictedCouncilGovernorAddress);
   }
 }

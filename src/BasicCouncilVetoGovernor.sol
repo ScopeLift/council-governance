@@ -25,7 +25,7 @@ contract BasicCouncilVetoGovernor is
   GovernorTimelockControl
 {
   /// @notice Thrown when an operation is not supported
-  error CouncilVetoGovernor_OperationNotSupported();
+  error BasicCouncilVetoGovernor_OperationNotSupported();
 
   address public immutable COUNCIL;
 
@@ -102,31 +102,31 @@ contract BasicCouncilVetoGovernor is
   }
 
   function propose(
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    string memory description
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    string memory _description
   ) public override onlyCouncil returns (uint256) {
-    return super.propose(targets, values, calldatas, description);
+    return super.propose(_targets, _values, _calldatas, _description);
   }
 
   function execute(
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    bytes32 _descriptionHash
   ) public payable override onlyCouncil returns (uint256) {
-    return super.execute(targets, values, calldatas, descriptionHash);
+    return super.execute(_targets, _values, _calldatas, _descriptionHash);
   }
 
   function _executeOperations(
-    uint256 proposalId,
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
+    uint256 _proposalId,
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    bytes32 _descriptionHash
   ) internal override(Governor, GovernorTimelockControl) {
-    super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
+    super._executeOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
   }
 
   function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
@@ -151,7 +151,7 @@ contract BasicCouncilVetoGovernor is
     override
     returns (uint256)
   {
-    revert CouncilVetoGovernor_OperationNotSupported();
+    revert BasicCouncilVetoGovernor_OperationNotSupported();
   }
 
   /// @inheritdoc GovernorTimelockControl
@@ -159,41 +159,41 @@ contract BasicCouncilVetoGovernor is
   /// @notice This internal function maintains the inheritance chain but should not be called
   /// because the public cancel function is disabled.
   function _cancel(
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    bytes32 _descriptionHash
   ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
-    return super._cancel(targets, values, calldatas, descriptionHash);
+    return super._cancel(_targets, _values, _calldatas, _descriptionHash);
   }
 
-  function state(uint256 proposalId)
+  function state(uint256 _proposalId)
     public
     view
     override(Governor, GovernorTimelockControl, GovernorVetoGuardian, GovernorVetoOverride)
     returns (ProposalState)
   {
-    return super.state(proposalId);
+    return super.state(_proposalId);
   }
 
   function _queueOperations(
-    uint256 proposalId,
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
+    uint256 _proposalId,
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    bytes32 _descriptionHash
   ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
-    return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+    return super._queueOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
   }
 
-  function proposalNeedsQueuing(uint256 proposalId)
+  function proposalNeedsQueuing(uint256 _proposalId)
     public
     view
     virtual
     override(Governor, GovernorTimelockControl)
     returns (bool)
   {
-    return GovernorTimelockControl.proposalNeedsQueuing(proposalId);
+    return GovernorTimelockControl.proposalNeedsQueuing(_proposalId);
   }
 
   function clock() public view override(Governor, GovernorVotes) returns (uint48) {

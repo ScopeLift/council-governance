@@ -6,7 +6,6 @@ import {Test} from "forge-std/Test.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
 // Internal Libraries
-import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSimple.sol";
 import {GovernorVetoCountingSimpleMock} from "test/mocks/GovernorVetoCountingSimpleMock.sol";
 
 contract GovernorVetoCountingSimple_Test is Test {

@@ -29,7 +29,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
   //////////////////////////////////////////////////////////////*/
 
   /// @notice Mapping of `proposalId` to its associated vote data (veto count and voter records).
-  mapping(uint256 proposalId => ProposalVote) private _proposalVotes;
+  mapping(uint256 proposalId => ProposalVote) private proposalVoteData;
 
   /*///////////////////////////////////////////////////////////////
                         External / Public Functions
@@ -52,14 +52,14 @@ abstract contract GovernorVetoCountingSimple is Governor {
     override
     returns (bool)
   {
-    return _proposalVotes[_proposalId].hasVoted[_account];
+    return proposalVoteData[_proposalId].hasVoted[_account];
   }
 
   /// @notice Returns the number of veto votes for a given `proposalId`
   /// @param _proposalId The ID of the proposal to get the vote counts for
   /// @return vetoVotes The number of veto votes for the proposal
-  function proposalVotes(uint256 _proposalId) public view virtual returns (uint256 vetoVotes) {
-    return (_proposalVotes[_proposalId].vetoVotes);
+  function proposalVotes(uint256 _proposalId) public view virtual returns (uint256) {
+    return proposalVoteData[_proposalId].vetoVotes;
   }
 
   /*///////////////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
   /// @return bool True if the proposal's `vetoVotes` >= quorum at the proposal snapshot.
   /// @dev `quorum(proposalSnapshot(proposalId))` uses the same quorum rule as the parent Governor.
   function _proposalFromCouncilIsVetoed(uint256 _proposalId) internal view returns (bool) {
-    return (_proposalVotes[_proposalId].vetoVotes >= quorum(proposalSnapshot(_proposalId)));
+    return (proposalVoteData[_proposalId].vetoVotes >= quorum(proposalSnapshot(_proposalId)));
   }
 
   /// @inheritdoc Governor
@@ -97,7 +97,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
     uint256 _totalWeight,
     bytes memory // params
   ) internal virtual override returns (uint256) {
-    ProposalVote storage proposalVote = _proposalVotes[_proposalId];
+    ProposalVote storage proposalVote = proposalVoteData[_proposalId];
 
     if (proposalVote.hasVoted[_account]) revert GovernorAlreadyCastVote(_account);
     proposalVote.hasVoted[_account] = true;

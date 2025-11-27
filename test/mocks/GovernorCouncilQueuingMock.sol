@@ -135,7 +135,7 @@ contract GovernorCouncilQueuingMock is
   }
 
   function exposed_proposalDescription(uint256 proposalId) public view returns (string memory) {
-    return _proposalDescriptions[proposalId];
+    return proposalDescriptions[proposalId];
   }
 
   function _executeOperations(

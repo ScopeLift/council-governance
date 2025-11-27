@@ -122,17 +122,17 @@ contract GovernorCouncilQueuingTest is MockCallVetoGovernor {
   }
 
   function _createCouncilMembers() internal {
-    for (uint256 i = 0; i < COUNCIL_SIZE; i++) {
-      address member = makeAddr(string(abi.encodePacked("councilMember", vm.toString(i + 1))));
-      councilMembers.push(member);
+    for (uint256 _i = 0; _i < COUNCIL_SIZE; _i++) {
+      address _member = makeAddr(string(abi.encodePacked("councilMember", vm.toString(_i + 1))));
+      councilMembers.push(_member);
       vm.prank(admin);
-      councilToken.mint(member, 1);
+      councilToken.mint(_member, 1);
     }
     skip(1);
   }
 
-  function _selectCouncilMember(uint256 councilMemberIndex) internal view returns (address) {
-    return councilMembers[councilMemberIndex % COUNCIL_SIZE];
+  function _selectCouncilMember(uint256 _councilMemberIndex) internal view returns (address) {
+    return councilMembers[_councilMemberIndex % COUNCIL_SIZE];
   }
 
   function _buildEmptyProposal() internal returns (Proposal memory _proposal) {

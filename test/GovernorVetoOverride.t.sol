@@ -3,9 +3,6 @@ pragma solidity ^0.8.30;
 
 /// External imports
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
-import {
-  GovernorCountingSimple
-} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
 /// Internal imports
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
@@ -67,11 +64,11 @@ contract GovernorVetoOverrideTest is Test {
     vm.warp(block.timestamp + vetoOverrideMock.votingDelay() + vetoOverrideMock.votingPeriod() + 1);
   }
 
-  function _assertProposalState(uint256 proposalId, IGovernor.ProposalState expected)
+  function _assertProposalState(uint256 _proposalId, IGovernor.ProposalState _expected)
     internal
     view
   {
-    assertEq(uint8(vetoOverrideMock.state(proposalId)), uint8(expected));
+    assertEq(uint8(vetoOverrideMock.state(_proposalId)), uint8(_expected));
   }
 }
 
@@ -79,11 +76,11 @@ contract Constructor is Test {
   function testFuzz_SetsInitialParameters(address _vetoOverrideRole, uint48 _vetoOverrideDuration)
     public
   {
-    GovernorVetoOverrideMock mock =
+    GovernorVetoOverrideMock _mock =
       new GovernorVetoOverrideMock(_vetoOverrideRole, _vetoOverrideDuration);
 
-    assertEq(mock.vetoOverrideRole(), _vetoOverrideRole);
-    assertEq(mock.vetoOverrideDuration(), _vetoOverrideDuration);
+    assertEq(_mock.vetoOverrideRole(), _vetoOverrideRole);
+    assertEq(_mock.vetoOverrideDuration(), _vetoOverrideDuration);
   }
 }
 

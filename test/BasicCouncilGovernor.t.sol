@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.30;
 
-import {Test, console2} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {BasicCouncilGovernor} from "../src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "../src/BasicCouncilVetoGovernor.sol";
-import {GovernorVetoGuardian} from "../src/extensions/GovernorVetoGuardian.sol";
 import {CouncilERC20} from "../src/CouncilERC20.sol";
 import {MockERC20Votes} from "./helpers/MockERC20Votes.sol";
 import {Counter} from "./helpers/Counter.sol";
@@ -219,23 +218,23 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
 
   function test_CancelsAPendingProposal() public {
     vm.prank(councilMembers[0]);
-    uint256 proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
 
     skip(1);
 
     vm.prank(councilMembers[0]);
     councilGovernor.cancel(targets, values, calldatas, descriptionHash);
 
-    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Canceled));
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Canceled));
   }
 
-  function test_RevertsIf_CancelsAForwardedProposal() public {
+  function test_RevertIf_CancelsAForwardedProposal() public {
     vm.prank(councilMembers[0]);
-    uint256 proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
     vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
-    for (uint256 i = 0; i < councilGovernor.quorum(0); i++) {
-      vm.prank(councilMembers[i]);
-      councilGovernor.castVote(proposalId, 1);
+    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
+      vm.prank(councilMembers[_i]);
+      councilGovernor.castVote(_proposalId, 1);
     }
     vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
 
@@ -243,12 +242,12 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     councilGovernor.queue(targets, values, calldatas, descriptionHash);
 
     // Assert the state is now `Queued` (which means "Forwarded" in this context)
-    assertEq(uint8(councilGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Queued));
-    assertEq(uint8(vetoGovernor.state(proposalId)), uint8(IGovernor.ProposalState.Pending));
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Pending));
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IGovernor.GovernorUnableToCancel.selector, proposalId, councilMembers[0]
+        IGovernor.GovernorUnableToCancel.selector, _proposalId, councilMembers[0]
       )
     );
     vm.prank(councilMembers[0]);
