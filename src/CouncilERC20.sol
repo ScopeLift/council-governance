@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-// External Libraries
+// External Dependencies
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
@@ -111,7 +111,10 @@ contract CouncilERC20 is ERC20, ERC20Votes, Ownable {
   /// @param _to The address to update the balances to
   /// @param _value The value of the tokens to update
   /// @dev This function is overridden to prevent transfers between addresses
-  function _update(address _from, address _to, uint256 _value) internal override(ERC20, ERC20Votes) {
+  function _update(address _from, address _to, uint256 _value)
+    internal
+    override(ERC20, ERC20Votes)
+  {
     // Prevent transfers between addresses
     if (_from != address(0) && _to != address(0)) revert CouncilERC20_OperationNotSupported();
     ERC20Votes._update(_from, _to, _value);

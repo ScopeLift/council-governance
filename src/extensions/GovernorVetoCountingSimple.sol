@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-// External Libraries
+// External Dependencies
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 
 /// @title GovernorVetoCountingSimple
 /// @author [ScopeLift](https://scopelift.co)
-/// @notice Governor extension implementing a simple "veto only" counting mode.
-/// @dev Only veto votes are counted towards quorum. Other vote types are ignored.
-///      Sourced from OpenZeppelin's GovernorCountingSimple (last updated v5.4.0)
-///      (contracts/governance/extensions/GovernorCountingSimple.sol) with behavior adapted for
+/// @notice Extension of {Governor} that implements a simple "veto only" counting mode.
+/// @dev Only veto votes are counted towards quorum. Other vote types are ignored. Sourced from
+/// OpenZeppelin's {GovernorCountingSimple} (last updated v5.4.0)
+/// (contracts/governance/extensions/GovernorCountingSimple.sol) with behavior adapted for
 /// veto-counting.
 abstract contract GovernorVetoCountingSimple is Governor {
   /*///////////////////////////////////////////////////////////////
@@ -29,7 +29,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
   //////////////////////////////////////////////////////////////*/
 
   /// @notice Mapping of `proposalId` to its associated vote data (veto count and voter records).
-  mapping(uint256 proposalId => ProposalVote) private _proposalVotes;
+  mapping(uint256 proposalId => ProposalVote) private proposalVoteData;
 
   /*///////////////////////////////////////////////////////////////
                         External / Public Functions
@@ -52,14 +52,14 @@ abstract contract GovernorVetoCountingSimple is Governor {
     override
     returns (bool)
   {
-    return _proposalVotes[_proposalId].hasVoted[_account];
+    return proposalVoteData[_proposalId].hasVoted[_account];
   }
 
   /// @notice Returns the number of veto votes for a given `proposalId`
   /// @param _proposalId The ID of the proposal to get the vote counts for
   /// @return vetoVotes The number of veto votes for the proposal
-  function proposalVotes(uint256 _proposalId) public view virtual returns (uint256 vetoVotes) {
-    return (_proposalVotes[_proposalId].vetoVotes);
+  function proposalVotes(uint256 _proposalId) public view virtual returns (uint256) {
+    return proposalVoteData[_proposalId].vetoVotes;
   }
 
   /*///////////////////////////////////////////////////////////////
@@ -68,8 +68,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
 
   /// @inheritdoc Governor
   /// @dev For council-sourced proposals this function treats proposals as being in quorum by
-  /// default.
-  ///      If the veto threshold is reached, quorum is considered not reached.
+  /// default. If the veto threshold is reached, quorum is considered not reached.
   function _quorumReached(uint256 _proposalId) internal view virtual override returns (bool) {
     return !(_proposalFromCouncilIsVetoed(_proposalId));
   }
@@ -79,7 +78,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
   /// @return bool True if the proposal's `vetoVotes` >= quorum at the proposal snapshot.
   /// @dev `quorum(proposalSnapshot(proposalId))` uses the same quorum rule as the parent Governor.
   function _proposalFromCouncilIsVetoed(uint256 _proposalId) internal view returns (bool) {
-    return (_proposalVotes[_proposalId].vetoVotes >= quorum(proposalSnapshot(_proposalId)));
+    return (proposalVoteData[_proposalId].vetoVotes >= quorum(proposalSnapshot(_proposalId)));
   }
 
   /// @inheritdoc Governor
@@ -97,7 +96,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
     uint256 _totalWeight,
     bytes memory // params
   ) internal virtual override returns (uint256) {
-    ProposalVote storage proposalVote = _proposalVotes[_proposalId];
+    ProposalVote storage proposalVote = proposalVoteData[_proposalId];
 
     if (proposalVote.hasVoted[_account]) revert GovernorAlreadyCastVote(_account);
     proposalVote.hasVoted[_account] = true;

@@ -2,16 +2,14 @@
 
 pragma solidity ^0.8.24;
 
-/// External imports
+/// External Dependencies
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
-import {GovernorCountingSimple} from
-  "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 
-/// Internal imports
+/// Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
 
-/// Test imports
+/// Test Dependencies
 import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
 
 /// @title GovernorVetoOverrideMock
@@ -26,49 +24,9 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     GovernorVetoOverride(_vetoOverrideRole, _vetoOverrideDuration)
   {}
 
-  function votingDelay() public pure override returns (uint256) {
-    return 1 hours;
-  }
-
-  function votingPeriod() public pure override returns (uint256) {
-    return 1 days;
-  }
-
-  function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
-    return 10_000e18;
-  }
-
-  function COUNTING_MODE() external pure returns (string memory) {
-    return "support=veto&quorum=veto";
-  }
-
-  function hasVoted(
-    uint256, //proposalId
-    address //account
-  ) public view virtual override returns (bool) {
-    return false;
-  }
-
-  function _countVote(
-    uint256, // proposalId
-    address, // account
-    uint8, // support
-    uint256, // totalWeight
-    bytes memory // params
-  ) internal virtual override returns (uint256) {
-    return 0;
-  }
-
+  /// @notice Test utility function that sets a given proposal to defeated.
   function setDefeated(uint256 proposalId, bool defeated) public {
     _defeated[proposalId] = defeated;
-  }
-
-  function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
-    return !_defeated[proposalId];
-  }
-
-  function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
-    return !_defeated[proposalId];
   }
 
   function exposed_SetOverrideRole(address vetoOverrideRole) public {
@@ -79,6 +37,42 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     _setVetoOverrideDuration(vetoOverrideDuration);
   }
 
+  function COUNTING_MODE() external pure returns (string memory) {
+    return "support=veto&quorum=veto";
+  }
+
+  function votingDelay() public pure override returns (uint256) {
+    return 1 hours;
+  }
+
+  function votingPeriod() public pure override returns (uint256) {
+    return 1 days;
+  }
+
+  function quorum(
+    uint256 /*timepoint*/
+  )
+    public
+    pure
+    override
+    returns (uint256)
+  {
+    return 10_000e18;
+  }
+
+  function hasVoted(
+    uint256, //proposalId
+    address //account
+  )
+    public
+    view
+    virtual
+    override
+    returns (bool)
+  {
+    return false;
+  }
+
   function state(uint256 proposalId)
     public
     view
@@ -86,5 +80,28 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     returns (ProposalState)
   {
     return GovernorVetoOverride.state(proposalId);
+  }
+
+  function _countVote(
+    uint256, // proposalId
+    address, // account
+    uint8, // support
+    uint256, // totalWeight
+    bytes memory // params
+  )
+    internal
+    virtual
+    override
+    returns (uint256)
+  {
+    return 0;
+  }
+
+  function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
+    return !_defeated[proposalId];
+  }
+
+  function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
+    return !_defeated[proposalId];
   }
 }

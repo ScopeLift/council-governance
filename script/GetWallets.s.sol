@@ -13,34 +13,36 @@ contract GetWallets is Script {
   Vm.Wallet[] testVoterWallets;
 
   function run() public {
-    Vm.Wallet memory deployer =
+    Vm.Wallet memory _deployer =
       vm.createWallet(uint256(keccak256(abi.encodePacked(wallet))) + walletNonce);
-    console.log("Deployer Address:\t\t", deployer.addr);
-    console.log("Deployer Private Key:\t\t", vm.toString(bytes32(deployer.privateKey)));
-    for (uint256 i = 0; i < councilMembers; i++) {
-      Vm.Wallet memory councilMember =
-        vm.createWallet(uint256(keccak256(abi.encodePacked(wallet))) + walletNonce + i + 1);
-      console.log("Council Member", i + 1, "Address:\t", councilMember.addr);
+    console.log("Deployer Address:\t\t", _deployer.addr);
+    console.log("Deployer Private Key:\t\t", vm.toString(bytes32(_deployer.privateKey)));
+    for (uint256 _i = 0; _i < councilMembers; _i++) {
+      Vm.Wallet memory _councilMember =
+        vm.createWallet(uint256(keccak256(abi.encodePacked(wallet))) + walletNonce + _i + 1);
+      console.log("Council Member", _i + 1, "Address:\t", _councilMember.addr);
       console.log(
-        "Council Member", i + 1, "Private Key:\t", vm.toString(bytes32(councilMember.privateKey))
+        "Council Member", _i + 1, "Private Key:\t", vm.toString(bytes32(_councilMember.privateKey))
       );
-      councilMemberWallets.push(councilMember);
+      councilMemberWallets.push(_councilMember);
     }
-    for (uint256 i = 0; i < testVoters; i++) {
-      Vm.Wallet memory testVoter = vm.createWallet(
-        uint256(keccak256(abi.encodePacked(wallet))) + walletNonce + councilMembers + i + 1
+    for (uint256 _i = 0; _i < testVoters; _i++) {
+      Vm.Wallet memory _testVoter = vm.createWallet(
+        uint256(keccak256(abi.encodePacked(wallet))) + walletNonce + councilMembers + _i + 1
       );
-      console.log("Test Voter", i + 1, "Address:\t", testVoter.addr);
-      console.log("Test Voter", i + 1, "Private Key:\t", vm.toString(bytes32(testVoter.privateKey)));
-      testVoterWallets.push(testVoter);
+      console.log("Test Voter", _i + 1, "Address:\t", _testVoter.addr);
+      console.log(
+        "Test Voter", _i + 1, "Private Key:\t", vm.toString(bytes32(_testVoter.privateKey))
+      );
+      testVoterWallets.push(_testVoter);
     }
     console.log("\nCouncil Member Wallets:");
-    for (uint256 i = 0; i < councilMemberWallets.length; i++) {
-      console.log(councilMemberWallets[i].addr);
+    for (uint256 _i = 0; _i < councilMemberWallets.length; _i++) {
+      console.log(councilMemberWallets[_i].addr);
     }
     console.log("\nTest Voter Wallets:");
-    for (uint256 i = 0; i < testVoterWallets.length; i++) {
-      console.log(testVoterWallets[i].addr);
+    for (uint256 _i = 0; _i < testVoterWallets.length; _i++) {
+      console.log(testVoterWallets[_i].addr);
     }
   }
 }

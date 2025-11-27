@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+// External Dependencies
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 
 /// @title GovernorVetoGuardian
@@ -11,10 +12,6 @@ abstract contract GovernorVetoGuardian is Governor {
   address public vetoGuardian;
   mapping(uint256 => bool) public guardianVetoed;
 
-  constructor(address _vetoGuardian) {
-    _setVetoGuardian(_vetoGuardian);
-  }
-
   /// @notice Emitted when the veto guardian address is modified.
   event VetoGuardianModified(address indexed oldVetoGuardian, address indexed newVetoGuardian);
 
@@ -23,6 +20,10 @@ abstract contract GovernorVetoGuardian is Governor {
 
   /// @notice Thrown when any address other than the veto guardian calls the function.
   error GovernorVetoGuardian_Unauthorized();
+
+  constructor(address _vetoGuardian) {
+    _setVetoGuardian(_vetoGuardian);
+  }
 
   /// @notice Restricts the function to the current veto guardian.
   /// @dev Reverts with `GovernorVetoGuardian_Unauthorized` when the caller is not `vetoGuardian`.
@@ -35,7 +36,7 @@ abstract contract GovernorVetoGuardian is Governor {
   /// @dev The guardian flag is ignored once queue succeeds, so veto overrides can still promote
   /// the proposal.
   function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
-    ProposalState _currentState = super.state(_proposalId);
+    ProposalState _currentState = Governor.state(_proposalId);
 
     if (
       guardianVetoed[_proposalId] && _currentState != ProposalState.Queued
