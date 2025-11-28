@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-// External Libraries
+// External Dependencies
 import {Test} from "forge-std/Test.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-// Internal Libraries
+// Internal Dependencies
 import {CouncilERC20} from "src/CouncilERC20.sol";
 
 contract CouncilERC20_Test is Test {

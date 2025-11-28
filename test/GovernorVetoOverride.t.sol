@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-/// External imports
+/// External Dependencies
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
-/// Internal imports
+/// Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
 
-/// Test imports
+/// Test Dependencies
 import {Test} from "forge-std/Test.sol";
 import {GovernorVetoOverrideMock} from "test/mocks/GovernorVetoOverrideMock.sol";
 

@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.24;
 
-/// External imports
+/// External Dependencies
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 
-/// Internal imports
+/// Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
 
-/// Test imports
+/// Test Dependencies
 import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
 
 /// @title GovernorVetoOverrideMock

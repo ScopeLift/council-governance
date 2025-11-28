@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.30;
 
-import {Test} from "forge-std/Test.sol";
-import {BasicCouncilGovernor} from "../src/BasicCouncilGovernor.sol";
-import {BasicCouncilVetoGovernor} from "../src/BasicCouncilVetoGovernor.sol";
-import {CouncilERC20} from "../src/CouncilERC20.sol";
-import {MockERC20Votes} from "./helpers/MockERC20Votes.sol";
-import {Counter} from "./helpers/Counter.sol";
+// External Dependencies
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+
+// Internal Dependencies
+import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
+import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
+import {CouncilERC20} from "src/CouncilERC20.sol";
+
+// Test Dependencies
+import {Test} from "forge-std/Test.sol";
+import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
+import {Counter} from "test/helpers/Counter.sol";
 
 // Base contract for setting up the test environment
 abstract contract BasicCouncilGovernorTest is Test {
@@ -100,19 +105,15 @@ abstract contract BasicCouncilGovernorTest is Test {
 
 // --- SMOKE TESTS ---
 contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
-  /**
-   * @notice Test 1: Verifies that the governor is initialized with the correct state variables.
-   */
+  /// @notice Test 1: Verifies that the governor is initialized with the correct state variables.
   function test_SetupAndInitialization() public view {
     assertEq(councilGovernor.name(), "BasicCouncilGovernor");
     assertEq(address(councilGovernor.token()), address(councilToken));
     assertEq(address(councilGovernor.councilVetoGovernor()), address(vetoGovernor));
   }
 
-  /**
-   * @notice Test 2: Verifies the happy path where a council proposes and passes a vote,
-   *         and the proposal state becomes `Succeeded`.
-   */
+  /// @notice Test 2: Verifies the happy path where a council proposes and passes a vote, and the
+  /// proposal state becomes `Succeeded`.
   function test_HappyPath_CouncilProposesAndPasses() public {
     // Propose
     vm.prank(councilMembers[0]);
@@ -134,10 +135,8 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
   }
 
-  /**
-   * @notice Test 3: Verifies that a `Succeeded` proposal, when queued, correctly
-   *         forwards the proposal to the Veto Governor.
-   */
+  /// @notice Test 3: Verifies that a `Succeeded` proposal, when queued, correctly forwards the
+  /// proposal to the Veto Governor.
   function test_HappyPath_SuccessfulProposalIsForwardedToVetoGovernor() public {
     // Propose and pass the council vote
     vm.prank(councilMembers[0]);
@@ -163,10 +162,8 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
   }
 
-  /**
-   * @notice Test 4: Verifies that meeting the `superQuorum` immediately moves the
-   *         proposal to the `Succeeded` state, ready for forwarding.
-   */
+  /// @notice Test 4: Verifies that meeting the `superQuorum` immediately moves the proposal to the
+  /// `Succeeded` state, ready for forwarding.
   function test_HappyPath_SuperQuorumFastTracksProposal() public {
     // Propose
     vm.prank(councilMembers[0]);
@@ -192,9 +189,7 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     councilGovernor.queue(targets, values, calldatas, descriptionHash);
   }
 
-  /**
-   * @notice Test 5: Verifies that an address without a council token cannot create a proposal.
-   */
+  /// @notice Test 5: Verifies that an address without a council token cannot create a proposal.
   function test_RevertIf_NonCouncilMemberProposes() public {
     // Check that the non-council member has 0 votes
     assertEq(councilToken.getVotes(nonCouncilMember), 0);

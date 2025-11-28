@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {BasicCouncilGovernorTest} from "./BasicCouncilGovernor.t.sol";
+// External Dependencies
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+// Test Dependencies
+import {BasicCouncilGovernorTest} from "test/BasicCouncilGovernor.t.sol";
 
 contract GovernorAdminTest is BasicCouncilGovernorTest {
   function _proposeForwardAndQueueToVetoGovernor(string memory _description)

@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.30;
 
-import {Test} from "forge-std/Test.sol";
-import {BasicCouncilGovernor} from "../src/BasicCouncilGovernor.sol";
-import {BasicCouncilVetoGovernor} from "../src/BasicCouncilVetoGovernor.sol";
-import {CouncilERC20} from "../src/CouncilERC20.sol";
-import {MockERC20Votes} from "./helpers/MockERC20Votes.sol";
-import {Counter} from "./helpers/Counter.sol";
+// External Dependencies
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+
+// Internal Dependencies
+import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
+import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
+import {CouncilERC20} from "src/CouncilERC20.sol";
+
+// Test Dependencies
+import {Test} from "forge-std/Test.sol";
+import {Counter} from "test/helpers/Counter.sol";
+import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
 
 // Base contract for setting up the full two-governor test environment
 abstract contract BasicCouncilVetoGovernorTest is Test {
@@ -111,10 +116,8 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     calldatas.push(abi.encodeWithSignature("increment()"));
   }
 
-  /**
-   * @notice Helper function to fully propose and forward a proposal from the
-   *         CouncilGovernor to the VetoGovernor, returning the VetoGovernor's proposalId.
-   */
+  /// @notice Helper function to fully propose and forward a proposal from the CouncilGovernor to
+  /// the VetoGovernor, returning the VetoGovernor's proposalId.
   function _proposeAndForwardToVetoGovernor(string memory _description)
     internal
     returns (uint256 vetoProposalId)
@@ -142,19 +145,15 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
 
 // --- SMOKE TESTS ---
 contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
-  /**
-   * @notice Test 1: Verifies that the veto governor is initialized correctly.
-   */
+  /// @notice Test 1: Verifies that the veto governor is initialized correctly.
   function test_SetupAndInitialization() public view {
     assertEq(vetoGovernor.COUNCIL(), address(councilGovernor));
     assertEq(vetoGovernor.vetoOverrideRole(), deployer);
     assertEq(address(vetoGovernor.timelock()), address(timelock));
   }
 
-  /**
-   * @notice Test 2: Verifies the happy path where a proposal is not vetoed and
-   *         successfully queues and executes.
-   */
+  /// @notice Test 2: Verifies the happy path where a proposal is not vetoed and successfully queues
+  /// and executes.
   function test_HappyPath_ProposalSucceedsAndExecutes() public {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor("Succeeds");
 
@@ -176,9 +175,7 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     assertEq(target.number(), 1, "Target contract should have been incremented");
   }
 
-  /**
-   * @notice Test 3: Verifies that a proposal is successfully vetoed when the vetoQuorum is met.
-   */
+  /// @notice Test 3: Verifies that a proposal is successfully vetoed when the vetoQuorum is met.
   function test_VetoPath_ProposalIsSuccessfullyVetoed() public {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor("Vetoed");
 
@@ -198,10 +195,8 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Vetoed")));
   }
 
-  /**
-   * @notice Test 4: Verifies that a vetoed proposal can be overridden by the designated
-   *         role and then successfully executed.
-   */
+  /// @notice Test 4: Verifies that a vetoed proposal can be overridden by the designated role and
+  /// then successfully executed.
   function test_VetoOverridePath_VetoedProposalIsOverriddenAndExecuted() public {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor("Overridden");
 
@@ -228,9 +223,7 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     assertEq(target.number(), 1);
   }
 
-  /**
-   * @notice Test 5: Verifies that only the designated Council Governor can create proposals.
-   */
+  /// @notice Test 5: Verifies that only the designated Council Governor can create proposals.
   function test_RevertIf_NonCouncilProposes() public {
     vm.expectRevert("Only council");
 

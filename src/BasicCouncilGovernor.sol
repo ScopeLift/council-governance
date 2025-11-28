@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-// External Libraries
+// External Dependencies
 import {Governor, IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorCountingSimple} from
   "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
@@ -11,14 +11,14 @@ import {GovernorSuperQuorum} from
   "@openzeppelin/contracts/governance/extensions/GovernorSuperQuorum.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 
-// Internal Libraries
-import {GovernorAdmin} from "./extensions/GovernorAdmin.sol";
-import {GovernorCouncilQueuing} from "./extensions/GovernorCouncilQueuing.sol";
+// Internal Dependencies
+import {GovernorAdmin} from "src/extensions/GovernorAdmin.sol";
+import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol";
 
 /// @title BasicCouncilGovernor
 /// @author [ScopeLift](https://scopelift.co)
 /// @notice A dual-governance council governor that manages proposals through a two-stage process:
-///         council voting followed by veto governor review.
+/// council voting followed by veto governor review.
 ///
 /// @dev This contract implements a council-based governance system with the following key features:
 ///

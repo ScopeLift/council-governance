@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+// External Dependencies
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
+
+// Internal Dependencies
 import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSimple.sol";
 
-/**
- * @title GovernorVetoCountingSimpleMock
- * @dev Mock implementation of GovernorVetoCountingSimple for testing purposes.
- */
+/// @title GovernorVetoCountingSimpleMock
+/// @dev Mock implementation of GovernorVetoCountingSimple for testing purposes.
 contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
   constructor() Governor("GovernorVetoCountingSimpleMock") {}
 

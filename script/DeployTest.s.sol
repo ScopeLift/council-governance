@@ -44,9 +44,7 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
   BasicCouncilGovernor public councilGovernor;
   address public vetoGuardian = makeAddr("VetoGuardian");
 
-  /**
-   * @notice Main entry point for the deployment script.
-   */
+  /// @notice Main entry point for the deployment script.
   function run() public {
     MAIN_DAO_GOVERNOR = msg.sender;
     vm.startBroadcast();
@@ -77,9 +75,7 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
     console.log("--------------------------");
   }
 
-  /**
-   * @notice Deploys the voting tokens and distributes them to council members and test voters.
-   */
+  /// @notice Deploys the voting tokens and distributes them to council members and test voters.
   function _deployTokensAndFundAccounts(address _deployer) internal {
     console.log("\nDeploying tokens and funding accounts...");
 
@@ -105,11 +101,9 @@ contract DeployOptimisticGovernance is Script, StdAssertions {
     payable(testVoter2).transfer(0.0001 ether);
   }
 
-  /**
-   * @notice Deploys the Timelock and the two chained Governor contracts.
-   * @dev Uses `vm.computeCreateAddress` to resolve the circular dependency where each governor
-   *      needs the other's address during construction.
-   */
+  /// @notice Deploys the Timelock and the two chained Governor contracts.
+  /// @dev Uses `vm.computeCreateAddress` to resolve the circular dependency where each governor
+  /// needs the other's address during construction.
   function _deployGovernorsAndTimelock(address _deployer) internal {
     console.log("Pre-computing governor addresses and deploying Timelock & Governors...");
 

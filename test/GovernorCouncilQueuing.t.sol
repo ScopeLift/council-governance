@@ -2,13 +2,18 @@
 
 pragma solidity ^0.8.30;
 
-import {Test} from "forge-std/Test.sol";
+// External Dependencies
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
-import {GovernorCouncilQueuingMock} from "test/mocks/GovernorCouncilQueuingMock.sol";
 import {GovernorCountingSimple} from
   "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+
+// Internal Dependencies
 import {CouncilERC20} from "src/CouncilERC20.sol";
 import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol";
+
+// Test Dependencies
+import {Test} from "forge-std/Test.sol";
+import {GovernorCouncilQueuingMock} from "test/mocks/GovernorCouncilQueuingMock.sol";
 
 contract MockCallVetoGovernor is Test {
   address internal vetoGovernor = makeAddr("veto governor");

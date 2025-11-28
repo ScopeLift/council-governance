@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Test, stdStorage, StdStorage} from "forge-std/Test.sol";
+// External Dependencies
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 
+// Internal Dependencies
 import {GovernorVetoGuardian} from "src/extensions/GovernorVetoGuardian.sol";
-import {GovernorVetoGuardianMock} from "test/mock/GovernorVetoGuardianMock.sol";
+
+// Test Dependencies
+import {Test, stdStorage, StdStorage} from "forge-std/Test.sol";
+import {GovernorVetoGuardianMock} from "test/mocks/GovernorVetoGuardianMock.sol";
 
 using stdStorage for StdStorage;
 

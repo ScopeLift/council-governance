@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-// External Libraries
+// External Dependencies
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 
 /// @title GovernorCouncilQueuing

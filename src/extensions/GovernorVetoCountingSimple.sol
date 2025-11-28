@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-// External Libraries
+// External Dependencies
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 
 /// @title GovernorVetoCountingSimple
 /// @author [ScopeLift](https://scopelift.co)
 /// @notice Governor extension implementing a simple "veto only" counting mode.
-/// @dev Only veto votes are counted towards quorum. Other vote types are ignored.
-///      Sourced from OpenZeppelin's GovernorCountingSimple (last updated v5.4.0)
-///      (contracts/governance/extensions/GovernorCountingSimple.sol) with behavior adapted for
+/// @dev Only veto votes are counted towards quorum. Other vote types are ignored. Sourced from
+/// OpenZeppelin's GovernorCountingSimple (last updated v5.4.0)
+/// (contracts/governance/extensions/GovernorCountingSimple.sol) with behavior adapted for
 /// veto-counting.
 abstract contract GovernorVetoCountingSimple is Governor {
   /*///////////////////////////////////////////////////////////////
@@ -68,8 +68,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
 
   /// @inheritdoc Governor
   /// @dev For council-sourced proposals this function treats proposals as being in quorum by
-  /// default.
-  ///      If the veto threshold is reached, quorum is considered not reached.
+  /// default. If the veto threshold is reached, quorum is considered not reached.
   function _quorumReached(uint256 _proposalId) internal view virtual override returns (bool) {
     return !(_proposalFromCouncilIsVetoed(_proposalId));
   }

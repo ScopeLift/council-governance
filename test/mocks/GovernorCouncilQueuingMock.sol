@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.24;
 
+// External Dependencies
 import {Governor, IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import {GovernorCountingSimple} from
@@ -11,12 +12,12 @@ import {
   GovernorVotes
 } from "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
+
+// Internal Dependencies
 import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol";
 
-/**
- * @title GovernorCouncilQueuingMock
- * @dev Mock implementation of GovernorCouncilQueuing for testing purposes.
- */
+/// @title GovernorCouncilQueuingMock
+/// @dev Mock implementation of GovernorCouncilQueuing for testing purposes.
 contract GovernorCouncilQueuingMock is
   GovernorCouncilQueuing,
   GovernorSettings,
@@ -117,7 +118,7 @@ contract GovernorCouncilQueuingMock is
     _cancel(targets, values, calldatas, descriptionHash);
   }
 
-  function exposed_executor() public returns (address) {
+  function exposed_executor() public view returns (address) {
     return _executor();
   }
 
