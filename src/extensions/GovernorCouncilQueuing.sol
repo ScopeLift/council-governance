@@ -63,15 +63,17 @@ abstract contract GovernorCouncilQueuing is Governor {
     ProposalState _currentState = super.state(_proposalId);
 
     if (_currentState != ProposalState.Queued) return _currentState;
-    if (_checkVetoGovernorStateBitmap(
+    if (
+      _checkVetoGovernorStateBitmap(
         _proposalId,
         _encodeStateBitmap(ProposalState.Pending) | _encodeStateBitmap(ProposalState.Active)
           | _encodeStateBitmap(ProposalState.Queued) | _encodeStateBitmap(ProposalState.Succeeded)
-      )) {
+      )
+    ) {
       return ProposalState.Queued;
-    } else if (_checkVetoGovernorStateBitmap(
-        _proposalId, _encodeStateBitmap(ProposalState.Executed)
-      )) {
+    } else if (
+      _checkVetoGovernorStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Executed))
+    ) {
       // Fallback for proposals executed directly on the veto governor or the timelock
       return ProposalState.Executed;
     } else {

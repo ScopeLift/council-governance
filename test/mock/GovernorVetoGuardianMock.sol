@@ -25,14 +25,7 @@ contract GovernorVetoGuardianMock is GovernorVetoGuardian {
     return 1 days;
   }
 
-  function quorum(
-    uint256 /*timepoint*/
-  )
-    public
-    pure
-    override
-    returns (uint256)
-  {
+  function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
     return 0;
   }
 
@@ -50,12 +43,7 @@ contract GovernorVetoGuardianMock is GovernorVetoGuardian {
     uint256,
     /* timepoint */
     bytes memory /* params */
-  )
-    internal
-    pure
-    override
-    returns (uint256)
-  {
+  ) internal pure override returns (uint256) {
     return 1; // Return a default vote weight for testing
   }
 
@@ -66,13 +54,7 @@ contract GovernorVetoGuardianMock is GovernorVetoGuardian {
   function hasVoted(
     uint256, //proposalId
     address //account
-  )
-    public
-    view
-    virtual
-    override
-    returns (bool)
-  {
+  ) public view virtual override returns (bool) {
     return false;
   }
 
@@ -82,12 +64,7 @@ contract GovernorVetoGuardianMock is GovernorVetoGuardian {
     uint8, // support
     uint256, // totalWeight
     bytes memory // params
-  )
-    internal
-    virtual
-    override
-    returns (uint256)
-  {
+  ) internal virtual override returns (uint256) {
     return 0;
   }
 
@@ -113,12 +90,7 @@ contract GovernorVetoGuardianMock is GovernorVetoGuardian {
     uint256[] memory, /*values*/
     bytes[] memory, /*calldatas*/
     bytes32 /*descriptionHash*/
-  )
-    internal
-    pure
-    override
-    returns (uint48)
-  {
+  ) internal pure override returns (uint48) {
     return 1 days;
   }
 

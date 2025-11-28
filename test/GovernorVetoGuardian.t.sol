@@ -262,8 +262,9 @@ contract VetoByGuardian is GovernorVetoGuardianTest {
     vm.assume(_newVetoGuardian != vetoGuardian);
 
     address _oldVetoGuardian = vetoGuardian;
-    stdstore.target(address(vetoGovernor)).sig(vetoGovernor.vetoGuardian.selector)
-      .checked_write(address(_newVetoGuardian));
+    stdstore.target(address(vetoGovernor)).sig(vetoGovernor.vetoGuardian.selector).checked_write(
+      address(_newVetoGuardian)
+    );
     assertEq(vetoGovernor.vetoGuardian(), _newVetoGuardian);
 
     uint256 _proposalId = _submitProposal(_proposer, _buildEmptyProposal());

@@ -147,9 +147,7 @@ contract OverrideVeto is GovernorVetoOverrideTest {
     vetoOverrideMock.overrideVeto(_proposalId);
   }
 
-  function testFuzz_RevertIf_CallerIsNotVetoOverrideRole(address _proposer, address _caller)
-    public
-  {
+  function testFuzz_RevertIf_CallerIsNotVetoOverrideRole(address _proposer, address _caller) public {
     vm.assume(_caller != vetoOverrideMock.vetoOverrideRole());
     uint256 _proposalId = _createDefeatedProposal(_proposer);
 
@@ -250,8 +248,7 @@ contract State is GovernorVetoOverrideTest {
     _newTimestamp = uint48(
       bound(
         _newTimestamp,
-        vetoOverrideMock.proposalDeadline(_proposalId) + vetoOverrideMock.vetoOverrideDuration()
-          + 1,
+        vetoOverrideMock.proposalDeadline(_proposalId) + vetoOverrideMock.vetoOverrideDuration() + 1,
         type(uint48).max
       )
     );

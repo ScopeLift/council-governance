@@ -32,14 +32,7 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     return 1 days;
   }
 
-  function quorum(
-    uint256 /*timepoint*/
-  )
-    public
-    pure
-    override
-    returns (uint256)
-  {
+  function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
     return 10_000e18;
   }
 
@@ -50,13 +43,7 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
   function hasVoted(
     uint256, //proposalId
     address //account
-  )
-    public
-    view
-    virtual
-    override
-    returns (bool)
-  {
+  ) public view virtual override returns (bool) {
     return false;
   }
 
@@ -66,12 +53,7 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     uint8, // support
     uint256, // totalWeight
     bytes memory // params
-  )
-    internal
-    virtual
-    override
-    returns (uint256)
-  {
+  ) internal virtual override returns (uint256) {
     return 0;
   }
 

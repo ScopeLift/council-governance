@@ -3,14 +3,12 @@ pragma solidity 0.8.30;
 
 // External Libraries
 import {Governor, IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
-import {
-  GovernorCountingSimple
-} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import {GovernorCountingSimple} from
+  "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
-import {
-  GovernorSuperQuorum
-} from "@openzeppelin/contracts/governance/extensions/GovernorSuperQuorum.sol";
+import {GovernorSuperQuorum} from
+  "@openzeppelin/contracts/governance/extensions/GovernorSuperQuorum.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 
 // Internal Libraries
@@ -136,27 +134,12 @@ contract BasicCouncilGovernor is
   }
 
   /// @inheritdoc Governor
-  function quorum(
-    uint256 /*timepoint*/
-  )
-    public
-    pure
-    override
-    returns (uint256)
-  {
+  function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
     return 4;
   }
 
   /// @inheritdoc GovernorSuperQuorum
-  function superQuorum(
-    uint256 /*timepoint*/
-  )
-    public
-    view
-    virtual
-    override
-    returns (uint256)
-  {
+  function superQuorum(uint256 /*timepoint*/ ) public view virtual override returns (uint256) {
     return 7;
   }
 

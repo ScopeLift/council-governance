@@ -4,9 +4,8 @@ pragma solidity ^0.8.24;
 
 import {Governor, IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
-import {
-  GovernorCountingSimple
-} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import {GovernorCountingSimple} from
+  "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {
   GovernorVotesQuorumFraction,
   GovernorVotes

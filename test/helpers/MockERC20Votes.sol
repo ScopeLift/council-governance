@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {
-  ERC20VotesTimestampMock
-} from "@openzeppelin/contracts/mocks/token/ERC20VotesTimestampMock.sol";
+import {ERC20VotesTimestampMock} from
+  "@openzeppelin/contracts/mocks/token/ERC20VotesTimestampMock.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
