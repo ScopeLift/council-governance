@@ -6,6 +6,7 @@ import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title GovernorAdmin
+/// @author [ScopeLift](https://scopelift.co)
 /// @notice Extension of {Governor} that restricts privileged governance actions to a desginated
 /// admin.
 /// @dev Overrides `Governor-_checkGovernance` so that only the admin can perform

@@ -13,7 +13,7 @@ import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.s
 /// Using this model means the proposal will be operated by the {CouncilVetoGovernor} and not by the
 /// {CouncilGovernor}. Thus, the assets and permissions must be attached to the
 /// {CouncilVetoGovernor}. Any asset sent to this {CouncilGovernor} will be inaccessible from a
-/// proposal, unless executed via {CouncilGovernor-relay}.
+/// proposal, unless executed via `CouncilGovernor-relay`.
 abstract contract GovernorCouncilQueuing is Governor {
   /*///////////////////////////////////////////////////////////////
                           Events

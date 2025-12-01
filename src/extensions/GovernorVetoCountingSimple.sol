@@ -6,9 +6,9 @@ import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.s
 
 /// @title GovernorVetoCountingSimple
 /// @author [ScopeLift](https://scopelift.co)
-/// @notice Governor extension implementing a simple "veto only" counting mode.
+/// @notice Extension of {Governor} that implements a simple "veto only" counting mode.
 /// @dev Only veto votes are counted towards quorum. Other vote types are ignored. Sourced from
-/// OpenZeppelin's GovernorCountingSimple (last updated v5.4.0)
+/// OpenZeppelin's {GovernorCountingSimple} (last updated v5.4.0)
 /// (contracts/governance/extensions/GovernorCountingSimple.sol) with behavior adapted for
 /// veto-counting.
 abstract contract GovernorVetoCountingSimple is Governor {
