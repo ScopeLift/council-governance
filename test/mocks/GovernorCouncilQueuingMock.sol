@@ -102,11 +102,11 @@ contract GovernorCouncilQueuingMock is
     override(Governor, GovernorCouncilQueuing)
     returns (ProposalState)
   {
-    return super.state(proposalId);
+    return GovernorCouncilQueuing.state(proposalId);
   }
 
   function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.proposalThreshold();
+    return GovernorSettings.proposalThreshold();
   }
 
   function propose(
@@ -115,7 +115,7 @@ contract GovernorCouncilQueuingMock is
     bytes[] memory calldatas,
     string memory description
   ) public override(Governor, GovernorCouncilQueuing) returns (uint256) {
-    return super.propose(targets, values, calldatas, description);
+    return GovernorCouncilQueuing.propose(targets, values, calldatas, description);
   }
 
   function proposalNeedsQueuing(uint256 proposalId)
@@ -125,7 +125,7 @@ contract GovernorCouncilQueuingMock is
     override(Governor, GovernorCouncilQueuing)
     returns (bool)
   {
-    return super.proposalNeedsQueuing(proposalId);
+    return GovernorCouncilQueuing.proposalNeedsQueuing(proposalId);
   }
 
   function _cancel(
@@ -134,7 +134,7 @@ contract GovernorCouncilQueuingMock is
     bytes[] memory calldatas,
     bytes32 descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) returns (uint256) {
-    return super._cancel(targets, values, calldatas, descriptionHash);
+    return GovernorCouncilQueuing._cancel(targets, values, calldatas, descriptionHash);
   }
 
   function _queueOperations(
@@ -144,7 +144,9 @@ contract GovernorCouncilQueuingMock is
     bytes[] memory calldatas,
     bytes32 descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) returns (uint48) {
-    return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+    return GovernorCouncilQueuing._queueOperations(
+      proposalId, targets, values, calldatas, descriptionHash
+    );
   }
 
   function _executeOperations(
@@ -154,10 +156,12 @@ contract GovernorCouncilQueuingMock is
     bytes[] memory calldatas,
     bytes32 descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) {
-    super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
+    GovernorCouncilQueuing._executeOperations(
+      proposalId, targets, values, calldatas, descriptionHash
+    );
   }
 
   function _executor() internal view override(Governor, GovernorCouncilQueuing) returns (address) {
-    return super._executor();
+    return GovernorCouncilQueuing._executor();
   }
 }

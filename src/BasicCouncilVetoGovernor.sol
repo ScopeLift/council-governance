@@ -76,15 +76,15 @@ contract BasicCouncilVetoGovernor is
   }
 
   function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.votingDelay();
+    return GovernorSettings.votingDelay();
   }
 
   function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.votingPeriod();
+    return GovernorSettings.votingPeriod();
   }
 
   function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.proposalThreshold();
+    return GovernorSettings.proposalThreshold();
   }
 
   function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
@@ -97,7 +97,7 @@ contract BasicCouncilVetoGovernor is
     override(Governor, GovernorTimelockControl, GovernorVetoGuardian, GovernorVetoOverride)
     returns (ProposalState)
   {
-    return super.state(_proposalId);
+    return GovernorVetoOverride.state(_proposalId);
   }
 
   function proposalNeedsQueuing(uint256 _proposalId)
@@ -124,7 +124,7 @@ contract BasicCouncilVetoGovernor is
     bytes[] memory _calldatas,
     string memory _description
   ) public override onlyCouncil returns (uint256) {
-    return super.propose(_targets, _values, _calldatas, _description);
+    return Governor.propose(_targets, _values, _calldatas, _description);
   }
 
   /// @notice Cancel is disabled.
@@ -147,7 +147,7 @@ contract BasicCouncilVetoGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) public payable override onlyCouncil returns (uint256) {
-    return super.execute(_targets, _values, _calldatas, _descriptionHash);
+    return Governor.execute(_targets, _values, _calldatas, _descriptionHash);
   }
 
   function _checkGovernance() internal virtual override(Governor, GovernorAdmin) {
@@ -155,7 +155,7 @@ contract BasicCouncilVetoGovernor is
   }
 
   function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
-    return super._executor();
+    return Governor._executor();
   }
 
   /// @inheritdoc GovernorTimelockControl
@@ -168,7 +168,7 @@ contract BasicCouncilVetoGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
-    return super._cancel(_targets, _values, _calldatas, _descriptionHash);
+    return GovernorTimelockControl._cancel(_targets, _values, _calldatas, _descriptionHash);
   }
 
   function _queueOperations(
@@ -178,7 +178,9 @@ contract BasicCouncilVetoGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
-    return super._queueOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
+    return GovernorTimelockControl._queueOperations(
+      _proposalId, _targets, _values, _calldatas, _descriptionHash
+    );
   }
 
   function _executeOperations(
@@ -188,6 +190,8 @@ contract BasicCouncilVetoGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorTimelockControl) {
-    super._executeOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
+    GovernorTimelockControl._executeOperations(
+      _proposalId, _targets, _values, _calldatas, _descriptionHash
+    );
   }
 }

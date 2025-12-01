@@ -622,7 +622,7 @@ contract _cancel is GovernorCouncilQueuingTest {
 }
 
 contract _executor is GovernorCouncilQueuingTest {
-  function test_ExecutorIsCouncilVetoGovernor() public {
+  function test_ExecutorIsCouncilVetoGovernor() public view {
     assertEq(councilMock.exposed_executor(), vetoGovernor);
   }
 

@@ -120,17 +120,17 @@ contract BasicCouncilGovernor is
 
   /// @inheritdoc Governor
   function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.votingDelay();
+    return GovernorSettings.votingDelay();
   }
 
   /// @inheritdoc Governor
   function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.votingPeriod();
+    return GovernorSettings.votingPeriod();
   }
 
   /// @inheritdoc Governor
   function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.proposalThreshold();
+    return GovernorSettings.proposalThreshold();
   }
 
   /// @inheritdoc Governor
@@ -191,7 +191,7 @@ contract BasicCouncilGovernor is
     bytes[] memory _calldatas,
     string memory _description
   ) public override(Governor, GovernorCouncilQueuing) returns (uint256) {
-    return super.propose(_targets, _values, _calldatas, _description);
+    return GovernorCouncilQueuing.propose(_targets, _values, _calldatas, _description);
   }
 
   /// @inheritdoc GovernorSuperQuorum
@@ -231,7 +231,7 @@ contract BasicCouncilGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) returns (uint256) {
-    return super._cancel(_targets, _values, _calldatas, _descriptionHash);
+    return GovernorCouncilQueuing._cancel(_targets, _values, _calldatas, _descriptionHash);
   }
 
   /// @inheritdoc GovernorCouncilQueuing
@@ -242,7 +242,9 @@ contract BasicCouncilGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) {
-    super._executeOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
+    GovernorCouncilQueuing._executeOperations(
+      _proposalId, _targets, _values, _calldatas, _descriptionHash
+    );
   }
 
   /// @inheritdoc GovernorCouncilQueuing
@@ -258,6 +260,8 @@ contract BasicCouncilGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) returns (uint48) {
-    return super._queueOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
+    return GovernorCouncilQueuing._queueOperations(
+      _proposalId, _targets, _values, _calldatas, _descriptionHash
+    );
   }
 }
