@@ -12,6 +12,27 @@ import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSim
 contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
   constructor() Governor("GovernorVetoCountingSimpleMock") {}
 
+  /// @notice Exposes _quorumReached for unit testing purposes
+  function getQuorumReached(uint256 proposalId) public view returns (bool) {
+    return _quorumReached(proposalId);
+  }
+
+  /// @notice Exposes _voteSucceeded for unit testing purposes
+  function getVoteSucceeded(uint256 proposalId) public view returns (bool) {
+    return _voteSucceeded(proposalId);
+  }
+
+  /// @notice Exposes _countVote for unit testing purposes
+  function countVote(
+    uint256 proposalId,
+    address account,
+    uint8 support,
+    uint256 weight,
+    bytes memory params
+  ) public returns (uint256) {
+    return _countVote(proposalId, account, support, weight, params);
+  }
+
   function votingDelay() public pure override returns (uint256) {
     return 1 hours;
   }
@@ -40,26 +61,5 @@ contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
     bytes memory /* params */
   ) internal pure override returns (uint256) {
     return 1; // Return a default vote weight for testing
-  }
-
-  /// @notice Exposes _countVote for unit testing purposes
-  function countVote(
-    uint256 proposalId,
-    address account,
-    uint8 support,
-    uint256 weight,
-    bytes memory params
-  ) public returns (uint256) {
-    return _countVote(proposalId, account, support, weight, params);
-  }
-
-  /// @notice Exposes _quorumReached for unit testing purposes
-  function getQuorumReached(uint256 proposalId) public view returns (bool) {
-    return _quorumReached(proposalId);
-  }
-
-  /// @notice Exposes _voteSucceeded for unit testing purposes
-  function getVoteSucceeded(uint256 proposalId) public view returns (bool) {
-    return _voteSucceeded(proposalId);
   }
 }

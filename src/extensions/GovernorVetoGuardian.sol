@@ -12,10 +12,6 @@ abstract contract GovernorVetoGuardian is Governor {
   address public vetoGuardian;
   mapping(uint256 => bool) public guardianVetoed;
 
-  constructor(address _vetoGuardian) {
-    _setVetoGuardian(_vetoGuardian);
-  }
-
   /// @notice Emitted when the veto guardian address is modified.
   event VetoGuardianModified(address indexed oldVetoGuardian, address indexed newVetoGuardian);
 
@@ -24,6 +20,10 @@ abstract contract GovernorVetoGuardian is Governor {
 
   /// @notice Thrown when any address other than the veto guardian calls the function.
   error GovernorVetoGuardian_Unauthorized();
+
+  constructor(address _vetoGuardian) {
+    _setVetoGuardian(_vetoGuardian);
+  }
 
   /// @notice Restricts the function to the current veto guardian.
   /// @dev Reverts with `GovernorVetoGuardian_Unauthorized` when the caller is not `vetoGuardian`.

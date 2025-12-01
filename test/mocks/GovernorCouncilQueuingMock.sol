@@ -38,6 +38,55 @@ contract GovernorCouncilQueuingMock is
     GovernorVotes(IVotes(councilToken))
   {}
 
+  function exposed_cancel(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+  ) public {
+    _cancel(targets, values, calldatas, descriptionHash);
+  }
+
+  function exposed_queueOperations(
+    uint256 proposalId,
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+  ) public returns (uint48) {
+    return _queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+  }
+
+  function exposed_executeOperations(
+    uint256 proposalId,
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+  ) public {
+    _executeOperations(proposalId, targets, values, calldatas, descriptionHash);
+  }
+
+  function exposed_proposalDescription(uint256 proposalId) public view returns (string memory) {
+    return proposalDescriptions[proposalId];
+  }
+
+  function exposed_executor() public view returns (address) {
+    return _executor();
+  }
+
+  function exposed_updateCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) public {
+    _updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+  }
+
+  function exposed_checkVetoGovernorStateBitmap(uint256 proposalId, bytes32 allowedStates)
+    public
+    view
+    returns (bool)
+  {
+    return _checkVetoGovernorStateBitmap(proposalId, allowedStates);
+  }
+
   function quorum(uint256)
     public
     pure
@@ -79,6 +128,15 @@ contract GovernorCouncilQueuingMock is
     return super.proposalNeedsQueuing(proposalId);
   }
 
+  function _cancel(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    bytes32 descriptionHash
+  ) internal override(Governor, GovernorCouncilQueuing) returns (uint256) {
+    return super._cancel(targets, values, calldatas, descriptionHash);
+  }
+
   function _queueOperations(
     uint256 proposalId,
     address[] memory targets,
@@ -89,55 +147,6 @@ contract GovernorCouncilQueuingMock is
     return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
   }
 
-  function exposed_queueOperations(
-    uint256 proposalId,
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
-  ) public returns (uint48) {
-    return _queueOperations(proposalId, targets, values, calldatas, descriptionHash);
-  }
-
-  function exposed_executeOperations(
-    uint256 proposalId,
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
-  ) public {
-    _executeOperations(proposalId, targets, values, calldatas, descriptionHash);
-  }
-
-  function exposed_cancel(
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
-  ) public {
-    _cancel(targets, values, calldatas, descriptionHash);
-  }
-
-  function exposed_executor() public view returns (address) {
-    return _executor();
-  }
-
-  function exposed_updateCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) public {
-    _updateCouncilVetoGovernor(_newCouncilVetoGovernor);
-  }
-
-  function exposed_checkVetoGovernorStateBitmap(uint256 proposalId, bytes32 allowedStates)
-    public
-    view
-    returns (bool)
-  {
-    return _checkVetoGovernorStateBitmap(proposalId, allowedStates);
-  }
-
-  function exposed_proposalDescription(uint256 proposalId) public view returns (string memory) {
-    return proposalDescriptions[proposalId];
-  }
-
   function _executeOperations(
     uint256 proposalId,
     address[] memory targets,
@@ -146,15 +155,6 @@ contract GovernorCouncilQueuingMock is
     bytes32 descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) {
     super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
-  }
-
-  function _cancel(
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    bytes32 descriptionHash
-  ) internal override(Governor, GovernorCouncilQueuing) returns (uint256) {
-    return super._cancel(targets, values, calldatas, descriptionHash);
   }
 
   function _executor() internal view override(Governor, GovernorCouncilQueuing) returns (address) {

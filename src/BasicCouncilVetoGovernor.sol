@@ -27,11 +27,6 @@ contract BasicCouncilVetoGovernor is
   GovernorSettings,
   GovernorTimelockControl
 {
-  /// @notice Thrown when an operation is not supported
-  error BasicCouncilVetoGovernor_OperationNotSupported();
-
-  address public immutable COUNCIL;
-
   /// @notice Data structure for deploying the `CouncilVetoGovernor`.
   /// @param name The name of the council veto governor.
   /// @param token The token used to veto governance proposals.
@@ -57,6 +52,11 @@ contract BasicCouncilVetoGovernor is
     address governorAdmin;
     address council;
   }
+
+  address public immutable COUNCIL;
+
+  /// @notice Thrown when an operation is not supported
+  error BasicCouncilVetoGovernor_OperationNotSupported();
 
   modifier onlyCouncil() {
     require(msg.sender == COUNCIL, "Only council");
@@ -91,69 +91,6 @@ contract BasicCouncilVetoGovernor is
     return 10_000e18;
   }
 
-  function _checkGovernance() internal virtual override(Governor, GovernorAdmin) {
-    GovernorAdmin._checkGovernance();
-  }
-
-  function propose(
-    address[] memory _targets,
-    uint256[] memory _values,
-    bytes[] memory _calldatas,
-    string memory _description
-  ) public override onlyCouncil returns (uint256) {
-    return super.propose(_targets, _values, _calldatas, _description);
-  }
-
-  function execute(
-    address[] memory _targets,
-    uint256[] memory _values,
-    bytes[] memory _calldatas,
-    bytes32 _descriptionHash
-  ) public payable override onlyCouncil returns (uint256) {
-    return super.execute(_targets, _values, _calldatas, _descriptionHash);
-  }
-
-  function _executeOperations(
-    uint256 _proposalId,
-    address[] memory _targets,
-    uint256[] memory _values,
-    bytes[] memory _calldatas,
-    bytes32 _descriptionHash
-  ) internal override(Governor, GovernorTimelockControl) {
-    super._executeOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
-  }
-
-  function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
-    return super._executor();
-  }
-
-  /// @notice Cancel is disabled.
-  /// @notice By design, a proposal queued to the veto governor cannot be canceled. Proposal can
-  /// only be rejected through veto votes, or through the veto guardian.
-  /// @dev This function always reverts to prevent confusion between cancellation and veto
-  /// operations, which serve different purposes in the governance flow.
-  function cancel(
-    address[] memory, /* targets */
-    uint256[] memory, /* values */
-    bytes[] memory, /* calldadtas */
-    bytes32 /* descriptionHash */
-  ) public pure override returns (uint256) {
-    revert BasicCouncilVetoGovernor_OperationNotSupported();
-  }
-
-  /// @inheritdoc GovernorTimelockControl
-  /// @dev We override this function to resolve ambiguity between inherited contracts.
-  /// @notice This internal function maintains the inheritance chain but should not be called
-  /// because the public cancel function is disabled.
-  function _cancel(
-    address[] memory _targets,
-    uint256[] memory _values,
-    bytes[] memory _calldatas,
-    bytes32 _descriptionHash
-  ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
-    return super._cancel(_targets, _values, _calldatas, _descriptionHash);
-  }
-
   function state(uint256 _proposalId)
     public
     view
@@ -161,16 +98,6 @@ contract BasicCouncilVetoGovernor is
     returns (ProposalState)
   {
     return super.state(_proposalId);
-  }
-
-  function _queueOperations(
-    uint256 _proposalId,
-    address[] memory _targets,
-    uint256[] memory _values,
-    bytes[] memory _calldatas,
-    bytes32 _descriptionHash
-  ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
-    return super._queueOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
   }
 
   function proposalNeedsQueuing(uint256 _proposalId)
@@ -189,5 +116,78 @@ contract BasicCouncilVetoGovernor is
 
   function CLOCK_MODE() public pure override(Governor, GovernorVotes) returns (string memory) {
     return "mode=timestamp";
+  }
+
+  function propose(
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    string memory _description
+  ) public override onlyCouncil returns (uint256) {
+    return super.propose(_targets, _values, _calldatas, _description);
+  }
+
+  /// @notice Cancel is disabled.
+  /// @notice By design, a proposal queued to the veto governor cannot be canceled. Proposal can
+  /// only be rejected through veto votes, or through the veto guardian.
+  /// @dev This function always reverts to prevent confusion between cancellation and veto
+  /// operations, which serve different purposes in the governance flow.
+  function cancel(
+    address[] memory, /* targets */
+    uint256[] memory, /* values */
+    bytes[] memory, /* calldadtas */
+    bytes32 /* descriptionHash */
+  ) public pure override returns (uint256) {
+    revert BasicCouncilVetoGovernor_OperationNotSupported();
+  }
+
+  function execute(
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    bytes32 _descriptionHash
+  ) public payable override onlyCouncil returns (uint256) {
+    return super.execute(_targets, _values, _calldatas, _descriptionHash);
+  }
+
+  function _checkGovernance() internal virtual override(Governor, GovernorAdmin) {
+    GovernorAdmin._checkGovernance();
+  }
+
+  function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
+    return super._executor();
+  }
+
+  /// @inheritdoc GovernorTimelockControl
+  /// @dev We override this function to resolve ambiguity between inherited contracts.
+  /// @notice This internal function maintains the inheritance chain but should not be called
+  /// because the public cancel function is disabled.
+  function _cancel(
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    bytes32 _descriptionHash
+  ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
+    return super._cancel(_targets, _values, _calldatas, _descriptionHash);
+  }
+
+  function _queueOperations(
+    uint256 _proposalId,
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    bytes32 _descriptionHash
+  ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
+    return super._queueOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
+  }
+
+  function _executeOperations(
+    uint256 _proposalId,
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    bytes32 _descriptionHash
+  ) internal override(Governor, GovernorTimelockControl) {
+    super._executeOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
   }
 }

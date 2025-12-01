@@ -24,6 +24,23 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     GovernorVetoOverride(_vetoOverrideRole, _vetoOverrideDuration)
   {}
 
+  /// @notice Test utility function that sets a given proposal to defeated.
+  function setDefeated(uint256 proposalId, bool defeated) public {
+    _defeated[proposalId] = defeated;
+  }
+
+  function exposed_SetOverrideRole(address vetoOverrideRole) public {
+    _setVetoOverrideRole(vetoOverrideRole);
+  }
+
+  function exposed_SetOverrideDuration(uint48 vetoOverrideDuration) public {
+    _setVetoOverrideDuration(vetoOverrideDuration);
+  }
+
+  function COUNTING_MODE() external pure returns (string memory) {
+    return "support=veto&quorum=veto";
+  }
+
   function votingDelay() public pure override returns (uint256) {
     return 1 hours;
   }
@@ -36,15 +53,20 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     return 10_000e18;
   }
 
-  function COUNTING_MODE() external pure returns (string memory) {
-    return "support=veto&quorum=veto";
-  }
-
   function hasVoted(
     uint256, //proposalId
     address //account
   ) public view virtual override returns (bool) {
     return false;
+  }
+
+  function state(uint256 proposalId)
+    public
+    view
+    override(Governor, GovernorVetoOverride)
+    returns (ProposalState)
+  {
+    return GovernorVetoOverride.state(proposalId);
   }
 
   function _countVote(
@@ -57,32 +79,11 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     return 0;
   }
 
-  function setDefeated(uint256 proposalId, bool defeated) public {
-    _defeated[proposalId] = defeated;
-  }
-
   function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
     return !_defeated[proposalId];
   }
 
   function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
     return !_defeated[proposalId];
-  }
-
-  function exposed_SetOverrideRole(address vetoOverrideRole) public {
-    _setVetoOverrideRole(vetoOverrideRole);
-  }
-
-  function exposed_SetOverrideDuration(uint48 vetoOverrideDuration) public {
-    _setVetoOverrideDuration(vetoOverrideDuration);
-  }
-
-  function state(uint256 proposalId)
-    public
-    view
-    override(Governor, GovernorVetoOverride)
-    returns (ProposalState)
-  {
-    return GovernorVetoOverride.state(proposalId);
   }
 }
