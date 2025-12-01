@@ -30,9 +30,9 @@ contract DeployVetoGovernor is Script, BaseLogger {
       _config.vetoGovernorInitialVotingDelay,
       _config.vetoGovernorInitialVotingPeriod,
       _config.vetoGovernorInitialProposalThreshold,
+      _config.vetoGuardian,
       _config.vetoOverrideRole,
       _config.vetoOverrideDuration,
-      _config.vetoGuardian,
       TimelockController(_timelock),
       _config.vetoGovernorAdmin,
       _predictedCouncilGovernorAddress
