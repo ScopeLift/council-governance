@@ -1,0 +1,2 @@
+[ignore.overrides]
+"src/BaseBridgeReceiver.sol" = ["src", "error"]
