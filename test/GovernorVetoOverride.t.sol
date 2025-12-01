@@ -86,7 +86,7 @@ contract Constructor is Test {
 
 contract _setOverrideRole is GovernorVetoOverrideTest {
   function testFuzz_UpdatesOverrideRole(address _newVetoOverrideRole) public {
-    vetoOverrideMock.exposed_SetOverrideRole(_newVetoOverrideRole);
+    vetoOverrideMock.exposed_setOverrideRole(_newVetoOverrideRole);
 
     assertEq(vetoOverrideMock.vetoOverrideRole(), _newVetoOverrideRole);
   }
@@ -97,13 +97,13 @@ contract _setOverrideRole is GovernorVetoOverrideTest {
       vetoOverrideMock.vetoOverrideRole(), _newVetoOverrideRole
     );
 
-    vetoOverrideMock.exposed_SetOverrideRole(_newVetoOverrideRole);
+    vetoOverrideMock.exposed_setOverrideRole(_newVetoOverrideRole);
   }
 }
 
 contract _setOverrideDuration is GovernorVetoOverrideTest {
   function testFuzz_UpdatesOverrideDuration(uint48 _newVetoOverrideDuration) public {
-    vetoOverrideMock.exposed_SetOverrideDuration(_newVetoOverrideDuration);
+    vetoOverrideMock.exposed_setOverrideDuration(_newVetoOverrideDuration);
 
     assertEq(vetoOverrideMock.vetoOverrideDuration(), _newVetoOverrideDuration);
   }
@@ -114,7 +114,7 @@ contract _setOverrideDuration is GovernorVetoOverrideTest {
       vetoOverrideMock.vetoOverrideDuration(), _newVetoOverrideDuration
     );
 
-    vetoOverrideMock.exposed_SetOverrideDuration(_newVetoOverrideDuration);
+    vetoOverrideMock.exposed_setOverrideDuration(_newVetoOverrideDuration);
   }
 }
 
