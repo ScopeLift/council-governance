@@ -1,24 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-// External Libraries
+// External Dependencies
 import {Governor, IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
-import {GovernorCountingSimple} from
-  "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import {
+  GovernorCountingSimple
+} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
-import {GovernorSuperQuorum} from
-  "@openzeppelin/contracts/governance/extensions/GovernorSuperQuorum.sol";
+import {
+  GovernorSuperQuorum
+} from "@openzeppelin/contracts/governance/extensions/GovernorSuperQuorum.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 
-// Internal Libraries
-import {GovernorAdmin} from "./extensions/GovernorAdmin.sol";
-import {GovernorCouncilQueuing} from "./extensions/GovernorCouncilQueuing.sol";
+// Internal Dependencies
+import {GovernorAdmin} from "src/extensions/GovernorAdmin.sol";
+import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol";
 
 /// @title BasicCouncilGovernor
 /// @author [ScopeLift](https://scopelift.co)
 /// @notice A dual-governance council governor that manages proposals through a two-stage process:
-///         council voting followed by veto governor review.
+/// council voting followed by veto governor review.
 ///
 /// @dev This contract implements a council-based governance system with the following key features:
 ///
@@ -120,26 +122,41 @@ contract BasicCouncilGovernor is
 
   /// @inheritdoc Governor
   function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.votingDelay();
+    return GovernorSettings.votingDelay();
   }
 
   /// @inheritdoc Governor
   function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.votingPeriod();
+    return GovernorSettings.votingPeriod();
   }
 
   /// @inheritdoc Governor
   function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
-    return super.proposalThreshold();
+    return GovernorSettings.proposalThreshold();
   }
 
   /// @inheritdoc Governor
-  function quorum(uint256 /*timepoint*/ ) public pure override returns (uint256) {
+  function quorum(
+    uint256 /*timepoint*/
+  )
+    public
+    pure
+    override
+    returns (uint256)
+  {
     return 4;
   }
 
   /// @inheritdoc GovernorSuperQuorum
-  function superQuorum(uint256 /*timepoint*/ ) public view virtual override returns (uint256) {
+  function superQuorum(
+    uint256 /*timepoint*/
+  )
+    public
+    view
+    virtual
+    override
+    returns (uint256)
+  {
     return 7;
   }
 
@@ -191,7 +208,7 @@ contract BasicCouncilGovernor is
     bytes[] memory _calldatas,
     string memory _description
   ) public override(Governor, GovernorCouncilQueuing) returns (uint256) {
-    return super.propose(_targets, _values, _calldatas, _description);
+    return GovernorCouncilQueuing.propose(_targets, _values, _calldatas, _description);
   }
 
   /// @inheritdoc GovernorSuperQuorum
@@ -231,7 +248,7 @@ contract BasicCouncilGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) returns (uint256) {
-    return super._cancel(_targets, _values, _calldatas, _descriptionHash);
+    return GovernorCouncilQueuing._cancel(_targets, _values, _calldatas, _descriptionHash);
   }
 
   /// @inheritdoc GovernorCouncilQueuing
@@ -242,7 +259,9 @@ contract BasicCouncilGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) {
-    super._executeOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
+    GovernorCouncilQueuing._executeOperations(
+      _proposalId, _targets, _values, _calldatas, _descriptionHash
+    );
   }
 
   /// @inheritdoc GovernorCouncilQueuing
@@ -258,6 +277,8 @@ contract BasicCouncilGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal override(Governor, GovernorCouncilQueuing) returns (uint48) {
-    return super._queueOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
+    return GovernorCouncilQueuing._queueOperations(
+        _proposalId, _targets, _values, _calldatas, _descriptionHash
+      );
   }
 }

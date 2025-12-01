@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-// External Libraries
+// External Dependencies
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 
 /// @title GovernorCouncilQueuing
@@ -13,7 +13,7 @@ import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.s
 /// Using this model means the proposal will be operated by the {CouncilVetoGovernor} and not by the
 /// {CouncilGovernor}. Thus, the assets and permissions must be attached to the
 /// {CouncilVetoGovernor}. Any asset sent to this {CouncilGovernor} will be inaccessible from a
-/// proposal, unless executed via {CouncilGovernor-relay}.
+/// proposal, unless executed via `CouncilGovernor-relay`.
 abstract contract GovernorCouncilQueuing is Governor {
   /*///////////////////////////////////////////////////////////////
                           Events
@@ -30,7 +30,7 @@ abstract contract GovernorCouncilQueuing is Governor {
 
   /// @notice Mapping of proposal IDs to their descriptions.
   /// @dev Veto governor needs the description to create the proposal.
-  mapping(uint256 proposalId => string) internal _proposalDescriptions;
+  mapping(uint256 proposalId => string) internal proposalDescriptions;
 
   /// @notice The council veto governor instance.
   IGovernor public councilVetoGovernor;
@@ -60,20 +60,18 @@ abstract contract GovernorCouncilQueuing is Governor {
   /// @param _proposalId the ID of the proposal to check.
   /// @return The current state of the proposal considering both governors.
   function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
-    ProposalState _currentState = super.state(_proposalId);
+    ProposalState _currentState = Governor.state(_proposalId);
 
     if (_currentState != ProposalState.Queued) return _currentState;
-    if (
-      _checkVetoGovernorStateBitmap(
+    if (_checkVetoGovernorStateBitmap(
         _proposalId,
         _encodeStateBitmap(ProposalState.Pending) | _encodeStateBitmap(ProposalState.Active)
           | _encodeStateBitmap(ProposalState.Queued) | _encodeStateBitmap(ProposalState.Succeeded)
-      )
-    ) {
+      )) {
       return ProposalState.Queued;
-    } else if (
-      _checkVetoGovernorStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Executed))
-    ) {
+    } else if (_checkVetoGovernorStateBitmap(
+        _proposalId, _encodeStateBitmap(ProposalState.Executed)
+      )) {
       // Fallback for proposals executed directly on the veto governor or the timelock
       return ProposalState.Executed;
     } else {
@@ -100,8 +98,8 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes[] memory _calldatas,
     string memory _description
   ) public virtual override returns (uint256 _proposalId) {
-    _proposalId = super.propose(_targets, _values, _calldatas, _description);
-    _proposalDescriptions[_proposalId] = _description;
+    _proposalId = Governor.propose(_targets, _values, _calldatas, _description);
+    proposalDescriptions[_proposalId] = _description;
   }
 
   /// @notice Updates the veto governor used for proposal queuing and exeuction.
@@ -156,9 +154,9 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes32 /* _descriptionHash */
   ) internal virtual override returns (uint48) {
     // Forward the proposal to the veto governor
-    councilVetoGovernor.propose(_targets, _values, _calldatas, _proposalDescriptions[_proposalId]);
+    councilVetoGovernor.propose(_targets, _values, _calldatas, proposalDescriptions[_proposalId]);
     // Clean up the stored description
-    delete _proposalDescriptions[_proposalId];
+    delete proposalDescriptions[_proposalId];
     // Return the veto governor's deadline for this proposal
     return uint48(councilVetoGovernor.proposalDeadline(_proposalId));
   }
@@ -196,8 +194,8 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal virtual override returns (uint256 _proposalId) {
-    _proposalId = super._cancel(_targets, _values, _calldatas, _descriptionHash);
-    delete _proposalDescriptions[_proposalId];
+    _proposalId = Governor._cancel(_targets, _values, _calldatas, _descriptionHash);
+    delete proposalDescriptions[_proposalId];
   }
 
   /// @inheritdoc Governor
