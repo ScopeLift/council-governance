@@ -375,14 +375,14 @@ contract VetoByGuardian is GovernorVetoGuardianTest {
 contract _SetVetoGuardian is GovernorVetoGuardianTest {
   function testFuzz_SetsNewVetoGuardian(address _caller, address _newVetoGuardian) public {
     vm.prank(_caller);
-    vetoGovernor.exposed_SetVetoGuardian(_newVetoGuardian);
+    vetoGovernor.exposed_setVetoGuardian(_newVetoGuardian);
 
     assertEq(vetoGovernor.vetoGuardian(), _newVetoGuardian);
   }
 
   function testFuzz_SetsVetoGuardianToAddressZero(address _caller) public {
     vm.prank(_caller);
-    vetoGovernor.exposed_SetVetoGuardian(address(0));
+    vetoGovernor.exposed_setVetoGuardian(address(0));
 
     assertEq(vetoGovernor.vetoGuardian(), address(0));
   }
@@ -391,7 +391,7 @@ contract _SetVetoGuardian is GovernorVetoGuardianTest {
     address _oldVetoGuardian = vetoGovernor.vetoGuardian();
 
     vm.prank(_caller);
-    vetoGovernor.exposed_SetVetoGuardian(vetoGovernor.vetoGuardian());
+    vetoGovernor.exposed_setVetoGuardian(vetoGovernor.vetoGuardian());
 
     assertEq(vetoGovernor.vetoGuardian(), _oldVetoGuardian);
   }
@@ -402,6 +402,6 @@ contract _SetVetoGuardian is GovernorVetoGuardianTest {
     vm.expectEmit();
     emit GovernorVetoGuardian.VetoGuardianModified(_oldVetoGuardian, _newVetoGuardian);
     vm.prank(_caller);
-    vetoGovernor.exposed_SetVetoGuardian(_newVetoGuardian);
+    vetoGovernor.exposed_setVetoGuardian(_newVetoGuardian);
   }
 }

@@ -122,7 +122,7 @@ contract GovernorVetoGuardianMock is GovernorVetoGuardian {
     return 1 days;
   }
 
-  function exposed_SetVetoGuardian(address _newVetoGuardian) public {
+  function exposed_setVetoGuardian(address _newVetoGuardian) public {
     _setVetoGuardian(_newVetoGuardian);
   }
 }

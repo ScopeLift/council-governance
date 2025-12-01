@@ -39,7 +39,7 @@ contract GovernorVetoCountingSimple_Test is Test {
   function castVoteOnProposal(uint256 _proposalId, address _account, uint256 _weight) public {
     vm.assume(_account != address(0));
     // GovernorVetoCountingSimple only accepts support = 0 (veto votes)
-    governorVetoCountingSimple.countVote(_proposalId, _account, 0, _weight, "");
+    governorVetoCountingSimple.exposed_countVote(_proposalId, _account, 0, _weight, "");
   }
 
   function createProposalAndCastVetoVote(
@@ -145,7 +145,7 @@ contract QuorumReached is GovernorVetoCountingSimple_Test {
   ) public {
     _weight = bound(_weight, 0, quorum - 1);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
-    assertEq(governorVetoCountingSimple.getQuorumReached(_proposalId), true);
+    assertEq(governorVetoCountingSimple.exposed_quorumReached(_proposalId), true);
   }
 
   function testFuzz_QuorumReachedReturnsFalseWhenVetoVotesAtThreshold(
@@ -155,7 +155,7 @@ contract QuorumReached is GovernorVetoCountingSimple_Test {
     address _voter
   ) public {
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, quorum);
-    assertEq(governorVetoCountingSimple.getQuorumReached(_proposalId), false);
+    assertEq(governorVetoCountingSimple.exposed_quorumReached(_proposalId), false);
   }
 
   function testFuzz_QuorumReachedReturnsFalseWhenVetoVotesAboveThreshold(
@@ -167,7 +167,7 @@ contract QuorumReached is GovernorVetoCountingSimple_Test {
   ) public {
     _weight = bound(_weight, quorum + 1, type(uint256).max);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
-    assertEq(governorVetoCountingSimple.getQuorumReached(_proposalId), false);
+    assertEq(governorVetoCountingSimple.exposed_quorumReached(_proposalId), false);
   }
 
   function testFuzz_QuorumReachedReturnsTrueWhenVotesBelowQuorum(
@@ -179,7 +179,7 @@ contract QuorumReached is GovernorVetoCountingSimple_Test {
   ) public {
     _weight = bound(_weight, 0, quorum - 1);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
-    assertEq(governorVetoCountingSimple.getQuorumReached(_proposalId), true);
+    assertEq(governorVetoCountingSimple.exposed_quorumReached(_proposalId), true);
   }
 }
 
@@ -193,7 +193,7 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
   ) public {
     _weight = bound(_weight, 0, quorum - 1);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
-    assertEq(governorVetoCountingSimple.getVoteSucceeded(_proposalId), true);
+    assertEq(governorVetoCountingSimple.exposed_voteSucceeded(_proposalId), true);
   }
 
   function testFuzz_VoteSucceededReturnsFalseWhenVetoVotesAtThreshold(
@@ -203,7 +203,7 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
     address _voter
   ) public {
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, quorum);
-    assertEq(governorVetoCountingSimple.getVoteSucceeded(_proposalId), false);
+    assertEq(governorVetoCountingSimple.exposed_voteSucceeded(_proposalId), false);
   }
 
   function testFuzz_VoteSucceededReturnsFalseWhenVetoVotesAboveThreshold(
@@ -215,7 +215,7 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
   ) public {
     _weight = bound(_weight, quorum + 1, type(uint256).max);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
-    assertEq(governorVetoCountingSimple.getVoteSucceeded(_proposalId), false);
+    assertEq(governorVetoCountingSimple.exposed_voteSucceeded(_proposalId), false);
   }
 
   function testFuzz_VoteSucceededEqualsQuorumReached(
@@ -228,8 +228,8 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
 
     assertEq(
-      governorVetoCountingSimple.getVoteSucceeded(_proposalId),
-      governorVetoCountingSimple.getQuorumReached(_proposalId)
+      governorVetoCountingSimple.exposed_voteSucceeded(_proposalId),
+      governorVetoCountingSimple.exposed_quorumReached(_proposalId)
     );
   }
 }
@@ -310,7 +310,7 @@ contract CountVote is GovernorVetoCountingSimple_Test {
     uint256 _weight
   ) public castVetoVoteOnProposal(_proposalId, _account, _weight) {
     vm.expectRevert(abi.encodeWithSelector(IGovernor.GovernorAlreadyCastVote.selector, _account));
-    governorVetoCountingSimple.countVote(_proposalId, _account, 0, _weight, "");
+    governorVetoCountingSimple.exposed_countVote(_proposalId, _account, 0, _weight, "");
   }
 
   function testFuzz_RevertIf_AccountPassesInvalidSupport(
@@ -323,6 +323,6 @@ contract CountVote is GovernorVetoCountingSimple_Test {
     vm.assume(_support != 0);
 
     vm.expectRevert(IGovernor.GovernorInvalidVoteType.selector);
-    governorVetoCountingSimple.countVote(_proposalId, _account, _support, _weight, "");
+    governorVetoCountingSimple.exposed_countVote(_proposalId, _account, _support, _weight, "");
   }
 }

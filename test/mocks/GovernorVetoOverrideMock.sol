@@ -29,11 +29,11 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     _defeated[proposalId] = defeated;
   }
 
-  function exposed_SetOverrideRole(address vetoOverrideRole) public {
+  function exposed_setOverrideRole(address vetoOverrideRole) public {
     _setVetoOverrideRole(vetoOverrideRole);
   }
 
-  function exposed_SetOverrideDuration(uint48 vetoOverrideDuration) public {
+  function exposed_setOverrideDuration(uint48 vetoOverrideDuration) public {
     _setVetoOverrideDuration(vetoOverrideDuration);
   }
 

@@ -23,7 +23,7 @@ contract GovernorVetoGuardianMock is GovernorVetoGuardian {
     _defeated[proposalId] = true;
   }
 
-  function exposed_SetVetoGuardian(address _newVetoGuardian) public {
+  function exposed_setVetoGuardian(address _newVetoGuardian) public {
     _setVetoGuardian(_newVetoGuardian);
   }
 

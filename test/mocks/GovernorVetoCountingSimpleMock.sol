@@ -13,17 +13,17 @@ contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
   constructor() Governor("GovernorVetoCountingSimpleMock") {}
 
   /// @notice Exposes _quorumReached for unit testing purposes
-  function getQuorumReached(uint256 proposalId) public view returns (bool) {
+  function exposed_quorumReached(uint256 proposalId) public view returns (bool) {
     return _quorumReached(proposalId);
   }
 
   /// @notice Exposes _voteSucceeded for unit testing purposes
-  function getVoteSucceeded(uint256 proposalId) public view returns (bool) {
+  function exposed_voteSucceeded(uint256 proposalId) public view returns (bool) {
     return _voteSucceeded(proposalId);
   }
 
   /// @notice Exposes _countVote for unit testing purposes
-  function countVote(
+  function exposed_countVote(
     uint256 proposalId,
     address account,
     uint8 support,
