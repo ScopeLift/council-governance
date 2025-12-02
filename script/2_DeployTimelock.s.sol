@@ -4,7 +4,7 @@ pragma solidity ^0.8.30;
 import {Script} from "forge-std/Script.sol";
 import {BaseLogger} from "script/BaseLogger.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
-import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.s.sol";
+import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
 
 contract DeployTimelock is Script, BaseLogger {
   function run(

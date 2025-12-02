@@ -8,7 +8,7 @@ import {BaseLogger} from "script/BaseLogger.sol";
 import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
-import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.s.sol";
+import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 
 contract DeployCouncilGovernor is Script, BaseLogger {

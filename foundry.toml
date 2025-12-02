@@ -35,4 +35,4 @@
   wrap_comments = true
 
 [rpc_endpoints]
-mainnet = "${MAINNET_RPC_URL}"
+  mainnet = "${MAINNET_RPC_URL}"

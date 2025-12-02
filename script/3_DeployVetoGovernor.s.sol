@@ -4,12 +4,13 @@ pragma solidity ^0.8.30;
 import {Script} from "forge-std/Script.sol";
 import {BaseLogger} from "script/BaseLogger.sol";
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
-import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.s.sol";
+import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 
 contract DeployVetoGovernor is Script, BaseLogger {
   function _computeCouncilGovernorAddress(address _deployer) internal view returns (address) {
-    // We need to account for timelock param adjustment after deployment, which takes 3 transactions.
+    // We need to account for timelock param adjustment after deployment, which takes 3
+    // transactions.
     uint256 _nextNonce = vm.getNonce(_deployer) + 4;
     return vm.computeCreateAddress(_deployer, _nextNonce);
   }
@@ -23,20 +24,20 @@ contract DeployVetoGovernor is Script, BaseLogger {
 
     vm.startBroadcast(_deployer);
 
-    BasicCouncilVetoGovernor.ConstructorParams memory _params = BasicCouncilVetoGovernor
-      .ConstructorParams(
-      _config.vetoGovernorName,
-      _config.mainDaoToken,
-      _config.vetoGovernorInitialVotingDelay,
-      _config.vetoGovernorInitialVotingPeriod,
-      _config.vetoGovernorInitialProposalThreshold,
-      _config.vetoGuardian,
-      _config.vetoOverrideRole,
-      _config.vetoOverrideDuration,
-      TimelockController(_timelock),
-      _config.vetoGovernorAdmin,
-      _predictedCouncilGovernorAddress
-    );
+    BasicCouncilVetoGovernor.ConstructorParams memory _params =
+      BasicCouncilVetoGovernor.ConstructorParams(
+        _config.vetoGovernorName,
+        _config.mainDaoToken,
+        _config.vetoGovernorInitialVotingDelay,
+        _config.vetoGovernorInitialVotingPeriod,
+        _config.vetoGovernorInitialProposalThreshold,
+        _config.vetoGuardian,
+        _config.vetoOverrideRole,
+        _config.vetoOverrideDuration,
+        TimelockController(_timelock),
+        _config.vetoGovernorAdmin,
+        _predictedCouncilGovernorAddress
+      );
 
     vetoGovernor = new BasicCouncilVetoGovernor(_params);
     _timelock.grantRole(_timelock.EXECUTOR_ROLE(), address(vetoGovernor));

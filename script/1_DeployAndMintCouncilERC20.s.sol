@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {Script} from "forge-std/Script.sol";
 import {BaseLogger} from "script/BaseLogger.sol";
-import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.s.sol";
+import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
 
 contract DeployAndMintCouncilERC20 is Script, BaseLogger {

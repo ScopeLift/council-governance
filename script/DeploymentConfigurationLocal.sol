@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.s.sol";
+import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
 import {DeploymentInputLocal} from "script/DeploymentInputLocal.sol";
 
 contract DeploymentConfigurationLocal is DeploymentConfigurationBase, DeploymentInputLocal {
   function _getBaseDeploymentConfiguration()
     public
-    view
+    pure
     override
     returns (BaseDeploymentConfiguration memory)
   {
@@ -36,7 +36,7 @@ contract DeploymentConfigurationLocal is DeploymentConfigurationBase, Deployment
 
   function _getTimelockDeploymentConfiguration()
     public
-    view
+    pure
     override
     returns (TimelockDeploymentConfiguration memory)
   {
@@ -65,7 +65,7 @@ contract DeploymentConfigurationLocal is DeploymentConfigurationBase, Deployment
 
   function _getCouncilGovernorDeploymentConfiguration()
     public
-    view
+    pure
     override
     returns (CouncilGovernorDeploymentConfiguration memory)
   {

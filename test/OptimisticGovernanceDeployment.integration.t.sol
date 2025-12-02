@@ -15,7 +15,7 @@ import {DeployAndMintCouncilERC20} from "script/1_DeployAndMintCouncilERC20.s.so
 import {DeployTimelock} from "script/2_DeployTimelock.s.sol";
 import {DeployVetoGovernor} from "script/3_DeployVetoGovernor.s.sol";
 import {DeployCouncilGovernor} from "script/4_DeployCouncilGovernor.s.sol";
-import {DeploymentConfigurationLocal} from "script/DeploymentConfigurationLocal.s.sol";
+import {DeploymentConfigurationLocal} from "script/DeploymentConfigurationLocal.sol";
 import {DeploymentInputLocal} from "script/DeploymentInputLocal.sol";
 
 /// @title Integration test for the Optimistic Governance deployment
