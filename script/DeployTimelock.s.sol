@@ -1,16 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+// External Dependencies
+import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
+
+// Script Dependencies
 import {Script} from "forge-std/Script.sol";
 import {BaseLogger} from "script/BaseLogger.sol";
-import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
-import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
 
 contract DeployTimelock is Script, BaseLogger {
-  function run(
-    address _deployer,
-    DeploymentConfigurationBase.TimelockDeploymentConfiguration memory _config
-  ) public returns (TimelockController timelock) {
+  struct TimelockDeploymentConfiguration {
+    uint256 timelockMinDelay;
+  }
+
+  function _getTimelockDeploymentConfiguration()
+    public
+    view
+    virtual
+    returns (TimelockDeploymentConfiguration memory)
+  {}
+
+  function run(address _deployer, TimelockDeploymentConfiguration memory _config)
+    public
+    returns (TimelockController timelock)
+  {
     vm.startBroadcast(_deployer);
 
     address[] memory _proposers = new address[](0);

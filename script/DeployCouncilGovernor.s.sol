@@ -1,22 +1,40 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Script} from "forge-std/Script.sol";
+// External Dependencies
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
-
-import {BaseLogger} from "script/BaseLogger.sol";
-import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
-import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
-import {CouncilERC20} from "src/CouncilERC20.sol";
-import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 
+// Internal Dependencies
+import {CouncilERC20} from "src/CouncilERC20.sol";
+import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
+import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
+
+// Script Dependencies
+import {Script} from "forge-std/Script.sol";
+import {BaseLogger} from "script/BaseLogger.sol";
+
 contract DeployCouncilGovernor is Script, BaseLogger {
+  struct CouncilGovernorDeploymentConfiguration {
+    string councilGovernorName;
+    uint48 councilGovernorInitialVotingDelay;
+    uint32 councilGovernorInitialVotingPeriod;
+    uint256 councilGovernorInitialProposalThreshold;
+    address councilGovernorAdmin;
+  }
+
+  function _getCouncilGovernorDeploymentConfiguration()
+    public
+    view
+    virtual
+    returns (CouncilGovernorDeploymentConfiguration memory)
+  {}
+
   function run(
     address _deployer,
     CouncilERC20 _councilToken,
     BasicCouncilVetoGovernor _vetoGovernor,
-    DeploymentConfigurationBase.CouncilGovernorDeploymentConfiguration memory _config
+    CouncilGovernorDeploymentConfiguration memory _config
   ) public returns (BasicCouncilGovernor councilGovernor) {
     vm.startBroadcast(_deployer);
 

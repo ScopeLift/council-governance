@@ -11,10 +11,10 @@ import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 
 // Test imports
 import {Test} from "forge-std/Test.sol";
-import {DeployAndMintCouncilERC20} from "script/1_DeployAndMintCouncilERC20.s.sol";
-import {DeployTimelock} from "script/2_DeployTimelock.s.sol";
-import {DeployVetoGovernor} from "script/3_DeployVetoGovernor.s.sol";
-import {DeployCouncilGovernor} from "script/4_DeployCouncilGovernor.s.sol";
+import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
+import {DeployTimelock} from "script/DeployTimelock.s.sol";
+import {DeployVetoGovernor} from "script/DeployVetoGovernor.s.sol";
+import {DeployCouncilGovernor} from "script/DeployCouncilGovernor.s.sol";
 import {DeploymentConfigurationLocal} from "script/DeploymentConfigurationLocal.sol";
 import {DeploymentInputLocal} from "script/DeploymentInputLocal.sol";
 

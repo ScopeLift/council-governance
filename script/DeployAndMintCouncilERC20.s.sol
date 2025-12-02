@@ -1,16 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Script} from "forge-std/Script.sol";
-import {BaseLogger} from "script/BaseLogger.sol";
-import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
+// Internal Dependencies
 import {CouncilERC20} from "src/CouncilERC20.sol";
 
+// Script Dependencies
+import {Script} from "forge-std/Script.sol";
+import {BaseLogger} from "script/BaseLogger.sol";
+
 contract DeployAndMintCouncilERC20 is Script, BaseLogger {
-  function run(
-    address _deployer,
-    DeploymentConfigurationBase.CouncilERC20DeploymentConfiguration memory _config
-  ) public returns (CouncilERC20 councilToken) {
+  struct CouncilERC20DeploymentConfiguration {
+    string councilTokenName;
+    string councilTokenSymbol;
+    address councilTokenAdmin;
+    uint256 maxTokensPerMember;
+    address[] councilMembers;
+    uint256 councilMembersLength;
+  }
+
+  function _getCouncilERC20DeploymentConfiguration()
+    public
+    view
+    virtual
+    returns (CouncilERC20DeploymentConfiguration memory)
+  {}
+
+  function run(address _deployer, CouncilERC20DeploymentConfiguration memory _config)
+    public
+    returns (CouncilERC20 councilToken)
+  {
     vm.startBroadcast(_deployer);
     councilToken = new CouncilERC20(
       _config.councilTokenName,
