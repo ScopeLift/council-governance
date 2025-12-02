@@ -120,22 +120,22 @@ contract BasicCouncilGovernor is
                         Public Functions
   //////////////////////////////////////////////////////////////*/
 
-  /// @inheritdoc Governor
+  /// @inheritdoc GovernorSettings
   function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
     return GovernorSettings.votingDelay();
   }
 
-  /// @inheritdoc Governor
+  /// @inheritdoc GovernorSettings
   function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
     return GovernorSettings.votingPeriod();
   }
 
-  /// @inheritdoc Governor
+  /// @inheritdoc GovernorSettings
   function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
     return GovernorSettings.proposalThreshold();
   }
 
-  /// @inheritdoc Governor
+  /// @inheritdoc IGovernor
   function quorum(
     uint256 /*timepoint*/
   )
