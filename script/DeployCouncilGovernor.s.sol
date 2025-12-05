@@ -39,6 +39,7 @@ contract DeployCouncilGovernor is Script, BaseLogger {
     vm.startBroadcast(_deployer);
 
     councilGovernor = new BasicCouncilGovernor(
+      _config.councilGovernorName,
       IERC5805(_councilToken),
       IGovernor(_vetoGovernor),
       _config.councilGovernorAdmin,

@@ -95,6 +95,7 @@ contract BasicCouncilGovernor is
   //////////////////////////////////////////////////////////////*/
 
   /// @notice Constructor for the BasicCouncilGovernor contract.
+  /// @param _name The name of the council governor.
   /// @param _token The IERC5805 compliant token (CouncilERC20) used to vote on proposals.
   /// @param _councilVetoGovernor The veto governor contract to which proposals are forwarded.
   /// @param _governorAdmin The address authorized to change council governor parameters.
@@ -102,6 +103,7 @@ contract BasicCouncilGovernor is
   /// @param _initialVotingPeriod The initial voting period.
   /// @param _initialProposalThreshold The initial proposal threshold.
   constructor(
+    string memory _name,
     IERC5805 _token,
     IGovernor _councilVetoGovernor,
     address _governorAdmin,
@@ -109,7 +111,7 @@ contract BasicCouncilGovernor is
     uint32 _initialVotingPeriod,
     uint256 _initialProposalThreshold
   )
-    Governor("BasicCouncilGovernor")
+    Governor(_name)
     GovernorVotes(_token)
     GovernorCouncilQueuing(_councilVetoGovernor)
     GovernorSettings(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold)
