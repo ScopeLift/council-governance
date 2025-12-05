@@ -2,8 +2,10 @@
 pragma solidity ^0.8.30;
 
 import {ITimelock} from "src/interfaces/ITimelock.sol";
+import {MarketAdminPermissionCheckerInterface} from "src/interfaces/MarketAdminPermissionCheckerInterface.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract BaseBridgeReceiverWithPermissionChecker {
+contract BaseBridgeReceiverWithPermissionChecker is Ownable {
   /**
    *
    */
@@ -29,10 +31,7 @@ contract BaseBridgeReceiverWithPermissionChecker {
     uint256 eta
   );
   event ProposalExecuted(uint256 indexed id);
-
-  /**
-   *
-   */
+  event SetMarketAdminPermissionChecker(address indexed oldMarketAdminPermissionChecker, address indexed newMarketAdminPermissionChecker);
 
   /// @notice Address of the governing contract that this bridge receiver expects to
   ///  receive messages from; likely an address from another chain (e.g. mainnet)
@@ -41,6 +40,9 @@ contract BaseBridgeReceiverWithPermissionChecker {
   /// @notice Address of the timelock on this chain that the bridge receiver
   /// will send messages to
   address public localTimelock;
+
+  /// @notice MarketAdminPermissionChecker contract which is used to check if the caller has permission to perform operations
+  MarketAdminPermissionCheckerInterface public marketAdminPermissionChecker;
 
   /// @notice Whether contract has been initialized
   bool public initialized;
@@ -67,6 +69,8 @@ contract BaseBridgeReceiverWithPermissionChecker {
     Executed
   }
 
+  constructor(address initialOwner) Ownable(initialOwner) {}
+
   /**
    * @notice Initialize the contract
    * @param _govTimelock Address of the governing contract that this contract
@@ -89,7 +93,13 @@ contract BaseBridgeReceiverWithPermissionChecker {
    * @param data ABI-encoded bytes containing the transactions to be queued on the local timelock
    */
   function processMessage(address rootMessageSender, bytes calldata data) internal {
-    if (rootMessageSender != govTimelock) revert Unauthorized();
+    if (rootMessageSender != govTimelock) {
+      if (address(marketAdminPermissionChecker) != address(0)) {
+        marketAdminPermissionChecker.checkUpdatePermission(rootMessageSender);
+      } else {
+        revert Unauthorized();
+      }
+    }
 
     address[] memory targets;
     uint256[] memory values;
@@ -130,6 +140,17 @@ contract BaseBridgeReceiverWithPermissionChecker {
     emit ProposalCreated(
       rootMessageSender, proposal.id, targets, values, signatures, calldatas, eta
     );
+  }
+
+  /**
+   * @notice Sets the MarketAdminPermissionChecker contract
+   * @dev Note: Only callable by owner (main-governor-timelock)
+   */
+  function setMarketAdminPermissionChecker(MarketAdminPermissionCheckerInterface newMarketAdminPermissionChecker) external {
+    if (msg.sender != owner()) revert Unauthorized();
+    address oldMarketAdminPermissionChecker = address(marketAdminPermissionChecker);
+    marketAdminPermissionChecker = newMarketAdminPermissionChecker;
+    emit SetMarketAdminPermissionChecker(oldMarketAdminPermissionChecker, address(newMarketAdminPermissionChecker));
   }
 
   /**
