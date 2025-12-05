@@ -36,7 +36,7 @@ abstract contract GovernorVetoGuardian is Governor {
   /// @dev The guardian flag is ignored once queue succeeds, so veto overrides can still promote
   /// the proposal.
   function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
-    ProposalState _currentState = Governor.state(_proposalId);
+    ProposalState _currentState = super.state(_proposalId);
 
     if (
       guardianVetoed[_proposalId] && _currentState != ProposalState.Queued
