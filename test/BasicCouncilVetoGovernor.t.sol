@@ -106,8 +106,9 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
 
     // 7. Deploy the Council Governor
     vm.prank(deployer);
-    councilGovernor =
-      new BasicCouncilGovernor(councilToken, vetoGovernor, deployer, 1 days, 1 weeks, 1);
+    councilGovernor = new BasicCouncilGovernor(
+      "BasicCouncilGovernor", councilToken, vetoGovernor, deployer, 1 days, 1 weeks, 1
+    );
 
     // 8. Prepare a sample proposal payload
     targets.push(address(target));

@@ -377,7 +377,7 @@ contract State is GovernorCouncilQueuingTest {
 }
 
 contract Propose is GovernorCouncilQueuingTest {
-  function testFuzz_ProposeCallsVetoGovernorPropose(uint256 _councilMemberIndex, address _caller)
+  function testFuzz_CouncilMemberSubmitsProposal(uint256 _councilMemberIndex, address _caller)
     public
   {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
@@ -397,6 +397,15 @@ contract Propose is GovernorCouncilQueuingTest {
     uint256 _proposalId = _submitProposal(_proposer, _proposal);
 
     assertEq(councilMock.exposed_proposalDescription(_proposalId), _proposalDescription);
+  }
+
+  function testFuzz_RevertIf_NonCouncilMemberSubmitsProposal(address _proposer) public {
+    vm.assume(councilToken.balanceOf(_proposer) == 0);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IGovernor.GovernorInsufficientProposerVotes.selector, _proposer, 0, 1)
+    );
+    _submitProposal(_proposer, _buildEmptyProposal());
   }
 }
 

@@ -2,250 +2,488 @@
 pragma solidity 0.8.30;
 
 // External Dependencies
-import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
-import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
+import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
+import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
+import {
+  GovernorCountingSimple
+} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
 // Internal Dependencies
-import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
-import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
+import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 
 // Test Dependencies
 import {Test} from "forge-std/Test.sol";
-import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
-import {Counter} from "test/helpers/Counter.sol";
+import {BasicCouncilGovernorHarness} from "test/harnesses/BasicCouncilGovernorHarness.sol";
 
-// Base contract for setting up the test environment
-abstract contract BasicCouncilGovernorTest is Test {
-  // === Contracts ===
-  BasicCouncilGovernor internal councilGovernor;
-  BasicCouncilVetoGovernor internal vetoGovernor;
+// Script Dependencies
+import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
+import {
+  DeploymentInputMainnetForkTest
+} from "script/deploy-constants/DeploymentInputMainnetForkTest.sol";
+import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
+
+contract BasicCouncilGovernorTest is Test {
+  struct Proposal {
+    address[] targets;
+    uint256[] values;
+    bytes[] calldatas;
+    string description;
+  }
+
   CouncilERC20 internal councilToken;
-  MockERC20Votes internal daoToken;
-  TimelockController internal timelock;
-  Counter internal target;
+  BasicCouncilGovernorHarness internal councilGovernor;
+  address internal mockVetoGovernor = makeAddr("Veto governor");
 
-  // === Users ===
-  address internal deployer = makeAddr("deployer");
-  address internal nonCouncilMember = makeAddr("nonCouncilMember");
-  address[] internal councilMembers;
-  address internal vetoGuardian = makeAddr("vetoGuardian");
+  DeploymentInputMainnetForkTest public input;
 
-  // === Proposal Details ===
-  address[] internal targets;
-  uint256[] internal values;
-  bytes[] internal calldatas;
-  string internal description = "Proposal to increment Counter";
-  bytes32 internal descriptionHash;
+  function setUp() public {
+    input = new DeploymentInputMainnetForkTest();
 
-  // === Constants ===
-  uint256 constant COUNCIL_SIZE = 7;
-  uint256 constant TIMELOCK_MIN_DELAY = 1 days;
+    _deployCouncilTokenAndMint();
+    _deployCouncilGovernor();
+  }
 
-  function setUp() public virtual {
-    // 1. Deploy target contract
-    target = new Counter();
+  function _deployCouncilTokenAndMint() internal {
+    DeploymentConfigurationTest.CouncilERC20DeploymentConfiguration memory _config =
+      (new DeploymentConfigurationTest())._getCouncilERC20DeploymentConfiguration();
 
-    // 2. Deploy tokens
-    vm.prank(deployer);
-    councilToken = new CouncilERC20("Council Token", "CT", deployer, 1);
-    vm.prank(deployer);
-    daoToken = new MockERC20Votes();
+    DeployAndMintCouncilERC20 _script = new DeployAndMintCouncilERC20();
+    councilToken = _script.run(input.MAIN_DAO_GOVERNOR(), _config);
+    vm.warp(block.timestamp + 1);
+  }
 
-    // 3. Create and fund council members
-    for (uint256 _i = 0; _i < COUNCIL_SIZE; _i++) {
-      address _member = makeAddr(string(abi.encodePacked("councilMember", vm.toString(_i + 1))));
-      councilMembers.push(_member);
-      vm.prank(deployer);
-      councilToken.mint(_member, 1); // 1 address = 1 vote
+  function _deployCouncilGovernor() internal {
+    councilGovernor = new BasicCouncilGovernorHarness(councilToken, mockVetoGovernor);
+  }
+
+  function _selectCouncilMember(uint256 _proposerIndex) internal view returns (address) {
+    return input.COUNCIL_MEMBERS(_proposerIndex % input.COUNCIL_MEMBERS_LENGTH());
+  }
+
+  function _pickDistinctMembers(uint256 _seed)
+    internal
+    view
+    returns (address _proposer, address _forVoter, address _againstVoter, address _abstainVoter)
+  {
+    uint256 _len = input.COUNCIL_MEMBERS_LENGTH();
+    uint256 _base = _seed % _len;
+
+    _proposer = input.COUNCIL_MEMBERS(_base);
+    _forVoter = input.COUNCIL_MEMBERS((_base + 1) % _len);
+    _againstVoter = input.COUNCIL_MEMBERS((_base + 2) % _len);
+    _abstainVoter = input.COUNCIL_MEMBERS((_base + 3) % _len);
+  }
+
+  function _buildEmptyProposal(string memory _description)
+    internal
+    pure
+    returns (Proposal memory _proposal)
+  {
+    address[] memory _targets = new address[](1);
+    uint256[] memory _values = new uint256[](1);
+    bytes[] memory _calldatas = new bytes[](1);
+    _proposal = Proposal(_targets, _values, _calldatas, _description);
+  }
+
+  function _buildEmptyProposal() internal pure returns (Proposal memory _proposal) {
+    _proposal = _buildEmptyProposal("Empty proposal");
+  }
+
+  function _submitProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    vm.prank(_proposer);
+    _proposalId = councilGovernor.propose(
+      _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
+    );
+  }
+
+  function _submitProposalAndWarpPastVotingDelay(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposal(_proposer, _proposal);
+    vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
+  }
+
+  function _passSubmittedProposal(uint256 _proposalId) public {
+    uint256 _quorumVotesNeeded = councilGovernor.quorum(block.timestamp);
+    uint256 _councilMembersLength = input.COUNCIL_MEMBERS_LENGTH();
+    uint256 _votesCast;
+
+    for (uint256 _i = 0; _i < _councilMembersLength; _i++) {
+      address _councilMember = input.COUNCIL_MEMBERS(_i);
+      vm.prank(_councilMember);
+      councilGovernor.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.For));
+      _votesCast += councilToken.balanceOf(_councilMember);
+      if (_votesCast >= _quorumVotesNeeded) break;
     }
-    skip(1);
-    uint256 _nonce = vm.getNonce(address(deployer));
-    address _vetoGovernorAddress = vm.computeCreateAddress(address(deployer), _nonce + 1);
-    address _councilGovernorAddress = vm.computeCreateAddress(address(deployer), _nonce + 2);
-    // 4. Deploy Timelock and Veto Governor
-    address[] memory _proposers = new address[](1);
-    address[] memory _executors = new address[](1);
-    _proposers[0] = _vetoGovernorAddress;
-    _executors[0] = _vetoGovernorAddress;
+  }
 
-    vm.prank(deployer);
-    timelock = new TimelockController(TIMELOCK_MIN_DELAY, _proposers, _executors, address(0));
+  function _passSubmittedProposalWithSuperQuorum(uint256 _proposalId) public {
+    uint256 _quorumVotesNeeded = councilGovernor.superQuorum(block.timestamp);
+    uint256 _councilMembersLength = input.COUNCIL_MEMBERS_LENGTH();
+    uint256 _votesCast;
+    for (uint256 _i = 0; _i < _councilMembersLength; _i++) {
+      address _councilMember = input.COUNCIL_MEMBERS(_i);
+      vm.prank(_councilMember);
+      councilGovernor.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.For));
+      _votesCast += councilToken.balanceOf(_councilMember);
+      if (_votesCast >= _quorumVotesNeeded) break;
+    }
+  }
 
-    BasicCouncilVetoGovernor.ConstructorParams memory _vetoGovernorParams =
-      BasicCouncilVetoGovernor.ConstructorParams(
-        "BasicCouncilVetoGovernor",
-        daoToken,
-        1 hours, // initialVotingDelay
-        1 days, // initialVotingPeriod
-        0, // initialProposalThreshold
-        vetoGuardian,
-        deployer, // The main DAO governor is the veto overrider
-        4 days,
-        timelock,
-        deployer, // The main DAO governor is the governor admin
-        _councilGovernorAddress
-      );
+  function _failProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
 
-    vm.prank(deployer);
-    vetoGovernor = new BasicCouncilVetoGovernor(_vetoGovernorParams);
+    vm.prank(_proposer);
+    councilGovernor.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.Against));
+    vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
+  }
 
-    // 5. Deploy the Council Governor
-    vm.prank(deployer);
-    councilGovernor =
-      new BasicCouncilGovernor(councilToken, vetoGovernor, deployer, 1 days, 1 weeks, 1);
+  function _passProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    _passSubmittedProposal(_proposalId);
+    vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
+  }
 
-    // 6. Prepare a sample proposal payload
-    targets.push(address(target));
-    values.push(0);
-    calldatas.push(abi.encodeWithSignature("increment()"));
-    descriptionHash = keccak256(bytes(description));
+  function _assertProposalState(uint256 _proposalId, IGovernor.ProposalState _expected)
+    internal
+    view
+  {
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(_expected));
   }
 }
 
-// --- SMOKE TESTS ---
-contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
-  /// @notice Test 1: Verifies that the governor is initialized with the correct state variables.
-  function test_SetupAndInitialization() public view {
-    assertEq(councilGovernor.name(), "BasicCouncilGovernor");
-    assertEq(address(councilGovernor.token()), address(councilToken));
-    assertEq(address(councilGovernor.councilVetoGovernor()), address(vetoGovernor));
+contract Constructor is Test {
+  function test_ConstructorSetsParamsCorrectly(
+    string memory _name,
+    IERC5805 _token,
+    IGovernor _councilVetoGovernor,
+    address _owner,
+    uint48 _votingDelay,
+    uint32 _votingPeriod,
+    uint256 _proposalThreshold
+  ) public {
+    vm.assume(_owner != address(0));
+    vm.assume(_votingPeriod != 0);
+
+    BasicCouncilGovernor _councilGovernor = new BasicCouncilGovernor(
+      _name, _token, _councilVetoGovernor, _owner, _votingDelay, _votingPeriod, _proposalThreshold
+    );
+
+    assertEq(_councilGovernor.name(), _name);
+    assertEq(address(_councilGovernor.token()), address(_token));
+    assertEq(address(_councilGovernor.councilVetoGovernor()), address(_councilVetoGovernor));
+    assertEq(_councilGovernor.votingDelay(), _votingDelay);
+    assertEq(_councilGovernor.votingPeriod(), _votingPeriod);
+    assertEq(_councilGovernor.proposalThreshold(), _proposalThreshold);
+    assertEq(_councilGovernor.owner(), _owner);
+  }
+}
+
+contract VotingDelay is BasicCouncilGovernorTest {
+  function test_ReturnsVotingDelay() public view {
+    assertEq(councilGovernor.votingDelay(), input.COUNCIL_GOVERNOR_INITIAL_VOTING_DELAY());
+  }
+}
+
+contract VotingPeriod is BasicCouncilGovernorTest {
+  function test_ReturnsVotingPeriod() public view {
+    assertEq(councilGovernor.votingPeriod(), input.COUNCIL_GOVERNOR_INITIAL_VOTING_PERIOD());
+  }
+}
+
+contract ProposalThreshold is BasicCouncilGovernorTest {
+  function test_ReturnsProposalThreshold() public view {
+    assertEq(
+      councilGovernor.proposalThreshold(), input.COUNCIL_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD()
+    );
+  }
+}
+
+contract Quorum is BasicCouncilGovernorTest {
+  function testFuzz_ReturnsQuorum(uint256 _timepoint) public view {
+    assertEq(councilGovernor.quorum(_timepoint), 4);
+  }
+}
+
+contract SuperQuorum is BasicCouncilGovernorTest {
+  function testFuzz_ReturnsSuperQuorum(uint256 _timepoint) public view {
+    assertEq(councilGovernor.superQuorum(_timepoint), 7);
+  }
+}
+
+contract Clock is BasicCouncilGovernorTest {
+  function testFuzz_ReturnsCurrentTimestamp(uint256 _timestamp) public {
+    vm.warp(_timestamp);
+    assertEq(councilGovernor.clock(), uint48(_timestamp));
+  }
+}
+
+contract CLOCK_MODE is BasicCouncilGovernorTest {
+  function test_ReturnsTimestamp() public view {
+    assertEq(
+      abi.encodePacked(keccak256(bytes(councilGovernor.CLOCK_MODE()))),
+      abi.encodePacked(keccak256("mode=timestamp"))
+    );
+  }
+}
+
+contract SetVotingDelay is BasicCouncilGovernorTest {
+  function testFuzz_GovernanceSetsVotingDelay(uint48 _newVotingDelay) public {
+    vm.prank(councilGovernor.owner());
+    councilGovernor.setVotingDelay(_newVotingDelay);
+
+    assertEq(councilGovernor.votingDelay(), _newVotingDelay);
   }
 
-  /// @notice Test 2: Verifies the happy path where a council proposes and passes a vote, and the
-  /// proposal state becomes `Succeeded`.
-  function test_HappyPath_CouncilProposesAndPasses() public {
-    // Propose
-    vm.prank(councilMembers[0]);
-    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
-
-    // Warp past voting delay to make proposal Active
-    skip(councilGovernor.votingDelay() + 1);
-
-    // Cast votes to meet quorum (4)
-    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
-      vm.prank(councilMembers[_i]);
-      councilGovernor.castVote(_proposalId, 1); // 1 = For
-    }
-
-    // Warp past voting period to end the vote
-    skip(councilGovernor.votingPeriod() + 1);
-
-    // Assert state is Succeeded
-    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+  function testFuzz_EmitVotingDelaySet(uint48 _newVotingDelay) public {
+    vm.expectEmit();
+    emit GovernorSettings.VotingDelaySet(councilGovernor.votingDelay(), uint48(_newVotingDelay));
+    vm.prank(councilGovernor.owner());
+    councilGovernor.setVotingDelay(_newVotingDelay);
   }
 
-  /// @notice Test 3: Verifies that a `Succeeded` proposal, when queued, correctly forwards the
-  /// proposal to the Veto Governor.
-  function test_HappyPath_SuccessfulProposalIsForwardedToVetoGovernor() public {
-    // Propose and pass the council vote
-    vm.prank(councilMembers[0]);
-    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
-    vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
-    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
-      vm.prank(councilMembers[_i]);
-      councilGovernor.castVote(_proposalId, 1);
-    }
+  function testFuzz_RevertIf_NonAdminSetsVotingDelay(address _caller, uint48 _newVotingDelay)
+    public
+  {
+    vm.assume(_caller != councilGovernor.owner());
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, _caller));
+    vm.prank(_caller);
+    councilGovernor.setVotingDelay(_newVotingDelay);
+  }
+}
+
+contract SetVotingPeriod is BasicCouncilGovernorTest {
+  function testFuzz_GovernanceSetsVotingPeriod(uint32 _newVotingPeriod) public {
+    vm.assume(_newVotingPeriod != 0);
+
+    vm.prank(councilGovernor.owner());
+    councilGovernor.setVotingPeriod(_newVotingPeriod);
+
+    assertEq(councilGovernor.votingPeriod(), _newVotingPeriod);
+  }
+
+  function testFuzz_EmitVotingPeriodSet(uint32 _newVotingPeriod) public {
+    vm.assume(_newVotingPeriod != 0);
+
+    vm.expectEmit();
+    emit GovernorSettings.VotingPeriodSet(councilGovernor.votingPeriod(), uint32(_newVotingPeriod));
+    vm.prank(councilGovernor.owner());
+    councilGovernor.setVotingPeriod(_newVotingPeriod);
+  }
+
+  function testFuzz_RevertIf_NonAdminSetsVotingPeriod(address _caller, uint32 _newVotingPeriod)
+    public
+  {
+    vm.assume(_newVotingPeriod != 0);
+    vm.assume(_caller != councilGovernor.owner());
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, _caller));
+    vm.prank(_caller);
+    councilGovernor.setVotingPeriod(_newVotingPeriod);
+  }
+}
+
+contract SetProposalThreshold is BasicCouncilGovernorTest {
+  function testFuzz_GovernanceSetsVotingPeriod(uint256 _newProposalThreshold) public {
+    vm.prank(councilGovernor.owner());
+    councilGovernor.setProposalThreshold(_newProposalThreshold);
+
+    assertEq(councilGovernor.proposalThreshold(), _newProposalThreshold);
+  }
+
+  function testFuzz_EmitVotingPeriodSet(uint256 _newProposalThreshold) public {
+    vm.expectEmit();
+    emit GovernorSettings.ProposalThresholdSet(
+      councilGovernor.proposalThreshold(), _newProposalThreshold
+    );
+    vm.prank(councilGovernor.owner());
+    councilGovernor.setProposalThreshold(_newProposalThreshold);
+  }
+
+  function testFuzz_RevertIf_NonAdminSetsVotingDelay(address _caller, uint256 _newProposalThreshold)
+    public
+  {
+    vm.assume(_caller != councilGovernor.owner());
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, _caller));
+    vm.prank(_caller);
+    councilGovernor.setProposalThreshold(_newProposalThreshold);
+  }
+}
+
+contract ProposalNeedsQueuing is BasicCouncilGovernorTest {
+  function testFuzz_ProposalNeedsQueuingReturnsTrue(uint256 _proposalId) public view {
+    assertTrue(councilGovernor.proposalNeedsQueuing(_proposalId));
+  }
+}
+
+contract State is BasicCouncilGovernorTest {
+  function testFuzz_StatePendingBeforeVotingDelay(uint256 _proposerIndex) public {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitProposal(_proposer, _proposal);
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
+  }
+
+  function testFuzz_StateActiveDuringVotingPeriodWithoutSuperQuorum(uint256 _proposerIndex) public {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    _passSubmittedProposal(_proposalId);
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Active);
+  }
+
+  function testFuzz_StateSucceededDuringVotingPeriodWithSuperQuorum(uint256 _proposerIndex) public {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    _passSubmittedProposalWithSuperQuorum(_proposalId);
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
+  }
+
+  function testFuzz_StateDefeatedAfterVotingPeriodWithoutQuorumOrMajority(uint256 _proposerIndex)
+    public
+  {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _failProposal(_proposer, _proposal);
     vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
-    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
 
-    // Expect a `propose` call on the Veto Governor
-    vm.expectCall(
-      address(vetoGovernor),
-      abi.encodeWithSelector(vetoGovernor.propose.selector, targets, values, calldatas, description)
-    );
-
-    // Queue the proposal, which triggers the forwarding
-    councilGovernor.queue(targets, values, calldatas, descriptionHash);
-
-    // Assert the state is now `Queued` (which means "Forwarded" in this context)
-    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
 
-  /// @notice Test 4: Verifies that meeting the `superQuorum` immediately moves the proposal to the
-  /// `Succeeded` state, ready for forwarding.
-  function test_HappyPath_SuperQuorumFastTracksProposal() public {
-    // Propose
-    vm.prank(councilMembers[0]);
-    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
+  function testFuzz_StateSucceededAfterVotingPeriodWithQuorumAndMajority(uint256 _proposerIndex)
+    public
+  {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passProposal(_proposer, _proposal);
 
-    // Warp past voting delay
-    vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
-
-    // Cast votes to meet superQuorum (7)
-    for (uint256 _i = 0; _i < councilGovernor.superQuorum(0); _i++) {
-      vm.prank(councilMembers[_i]);
-      councilGovernor.castVote(_proposalId, 1); // 1 = For
-    }
-
-    // Assert state is *immediately* Succeeded, without warping past the voting period
-    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
-
-    // Verify it can now be queued (forwarded)
-    vm.expectCall(
-      address(vetoGovernor),
-      abi.encodeWithSelector(vetoGovernor.propose.selector, targets, values, calldatas, description)
-    );
-    councilGovernor.queue(targets, values, calldatas, descriptionHash);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
-  /// @notice Test 5: Verifies that an address without a council token cannot create a proposal.
-  function test_RevertIf_NonCouncilMemberProposes() public {
-    // Check that the non-council member has 0 votes
-    assertEq(councilToken.getVotes(nonCouncilMember), 0);
+  function testFuzz_StateSucceededAfterVotingPeriodWithSuperQuorum(uint256 _proposerIndex) public {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    _passSubmittedProposalWithSuperQuorum(_proposalId);
 
-    // OpenZeppelin Governor reverts with this error when the proposer has insufficient votes.
-    // In our case, the threshold is 0, but `_canPropose` is implicitly overridden by our setup,
-    // so we check if the proposer's voting weight is > 0.
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IGovernor.GovernorInsufficientProposerVotes.selector,
-        nonCouncilMember,
-        0,
-        councilGovernor.proposalThreshold()
-      )
-    );
-
-    // Attempt to propose
-    vm.prank(nonCouncilMember);
-    councilGovernor.propose(targets, values, calldatas, description);
-  }
-
-  function test_CancelsAPendingProposal() public {
-    vm.prank(councilMembers[0]);
-    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
-
-    skip(1);
-
-    vm.prank(councilMembers[0]);
-    councilGovernor.cancel(targets, values, calldatas, descriptionHash);
-
-    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Canceled));
-  }
-
-  function test_RevertIf_CancelsAForwardedProposal() public {
-    vm.prank(councilMembers[0]);
-    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
-    vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
-    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
-      vm.prank(councilMembers[_i]);
-      councilGovernor.castVote(_proposalId, 1);
-    }
     vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
+  }
+}
 
-    // Queue the proposal, which triggers the forwarding
-    councilGovernor.queue(targets, values, calldatas, descriptionHash);
+contract ProposalVotes is BasicCouncilGovernorTest {
+  function testFuzz_ProposalVotesMatchesCountingSimple(uint256 _seed) public {
+    (address _proposer, address _forVoter, address _againstVoter, address _abstainVoter) =
+      _pickDistinctMembers(_seed);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
 
-    // Assert the state is now `Queued` (which means "Forwarded" in this context)
-    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
-    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Pending));
+    uint256 _expectedFor = councilToken.balanceOf(_forVoter);
+    uint256 _expectedAgainst = councilToken.balanceOf(_againstVoter);
+    uint256 _expectedAbstain = councilToken.balanceOf(_abstainVoter);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IGovernor.GovernorUnableToCancel.selector, _proposalId, councilMembers[0]
-      )
+    vm.prank(_forVoter);
+    councilGovernor.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.For));
+    vm.prank(_againstVoter);
+    councilGovernor.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.Against));
+    vm.prank(_abstainVoter);
+    councilGovernor.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.Abstain));
+
+    (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes) =
+      councilGovernor.proposalVotes(_proposalId);
+
+    assertEq(forVotes, _expectedFor);
+    assertEq(againstVotes, _expectedAgainst);
+    assertEq(abstainVotes, _expectedAbstain);
+  }
+}
+
+contract Propose is BasicCouncilGovernorTest {
+  function test_ProposeStoresProposalDescription(uint256 _proposerIndex, string memory _description)
+    public
+  {
+    Proposal memory _proposal = _buildEmptyProposal(_description);
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    uint256 _proposalId = _submitProposal(_proposer, _proposal);
+
+    assertEq(councilGovernor.exposed_ProposalDescriptions(_proposalId), _description);
+  }
+}
+
+contract UpdateCouncilVetoGovernor is BasicCouncilGovernorTest {
+  function testFuzz_AdminUpdatesCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) public {
+    vm.prank(councilGovernor.owner());
+    councilGovernor.updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+
+    assertEq(address(councilGovernor.councilVetoGovernor()), address(_newCouncilVetoGovernor));
+  }
+
+  function testFuzz_RevertIf_NonAdminUpdatesCouncilVetoGovernor(
+    address _caller,
+    IGovernor _newCouncilVetoGovernor
+  ) public {
+    vm.assume(_caller != councilGovernor.owner());
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, _caller));
+    vm.prank(_caller);
+    councilGovernor.updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+  }
+}
+
+contract _checkGovernance is BasicCouncilGovernorTest {
+  function test_CheckGovernanceAllowsOwner() public {
+    vm.prank(councilGovernor.owner());
+    councilGovernor.exposed_CheckGovernance();
+  }
+
+  function testFuzz_RevertIf_CheckGovernanceCalledByNonOwner(address _caller) public {
+    vm.assume(_caller != councilGovernor.owner());
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, _caller));
+    vm.prank(_caller);
+    councilGovernor.exposed_CheckGovernance();
+  }
+}
+
+contract _cancel is BasicCouncilGovernorTest {
+  function test_CancelDeletesProposalDescriptions(uint256 _proposerIndex) public {
+    Proposal memory _proposal = _buildEmptyProposal();
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    uint256 _proposalId = _submitProposal(_proposer, _proposal);
+
+    assertEq(councilGovernor.exposed_ProposalDescriptions(_proposalId), "Empty proposal");
+
+    vm.prank(_proposer);
+    councilGovernor.cancel(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
     );
-    vm.prank(councilMembers[0]);
-    councilGovernor.cancel(targets, values, calldatas, descriptionHash);
+
+    assertEq(councilGovernor.exposed_ProposalDescriptions(_proposalId), "");
+  }
+}
+
+contract _executor is BasicCouncilGovernorTest {
+  function test_ExecutorReturnsVetoGovernor() public view {
+    assertEq(councilGovernor.exposed_Executor(), address(councilGovernor.councilVetoGovernor()));
   }
 }
