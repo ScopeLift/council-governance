@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {ITimelock} from "src/interfaces/ITimelock.sol";
+import {MarketAdminPermissionCheckerInterface} from "src/interfaces/MarketAdminPermissionCheckerInterface.sol";
 
 contract BaseBridgeReceiver {
     /** Custom errors **/
@@ -14,11 +15,26 @@ contract BaseBridgeReceiver {
     error Unauthorized();
 
     /** Events **/
-    event Initialized(address indexed govTimelock, address indexed localTimelock);
+    event Initialized(address indexed govTimelock, address indexed localTimelock, address indexed marketAdminPermissionChecker);
     event ProposalCreated(address indexed rootMessageSender, uint id, address[] targets, uint[] values, string[] signatures, bytes[] calldatas, uint eta);
     event ProposalExecuted(uint indexed id);
 
+    /* Modifiers */
+    /**
+     * @dev Ensures that the caller is either the owner or the market admin.
+     * This delegates the permission check logic to the MarketAdminPermissionChecker contract.
+     */
+    modifier onlyOwnerOrMarketAdmin(address _caller) {
+        if (_caller != govTimelock) {
+          marketAdminPermissionChecker.checkUpdatePermission(_caller);
+        }
+        _;
+    }
+
     /** Public variables **/
+    
+    /// @notice MarketAdminPermissionChecker contract which is used to check if the caller has permission to process
+    MarketAdminPermissionCheckerInterface public marketAdminPermissionChecker;
 
     /// @notice Address of the governing contract that this bridge receiver expects to
     ///  receive messages from; likely an address from another chain (e.g. mainnet)
@@ -60,13 +76,14 @@ contract BaseBridgeReceiver {
      * @param _localTimelock Address of the timelock contract that this contract
      * will send messages to
      */
-    function initialize(address _govTimelock, address _localTimelock) external {
+    function initialize(address _govTimelock, address _localTimelock, address _marketAdminPermissionChecker) external {
         if (initialized) revert AlreadyInitialized();
         if (ITimelock(_localTimelock).admin() != address(this)) revert InvalidTimelockAdmin();
         govTimelock = _govTimelock;
         localTimelock = _localTimelock;
+        marketAdminPermissionChecker = MarketAdminPermissionCheckerInterface(_marketAdminPermissionChecker);
         initialized = true;
-        emit Initialized(_govTimelock, _localTimelock);
+        emit Initialized(_govTimelock, _localTimelock, _marketAdminPermissionChecker);
     }
 
     /**
@@ -77,8 +94,7 @@ contract BaseBridgeReceiver {
     function processMessage(
         address rootMessageSender,
         bytes calldata data
-    ) internal {
-        if (rootMessageSender != govTimelock) revert Unauthorized();
+    ) internal onlyOwnerOrMarketAdmin(rootMessageSender) {
 
         address[] memory targets;
         uint256[] memory values;
