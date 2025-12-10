@@ -9,6 +9,7 @@ on:
 
 env:
   FOUNDRY_PROFILE: ci
+  MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
 
 jobs:
   build:
@@ -120,6 +121,6 @@ jobs:
           slither-args: --filter-paths "./lib|./test" --exclude naming-convention,solc-version
 
       # - name: Upload SARIF file
-        # uses: github/codeql-action/upload-sarif@v2
-        # with:
-        #   sarif_file: ${{ steps.slither.outputs.sarif }}
+      #   uses: github/codeql-action/upload-sarif@v2
+      #   with:
+      #     sarif_file: ${{ steps.slither.outputs.sarif }}
