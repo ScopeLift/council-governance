@@ -54,8 +54,9 @@ contract OptimisticGovernanceDeployment is Test {
     if (address(councilGovernor) == address(0)) {
       _step1_deployCouncilTokenAndMint();
       _step2_deployTimelock();
-      _step3_deployVetoGovernor();
+      _step3_deployVetoGovernorAndGrantRoles();
       _step4_deployCouncilGovernor();
+      _step5_grantVetoGovernorRoles();
     }
     return (councilToken, timelock, vetoGovernor, councilGovernor);
   }
@@ -83,7 +84,7 @@ contract OptimisticGovernanceDeployment is Test {
     timelock = _script.run(deployer, _config);
   }
 
-  function _step3_deployVetoGovernor() internal {
+  function _step3_deployVetoGovernorAndGrantRoles() internal {
     require(address(vetoGovernor) == address(0), "Veto governor already deployed");
     require(address(timelock) != address(0), "Timelock must be deployed first");
 
@@ -91,7 +92,8 @@ contract OptimisticGovernanceDeployment is Test {
       config._getVetoGovernorDeploymentConfiguration();
     DeployVetoGovernor _script = new DeployVetoGovernor();
     _script.setLoggingSilenced(true);
-    vetoGovernor = _script.run(deployer, timelock, _config);
+    address _predictedCouncilGovernorAddress = _script.predictCouncilGovernorAddress(deployer);
+    vetoGovernor = _script.run(deployer, timelock, _config, _predictedCouncilGovernorAddress);
   }
 
   function _step4_deployCouncilGovernor() internal {
@@ -104,6 +106,11 @@ contract OptimisticGovernanceDeployment is Test {
     DeployCouncilGovernor _script = new DeployCouncilGovernor();
     _script.setLoggingSilenced(true);
     councilGovernor = _script.run(deployer, councilToken, vetoGovernor, _config);
+  }
+
+  function _step5_grantVetoGovernorRoles() internal {
+    DeployVetoGovernor _script = new DeployVetoGovernor();
+    _script.grantVetoGovernorRoles(deployer, vetoGovernor, timelock);
   }
 
   /// @notice Test the complete deployment flow with verification after each phase.
@@ -127,7 +134,7 @@ contract OptimisticGovernanceDeployment is Test {
     assertEq(timelock.getMinDelay(), input.TIMELOCK_MIN_DELAY());
 
     // Step 3: Deploy the veto governor and ensure wiring to the timelock.
-    _step3_deployVetoGovernor();
+    _step3_deployVetoGovernorAndGrantRoles();
 
     // Verify Step 3
     assertEq(vetoGovernor.name(), input.VETO_GOVERNOR_NAME());
@@ -156,5 +163,13 @@ contract OptimisticGovernanceDeployment is Test {
       councilGovernor.proposalThreshold(), input.COUNCIL_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD()
     );
     assertEq(councilGovernor.owner(), input.GOVERNOR_ADMIN());
+
+    // Step 5: Grant veto governor proposer and executor roles, remove deployer's default role.
+    _step5_grantVetoGovernorRoles();
+
+    // Verify Step 5
+    assertTrue(timelock.hasRole(timelock.PROPOSER_ROLE(), address(vetoGovernor)));
+    assertTrue(timelock.hasRole(timelock.EXECUTOR_ROLE(), address(vetoGovernor)));
+    assertFalse(timelock.hasRole(timelock.DEFAULT_ADMIN_ROLE(), address(deployer)));
   }
 }

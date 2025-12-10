@@ -22,16 +22,16 @@ contract DeployTimelock is Script, BaseLogger {
 
   function run(address _deployer, TimelockDeploymentConfiguration memory _config)
     public
-    returns (TimelockController timelock)
+    returns (TimelockController _timelock)
   {
     vm.startBroadcast(_deployer);
 
     address[] memory _proposers = new address[](0);
     address[] memory _executors = new address[](0);
-    timelock = new TimelockController(_config.timelockMinDelay, _proposers, _executors, _deployer);
+    _timelock = new TimelockController(_config.timelockMinDelay, _proposers, _executors, _deployer);
 
     vm.stopBroadcast();
 
-    _log("timelock", address(timelock));
+    _log("_timelock", address(_timelock));
   }
 }

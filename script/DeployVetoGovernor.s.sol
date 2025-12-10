@@ -32,20 +32,17 @@ contract DeployVetoGovernor is Script, BaseLogger {
     returns (VetoGovernorDeploymentConfiguration memory)
   {}
 
-  function _computeCouncilGovernorAddress(address _deployer) internal view returns (address) {
-    // We need to account for timelock param adjustment after deployment, which takes 3
-    // transactions.
-    uint256 _nextNonce = vm.getNonce(_deployer) + 4;
+  function predictCouncilGovernorAddress(address _deployer) public view returns (address) {
+    uint256 _nextNonce = vm.getNonce(_deployer) + 1;
     return vm.computeCreateAddress(_deployer, _nextNonce);
   }
 
   function run(
     address _deployer,
     TimelockController _timelock,
-    VetoGovernorDeploymentConfiguration memory _config
+    VetoGovernorDeploymentConfiguration memory _config,
+    address _predictedCouncilGovernorAddress
   ) public returns (BasicCouncilVetoGovernor vetoGovernor) {
-    address _predictedCouncilGovernorAddress = _computeCouncilGovernorAddress(_deployer);
-
     vm.startBroadcast(_deployer);
 
     BasicCouncilVetoGovernor.ConstructorParams memory _params =
@@ -64,12 +61,20 @@ contract DeployVetoGovernor is Script, BaseLogger {
       );
 
     vetoGovernor = new BasicCouncilVetoGovernor(_params);
-    _timelock.grantRole(_timelock.EXECUTOR_ROLE(), address(vetoGovernor));
-    _timelock.grantRole(_timelock.PROPOSER_ROLE(), address(vetoGovernor));
-    _timelock.renounceRole(_timelock.DEFAULT_ADMIN_ROLE(), _deployer);
-
     vm.stopBroadcast();
 
     _log("vetoGovernor", address(vetoGovernor));
+  }
+
+  function grantVetoGovernorRoles(
+    address _deployer,
+    BasicCouncilVetoGovernor _vetoGovernor,
+    TimelockController _timelock
+  ) public {
+    vm.startBroadcast(_deployer);
+    _timelock.grantRole(_timelock.EXECUTOR_ROLE(), address(_vetoGovernor));
+    _timelock.grantRole(_timelock.PROPOSER_ROLE(), address(_vetoGovernor));
+    _timelock.renounceRole(_timelock.DEFAULT_ADMIN_ROLE(), _deployer);
+    vm.stopBroadcast();
   }
 }
