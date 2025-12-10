@@ -3,15 +3,17 @@ pragma solidity ^0.8.30;
 
 // Script Dependencies
 import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
-import {DeploymentInputLocal} from "script/DeploymentInputLocal.sol";
+import {
+  DeploymentInputMainnetForkTest
+} from "script/deploy-constants/DeploymentInputMainnetForkTest.sol";
 import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
 import {DeployTimelock} from "script/DeployTimelock.s.sol";
 import {DeployVetoGovernor} from "script/DeployVetoGovernor.s.sol";
 import {DeployCouncilGovernor} from "script/DeployCouncilGovernor.s.sol";
 
-contract DeploymentConfigurationLocal is
+contract DeploymentConfigurationTest is
   DeploymentConfigurationBase,
-  DeploymentInputLocal,
+  DeploymentInputMainnetForkTest,
   DeployAndMintCouncilERC20,
   DeployTimelock,
   DeployVetoGovernor,

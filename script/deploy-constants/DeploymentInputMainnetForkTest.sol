@@ -4,13 +4,13 @@ pragma solidity ^0.8.30;
 // Script Dependencies
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 
-contract DeploymentInputLocal {
+contract DeploymentInputMainnetForkTest {
   // Address that controls council membership
   address public constant MAIN_DAO_GOVERNOR = 0x1111111111111111111111111111111111111111;
   // DAO token used by the veto governor for vote weight (placeholder)
   IERC5805 public constant MAIN_DAO_TOKEN = IERC5805(0x2222222222222222222222222222222222222222);
   // Admin account allowed to adjust governor settings (placeholder)
-  address public constant GOVERNOR_ADMIN = 0x3333333333333333333333333333333333333333;
+  address public constant GOVERNOR_ADMIN = MAIN_DAO_GOVERNOR;
 
   // Council token name
   string public constant COUNCIL_TOKEN_NAME = "Optimistic Council";
@@ -22,13 +22,13 @@ contract DeploymentInputLocal {
   uint256 public constant MAX_TOKENS_PER_MEMBER = 1;
   // Initial council membership roster used in scripts/tests
   address[] public COUNCIL_MEMBERS = [
-    0x9848A0c9412caCA9DfdCDC2e543b681462F49de9,
-    0x4882C0AD0E4999c1616B9E55292726bBE82c36a0,
-    0x14440b5eA01380DD3276a7E1157266fEadf7a6Ab,
-    0xb11D758A95f1070aAf6d65E81d86190ac3595E6d,
-    0xdDe3FaEC9Dd75753f9411511140cD0a169568037,
-    0xb7D72a7bB319E33804A28135b5f271F16Dc55917,
-    0xCAb91b447839E9598f4Cf73baEB475D8d9De1aC5
+    address(bytes20("council member 0")),
+    address(bytes20("council member 1")),
+    address(bytes20("council member 2")),
+    address(bytes20("council member 3")),
+    address(bytes20("council member 4")),
+    address(bytes20("council member 5")),
+    address(bytes20("council member 6"))
   ];
 
   function COUNCIL_MEMBERS_LENGTH() public view returns (uint256) {

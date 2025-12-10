@@ -15,8 +15,10 @@ import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol"
 import {DeployTimelock} from "script/DeployTimelock.s.sol";
 import {DeployVetoGovernor} from "script/DeployVetoGovernor.s.sol";
 import {DeployCouncilGovernor} from "script/DeployCouncilGovernor.s.sol";
-import {DeploymentConfigurationLocal} from "script/DeploymentConfigurationLocal.sol";
-import {DeploymentInputLocal} from "script/DeploymentInputLocal.sol";
+import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
+import {
+  DeploymentInputMainnetForkTest
+} from "script/deploy-constants/DeploymentInputMainnetForkTest.sol";
 
 /// @title Integration test for the Optimistic Governance deployment
 /// @notice This test exercises the entire deployment flow with verification after each phase.
@@ -27,8 +29,8 @@ contract OptimisticGovernanceDeployment is Test {
   BasicCouncilVetoGovernor public vetoGovernor;
   BasicCouncilGovernor public councilGovernor;
 
-  DeploymentInputLocal input;
-  DeploymentConfigurationLocal config;
+  DeploymentInputMainnetForkTest input;
+  DeploymentConfigurationTest config;
   address deployer;
 
   function setUp() public {
@@ -36,8 +38,8 @@ contract OptimisticGovernanceDeployment is Test {
     uint256 _forkBlock = 23_810_240;
     vm.createSelectFork(_rpcUrl, _forkBlock);
 
-    input = new DeploymentInputLocal();
-    config = new DeploymentConfigurationLocal();
+    input = new DeploymentInputMainnetForkTest();
+    config = new DeploymentConfigurationTest();
 
     deployer = input.MAIN_DAO_GOVERNOR();
   }
@@ -67,7 +69,7 @@ contract OptimisticGovernanceDeployment is Test {
 
   function _step1_deployCouncilTokenAndMint() internal {
     require(address(councilToken) == address(0), "Council token already deployed");
-    DeploymentConfigurationLocal.CouncilERC20DeploymentConfiguration memory _config =
+    DeploymentConfigurationTest.CouncilERC20DeploymentConfiguration memory _config =
       config._getCouncilERC20DeploymentConfiguration();
 
     DeployAndMintCouncilERC20 _script = new DeployAndMintCouncilERC20();
@@ -77,7 +79,7 @@ contract OptimisticGovernanceDeployment is Test {
 
   function _step2_deployTimelock() internal {
     require(address(timelock) == address(0), "Timelock already deployed");
-    DeploymentConfigurationLocal.TimelockDeploymentConfiguration memory _config =
+    DeploymentConfigurationTest.TimelockDeploymentConfiguration memory _config =
       config._getTimelockDeploymentConfiguration();
     DeployTimelock _script = new DeployTimelock();
     _script.setLoggingSilenced(true);
@@ -88,7 +90,7 @@ contract OptimisticGovernanceDeployment is Test {
     require(address(vetoGovernor) == address(0), "Veto governor already deployed");
     require(address(timelock) != address(0), "Timelock must be deployed first");
 
-    DeploymentConfigurationLocal.VetoGovernorDeploymentConfiguration memory _config =
+    DeploymentConfigurationTest.VetoGovernorDeploymentConfiguration memory _config =
       config._getVetoGovernorDeploymentConfiguration();
     DeployVetoGovernor _script = new DeployVetoGovernor();
     _script.setLoggingSilenced(true);
@@ -101,7 +103,7 @@ contract OptimisticGovernanceDeployment is Test {
     require(address(councilToken) != address(0), "Council token must be deployed first");
     require(address(vetoGovernor) != address(0), "Veto governor must be deployed first");
 
-    DeploymentConfigurationLocal.CouncilGovernorDeploymentConfiguration memory _config =
+    DeploymentConfigurationTest.CouncilGovernorDeploymentConfiguration memory _config =
       config._getCouncilGovernorDeploymentConfiguration();
     DeployCouncilGovernor _script = new DeployCouncilGovernor();
     _script.setLoggingSilenced(true);
