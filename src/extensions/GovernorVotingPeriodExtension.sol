@@ -20,27 +20,28 @@ abstract contract GovernorVotingPeriodExtension is Governor {
   /// @notice Emitted when the {_votingPeriodExtension} parameter is changed.
   event VotingPeriodExtensionSet(uint64 oldVotingPeriodExtension, uint64 newVotingPeriodExtension);
 
-  /// @notice Emitted when the {_votingPeriodExtensionThreshold} parameter is changed.
+  /// @notice Emitted when the {_votingPeriodExtensionThresholdBps} parameter is changed.
   event VotingPeriodExtensionThresholdSet(
     uint16 oldVotingPeriodExtensionThreshold, uint16 newVotingPeriodExtensionThreshold
   );
 
   /// @notice Reverts when a voting period extension threshold exceeds the BPS denominator.
-  /// @param votingPeriodExtensionThreshold The invalid threshold supplied, in basis points.
-  error GovernorVotingPeriodExtension_InvalidThreshold(uint16 votingPeriodExtensionThreshold);
+  /// @param votingPeriodExtensionThresholdBps The invalid threshold supplied, in basis points.
+  error GovernorVotingPeriodExtensionBps_InvalidThreshold(uint16 votingPeriodExtensionThresholdBps);
 
   uint48 private _votingPeriodExtension;
-  uint16 private _votingPeriodExtensionThreshold;
+  uint16 private _votingPeriodExtensionThresholdBps;
 
   mapping(uint256 proposalId => uint48) private _extendedDeadlines;
 
   /// @notice Initializes the vote extension parameter: the extra time (seconds or blocks, depending
   /// on the governor clock mode) added when the extension threshold is met near the end of voting.
   /// @param _initialVoteExtension Duration to extend when triggered.
-  /// @param _initialVotingPeriodExtensionThreshold Threshold in bps of quorum required to trigger.
-  constructor(uint48 _initialVoteExtension, uint16 _initialVotingPeriodExtensionThreshold) {
+  /// @param _initialVotingPeriodExtensionThresholdBps Threshold in bps of quorum required to
+  /// trigger.
+  constructor(uint48 _initialVoteExtension, uint16 _initialVotingPeriodExtensionThresholdBps) {
     _setVotingPeriodExtension(_initialVoteExtension);
-    _setVotingPeriodExtensionThreshold(_initialVotingPeriodExtensionThreshold);
+    _setVotingPeriodExtensionThresholdBps(_initialVotingPeriodExtensionThresholdBps);
   }
 
   /// @inheritdoc IGovernor
@@ -55,8 +56,8 @@ abstract contract GovernorVotingPeriodExtension is Governor {
 
   /// @notice Returns the threshold expressed in basis points of quorum that must be reached to
   /// extend the voting period.
-  function votingPeriodExtensionThreshold() public view virtual returns (uint16) {
-    return _votingPeriodExtensionThreshold;
+  function votingPeriodExtensionThresholdBps() public view virtual returns (uint16) {
+    return _votingPeriodExtensionThresholdBps;
   }
 
   function proposalVotes(uint256 _proposalId) public view virtual returns (uint256 _againstVotes);
@@ -81,7 +82,7 @@ abstract contract GovernorVotingPeriodExtension is Governor {
     virtual
     onlyGovernance
   {
-    _setVotingPeriodExtensionThreshold(_newVotingPeriodExtensionThreshold);
+    _setVotingPeriodExtensionThresholdBps(_newVotingPeriodExtensionThreshold);
   }
 
   /// @notice Returns true when the current votes meet or exceed the extension threshold.
@@ -93,12 +94,12 @@ abstract contract GovernorVotingPeriodExtension is Governor {
     virtual
     returns (bool)
   {
-    if (_votingPeriodExtensionThreshold == 0) return false;
+    if (_votingPeriodExtensionThresholdBps == 0) return false;
 
-    uint256 _juniorThreshold = Math.mulDiv(
-      quorum(proposalSnapshot(_proposalId)), _votingPeriodExtensionThreshold, BPS_DENOMINATOR
+    uint256 _minorThreshold = Math.mulDiv(
+      quorum(proposalSnapshot(_proposalId)), _votingPeriodExtensionThresholdBps, BPS_DENOMINATOR
     );
-    return proposalVotes(_proposalId) >= _juniorThreshold;
+    return proposalVotes(_proposalId) >= _minorThreshold;
   }
 
   /// @notice Vote tally updated and detects if it caused quorum to be reached, potentially
@@ -132,21 +133,21 @@ abstract contract GovernorVotingPeriodExtension is Governor {
     _votingPeriodExtension = _newVotingPeriodExtension;
   }
 
-  /// @notice Internal setter for {_votingPeriodExtensionThreshold}. Emits a
+  /// @notice Internal setter for {_votingPeriodExtensionThresholdBps}. Emits a
   /// {VotingPeriodExtensionThresholdSet} event.
   /// @dev Setting this value to 0 effectively turns off the extension module.
-  /// @param _newVotingPeriodExtensionThreshold Threshold in bps of quorum. Must be less than or
+  /// @param _newVotingPeriodExtensionThresholdBps Threshold in bps of quorum. Must be less than or
   /// equal to BPS_DENOMINATOR.
-  function _setVotingPeriodExtensionThreshold(uint16 _newVotingPeriodExtensionThreshold)
+  function _setVotingPeriodExtensionThresholdBps(uint16 _newVotingPeriodExtensionThresholdBps)
     internal
     virtual
   {
-    if (_newVotingPeriodExtensionThreshold > 10_000) {
-      revert GovernorVotingPeriodExtension_InvalidThreshold(_newVotingPeriodExtensionThreshold);
+    if (_newVotingPeriodExtensionThresholdBps > 10_000) {
+      revert GovernorVotingPeriodExtensionBps_InvalidThreshold(_newVotingPeriodExtensionThresholdBps);
     }
     emit VotingPeriodExtensionThresholdSet(
-      _votingPeriodExtensionThreshold, _newVotingPeriodExtensionThreshold
+      _votingPeriodExtensionThresholdBps, _newVotingPeriodExtensionThresholdBps
     );
-    _votingPeriodExtensionThreshold = _newVotingPeriodExtensionThreshold;
+    _votingPeriodExtensionThresholdBps = _newVotingPeriodExtensionThresholdBps;
   }
 }

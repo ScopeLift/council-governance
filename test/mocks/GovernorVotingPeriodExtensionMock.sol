@@ -21,10 +21,10 @@ contract GovernorVotingPeriodExtensionMock is
     )
   {}
 
-  bool internal triggerExtensionThreshold;
+  bool private _triggerVotingPeriodExtensionThreshold;
 
-  function forceTriggerExtensionThreshold() external {
-    triggerExtensionThreshold = true;
+  function forceTriggerVotingPeriodExtensionThreshold() external {
+    _triggerVotingPeriodExtensionThreshold = true;
   }
 
   function votingDelay() public pure override returns (uint256) {
@@ -95,7 +95,7 @@ contract GovernorVotingPeriodExtensionMock is
     override
     returns (bool)
   {
-    if (triggerExtensionThreshold) return true;
+    if (_triggerVotingPeriodExtensionThreshold) return true;
     return super._votingPeriodExtensionThresholdTriggered(_proposalId);
   }
 
@@ -133,9 +133,9 @@ contract GovernorVotingPeriodExtensionMock is
     _setVotingPeriodExtension(_newVotingPeriodExtension);
   }
 
-  function exposed_SetVotingPeriodExtensionThreshold(uint16 _newVotingPeriodExtensionThreshold)
+  function exposed_SetVotingPeriodExtensionThresholdBps(uint16 _newVotingPeriodExtensionThresholdBps)
     public
   {
-    _setVotingPeriodExtensionThreshold(_newVotingPeriodExtensionThreshold);
+    _setVotingPeriodExtensionThresholdBps(_newVotingPeriodExtensionThresholdBps);
   }
 }
