@@ -60,7 +60,7 @@ abstract contract GovernorCouncilQueuing is Governor {
   /// @param _proposalId the ID of the proposal to check.
   /// @return The current state of the proposal considering both governors.
   function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
-    ProposalState _currentState = Governor.state(_proposalId);
+    ProposalState _currentState = super.state(_proposalId);
 
     if (_currentState != ProposalState.Queued) return _currentState;
     if (_checkVetoGovernorStateBitmap(
@@ -98,7 +98,7 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes[] memory _calldatas,
     string memory _description
   ) public virtual override returns (uint256 _proposalId) {
-    _proposalId = Governor.propose(_targets, _values, _calldatas, _description);
+    _proposalId = super.propose(_targets, _values, _calldatas, _description);
     proposalDescriptions[_proposalId] = _description;
   }
 
@@ -194,7 +194,7 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal virtual override returns (uint256 _proposalId) {
-    _proposalId = Governor._cancel(_targets, _values, _calldatas, _descriptionHash);
+    _proposalId = super._cancel(_targets, _values, _calldatas, _descriptionHash);
     delete proposalDescriptions[_proposalId];
   }
 

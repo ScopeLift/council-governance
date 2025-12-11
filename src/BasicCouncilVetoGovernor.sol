@@ -135,7 +135,7 @@ contract BasicCouncilVetoGovernor is
     bytes[] memory _calldatas,
     string memory _description
   ) public override onlyCouncil returns (uint256) {
-    return Governor.propose(_targets, _values, _calldatas, _description);
+    return super.propose(_targets, _values, _calldatas, _description);
   }
 
   function execute(
@@ -144,7 +144,7 @@ contract BasicCouncilVetoGovernor is
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) public payable override onlyCouncil returns (uint256) {
-    return Governor.execute(_targets, _values, _calldatas, _descriptionHash);
+    return super.execute(_targets, _values, _calldatas, _descriptionHash);
   }
 
   function _checkGovernance() internal virtual override(Governor, GovernorAdmin) {
@@ -152,7 +152,7 @@ contract BasicCouncilVetoGovernor is
   }
 
   function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
-    return Governor._executor();
+    return GovernorTimelockControl._executor();
   }
 
   /// @inheritdoc GovernorTimelockControl

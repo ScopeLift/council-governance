@@ -65,7 +65,7 @@ abstract contract GovernorVetoOverride is Governor {
   /// @param _proposalId The ID of the proposal to check.
   /// @return ProposalState The current state of the proposal.
   function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
-    ProposalState _state = Governor.state(_proposalId);
+    ProposalState _state = super.state(_proposalId);
     if (
       isVetoOverridden[_proposalId] && _state == ProposalState.Defeated
         && clock() - proposalDeadline(_proposalId) < vetoOverrideDuration
