@@ -13,7 +13,7 @@ import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {Test} from "forge-std/Test.sol";
 import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
 import {DeployTimelock} from "script/DeployTimelock.s.sol";
-import {DeployGovernorsAndWireRoles} from "script/DeployGovernorsAndWireRoles.s.sol";
+import {DeployGovernorsAndGrantRoles} from "script/DeployGovernorsAndGrantRoles.s.sol";
 import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
 import {
   DeploymentInputMainnetForkTest
@@ -91,7 +91,7 @@ contract OptimisticGovernanceDeployment is Test {
       config._getVetoGovernorDeploymentConfiguration();
     DeploymentConfigurationTest.CouncilGovernorDeploymentConfiguration memory _councilConfig =
       config._getCouncilGovernorDeploymentConfiguration();
-    DeployGovernorsAndWireRoles _script = new DeployGovernorsAndWireRoles();
+    DeployGovernorsAndGrantRoles _script = new DeployGovernorsAndGrantRoles();
     _script.setLoggingSilenced(true);
     (councilGovernor, vetoGovernor) =
       _script.run(deployer, timelock, _councilConfig, _vetoConfig, councilToken);

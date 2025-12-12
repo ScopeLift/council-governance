@@ -15,7 +15,7 @@ import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {Script} from "forge-std/Script.sol";
 import {BaseLogger} from "script/BaseLogger.sol";
 
-contract DeployGovernorsAndWireRoles is Script, BaseLogger {
+contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
   struct CouncilGovernorDeploymentConfiguration {
     string councilGovernorName;
     uint48 councilGovernorInitialVotingDelay;
