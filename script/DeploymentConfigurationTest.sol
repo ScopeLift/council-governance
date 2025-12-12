@@ -87,6 +87,8 @@ contract DeploymentConfigurationTest is
       councilGovernorInitialVotingDelay: COUNCIL_GOVERNOR_INITIAL_VOTING_DELAY,
       councilGovernorInitialVotingPeriod: COUNCIL_GOVERNOR_INITIAL_VOTING_PERIOD,
       councilGovernorInitialProposalThreshold: COUNCIL_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD,
+      councilGovernorInitialQuorumFraction: COUNCIL_GOVERNOR_INITIAL_QUORUM_FRACTION,
+      councilGovernorInitialSuperQuorumFraction: COUNCIL_GOVERNOR_INITIAL_SUPER_QUORUM_FRACTION,
       councilGovernorAdmin: _baseConfig.governorAdmin
     });
   }

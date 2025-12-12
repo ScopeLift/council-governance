@@ -18,9 +18,13 @@ contract BasicCouncilGovernorHarness is BasicCouncilGovernor {
       _councilToken,
       BasicCouncilVetoGovernor(payable(_vetoGovernor)),
       _config().councilGovernorAdmin,
-      _config().councilGovernorInitialVotingDelay,
-      _config().councilGovernorInitialVotingPeriod,
-      _config().councilGovernorInitialProposalThreshold
+      BasicCouncilGovernor.InitialCouncilParams({
+        initialVotingDelay: _config().councilGovernorInitialVotingDelay,
+        initialVotingPeriod: _config().councilGovernorInitialVotingPeriod,
+        initialProposalThreshold: _config().councilGovernorInitialProposalThreshold,
+        initialQuorumFraction: _config().councilGovernorInitialQuorumFraction,
+        initialSuperQuorumFraction: _config().councilGovernorInitialSuperQuorumFraction
+      })
     )
   {}
 

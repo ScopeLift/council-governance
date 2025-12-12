@@ -22,6 +22,10 @@ contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
     return _voteSucceeded(proposalId);
   }
 
+  function exposed_isVetoed(uint256 proposalId) public view returns (bool) {
+    return _isVetoed(proposalId);
+  }
+
   /// @notice Exposes _countVote for unit testing purposes
   function exposed_countVote(
     uint256 proposalId,

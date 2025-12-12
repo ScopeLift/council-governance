@@ -21,6 +21,8 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
     uint48 councilGovernorInitialVotingDelay;
     uint32 councilGovernorInitialVotingPeriod;
     uint256 councilGovernorInitialProposalThreshold;
+    uint256 councilGovernorInitialQuorumFraction;
+    uint256 councilGovernorInitialSuperQuorumFraction;
     address councilGovernorAdmin;
   }
 
@@ -74,14 +76,21 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
   ) public returns (BasicCouncilGovernor councilGovernor, BasicCouncilVetoGovernor vetoGovernor) {
     vm.startBroadcast(_deployer);
 
+    BasicCouncilGovernor.InitialCouncilParams memory _councilParams =
+      BasicCouncilGovernor.InitialCouncilParams(
+        _councilConfig.councilGovernorInitialVotingDelay,
+        _councilConfig.councilGovernorInitialVotingPeriod,
+        _councilConfig.councilGovernorInitialProposalThreshold,
+        _councilConfig.councilGovernorInitialQuorumFraction,
+        _councilConfig.councilGovernorInitialSuperQuorumFraction
+      );
+
     councilGovernor = new BasicCouncilGovernor(
       _councilConfig.councilGovernorName,
       IERC5805(_councilToken),
       IGovernor(_predictVetoGovernorAddress(_deployer)),
       _councilConfig.councilGovernorAdmin,
-      _councilConfig.councilGovernorInitialVotingDelay,
-      _councilConfig.councilGovernorInitialVotingPeriod,
-      _councilConfig.councilGovernorInitialProposalThreshold
+      _councilParams
     );
 
     BasicCouncilVetoGovernor.ConstructorParams memory _params =

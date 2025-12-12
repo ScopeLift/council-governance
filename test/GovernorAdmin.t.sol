@@ -19,7 +19,11 @@ contract GovernorAdminTest is BasicCouncilGovernorTest {
     uint256 _councilProposalId = councilGovernor.propose(targets, values, calldatas, _description);
 
     skip(councilGovernor.votingDelay() + 1);
-    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.quorum(councilGovernor.proposalSnapshot(_councilProposalId));
+      _i++
+    ) {
       vm.prank(councilMembers[_i]);
       councilGovernor.castVote(_councilProposalId, 1);
     }

@@ -70,20 +70,20 @@ abstract contract GovernorVetoCountingSimple is Governor {
   /// @dev For council-sourced proposals this function treats proposals as being in quorum by
   /// default. If the veto threshold is reached, quorum is considered not reached.
   function _quorumReached(uint256 _proposalId) internal view virtual override returns (bool) {
-    return !(_proposalFromCouncilIsVetoed(_proposalId));
+    return true;
   }
 
-  /// @notice Checks whether a proposal has been vetoed by the council.
+  /// @notice Checks whether a proposal has been vetoed.
   /// @param _proposalId The id of the proposal to check.
   /// @return bool True if the proposal's `vetoVotes` >= quorum at the proposal snapshot.
   /// @dev `quorum(proposalSnapshot(proposalId))` uses the same quorum rule as the parent Governor.
-  function _proposalFromCouncilIsVetoed(uint256 _proposalId) internal view returns (bool) {
+  function _isVetoed(uint256 _proposalId) internal view returns (bool) {
     return (proposalVoteData[_proposalId].vetoVotes >= quorum(proposalSnapshot(_proposalId)));
   }
 
   /// @inheritdoc Governor
   function _voteSucceeded(uint256 _proposalId) internal view virtual override returns (bool) {
-    return _quorumReached(_proposalId);
+    return !(_isVetoed(_proposalId));
   }
 
   /// @inheritdoc Governor
