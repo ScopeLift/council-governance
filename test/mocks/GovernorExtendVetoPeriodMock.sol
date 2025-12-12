@@ -2,23 +2,15 @@
 pragma solidity ^0.8.30;
 
 // Internal Dependencies
-import {
-  Governor,
-  GovernorVotingPeriodExtension
-} from "src/extensions/GovernorVotingPeriodExtension.sol";
+import {Governor, GovernorExtendVetoPeriod} from "src/extensions/GovernorExtendVetoPeriod.sol";
 import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSimple.sol";
 
-/// @title GovernorVotingPeriodExtensionMock
+/// @title GovernorExtendVetoPeriodMock
 /// @author [ScopeLift](https://scopelift.co)
-contract GovernorVotingPeriodExtensionMock is
-  GovernorVotingPeriodExtension,
-  GovernorVetoCountingSimple
-{
+contract GovernorExtendVetoPeriodMock is GovernorExtendVetoPeriod, GovernorVetoCountingSimple {
   constructor(uint48 _initialVotingPeriodExtension, uint16 _initialVotingPeriodExtensionThreshold)
-    Governor("GovernorVotingPeriodExtensionMock")
-    GovernorVotingPeriodExtension(
-      _initialVotingPeriodExtension, _initialVotingPeriodExtensionThreshold
-    )
+    Governor("GovernorExtendVetoPeriodMock")
+    GovernorExtendVetoPeriod(_initialVotingPeriodExtension, _initialVotingPeriodExtensionThreshold)
   {}
 
   bool private _triggerVotingPeriodExtensionThreshold;
@@ -35,12 +27,12 @@ contract GovernorVotingPeriodExtensionMock is
     return 10 days;
   }
 
-  function quorum(
+  function vetoThreshold(
     uint256 /*timepoint*/
   )
     public
     pure
-    override
+    override(GovernorVetoCountingSimple, GovernorExtendVetoPeriod)
     returns (uint256)
   {
     return 10e18;
@@ -50,17 +42,17 @@ contract GovernorVotingPeriodExtensionMock is
     public
     view
     virtual
-    override(Governor, GovernorVotingPeriodExtension)
+    override(Governor, GovernorExtendVetoPeriod)
     returns (uint256)
   {
-    return GovernorVotingPeriodExtension.proposalDeadline(_proposalId);
+    return GovernorExtendVetoPeriod.proposalDeadline(_proposalId);
   }
 
   function proposalVotes(uint256 _proposalId)
     public
     view
     virtual
-    override(GovernorVetoCountingSimple, GovernorVotingPeriodExtension)
+    override(GovernorVetoCountingSimple, GovernorExtendVetoPeriod)
     returns (uint256 _againstVotes)
   {
     return GovernorVetoCountingSimple.proposalVotes(_proposalId);
@@ -102,9 +94,9 @@ contract GovernorVotingPeriodExtensionMock is
   function _tallyUpdated(uint256 _proposalId)
     internal
     virtual
-    override(Governor, GovernorVotingPeriodExtension)
+    override(Governor, GovernorExtendVetoPeriod)
   {
-    GovernorVotingPeriodExtension._tallyUpdated(_proposalId);
+    GovernorExtendVetoPeriod._tallyUpdated(_proposalId);
   }
 
   function exposed_countVote(
@@ -133,9 +125,9 @@ contract GovernorVotingPeriodExtensionMock is
     _setVotingPeriodExtension(_newVotingPeriodExtension);
   }
 
-  function exposed_SetVotingPeriodExtensionThresholdBps(uint16 _newVotingPeriodExtensionThresholdBps)
+  function exposed_setVetoPeriodExtensionThresholdPct(uint16 _newVetoPeriodExtensionThresholdPct)
     public
   {
-    _setVotingPeriodExtensionThresholdBps(_newVotingPeriodExtensionThresholdBps);
+    _setVetoPeriodExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 }

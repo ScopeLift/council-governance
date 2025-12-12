@@ -70,6 +70,9 @@ contract DeploymentConfigurationTest is
       vetoGovernorInitialProposalThreshold: VETO_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD,
       vetoOverrideRole: VETO_OVERRIDE_ROLE,
       vetoOverrideDuration: VETO_OVERRIDE_DURATION,
+      votingPeriodExtension: VOTING_PERIOD_EXTENSION,
+      votingPeriodExtensionThresholdPct: VOTING_PERIOD_EXTENSION_THRESHOLD_PCT,
+      vetoThresholdNumerator: VETO_GOVERNOR_INITIAL_VETO_THRESHOLD_FRACTION,
       vetoGuardian: VETO_GUARDIAN,
       vetoGovernorAdmin: _baseConfig.governorAdmin
     });

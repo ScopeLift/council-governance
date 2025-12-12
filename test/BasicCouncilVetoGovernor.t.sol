@@ -52,7 +52,7 @@ contract BasicVetoGovernorTest is Test {
     _timelock.renounceRole(_timelock.DEFAULT_ADMIN_ROLE(), input.MAIN_DAO_GOVERNOR());
     vm.stopPrank();
 
-    MockERC20Votes(address(vetoGovernor.token())).mint(whale, vetoGovernor.quorum(0) + 1);
+    MockERC20Votes(address(vetoGovernor.token())).mint(whale, 100e18);
   }
 
   function _deployVetoGovernor(
@@ -162,48 +162,49 @@ contract BasicVetoGovernorTest is Test {
 
 contract Constructor is Test {
   function test_ConstructorSetsParamsCorrectly(
-    string memory _name,
-    IERC5805 _token,
-    uint48 _votingDelay,
-    uint32 _votingPeriod,
-    uint256 _proposalThreshold,
-    address _vetoGuardian,
-    address _vetoOverrideRole,
-    uint48 _vetoOverrideDuration,
-    TimelockController _timelock,
-    address _owner,
-    address _council
+    BasicCouncilVetoGovernor.ConstructorParams memory _params
   ) public {
-    vm.assume(_owner != address(0));
-    vm.assume(_votingPeriod != 0);
+    vm.assume(_params.governorAdmin != address(0));
+    vm.assume(_params.votingPeriod != 0);
+    _params.votingPeriodExtensionThresholdPct =
+      uint16(bound(_params.votingPeriodExtensionThresholdPct, 0, 100));
+    _params.vetoThresholdNumerator = bound(_params.vetoThresholdNumerator, 0, 100);
 
-    BasicCouncilVetoGovernor.ConstructorParams memory _params =
+    BasicCouncilVetoGovernor.ConstructorParams memory _newParams =
       BasicCouncilVetoGovernor.ConstructorParams(
-        _name,
-        _token,
-        _votingDelay,
-        _votingPeriod,
-        _proposalThreshold,
-        _vetoGuardian,
-        _vetoOverrideRole,
-        _vetoOverrideDuration,
-        _timelock,
-        _owner,
-        _council
+        _params.name,
+        _params.token,
+        _params.votingDelay,
+        _params.votingPeriod,
+        _params.proposalThreshold,
+        _params.vetoGuardian,
+        _params.vetoOverrideRole,
+        _params.vetoOverrideDuration,
+        _params.votingPeriodExtension,
+        _params.votingPeriodExtensionThresholdPct,
+        _params.vetoThresholdNumerator,
+        _params.timelock,
+        _params.governorAdmin,
+        _params.council
       );
-    BasicCouncilVetoGovernor _vetoGovernor = new BasicCouncilVetoGovernor(_params);
+    BasicCouncilVetoGovernor _vetoGovernor = new BasicCouncilVetoGovernor(_newParams);
 
-    assertEq(_vetoGovernor.name(), _name);
-    assertEq(address(_vetoGovernor.token()), address(_token));
-    assertEq(_vetoGovernor.votingDelay(), _votingDelay);
-    assertEq(_vetoGovernor.votingPeriod(), _votingPeriod);
-    assertEq(_vetoGovernor.proposalThreshold(), _proposalThreshold);
-    assertEq(_vetoGovernor.vetoOverrideRole(), _vetoOverrideRole);
-    assertEq(_vetoGovernor.vetoOverrideDuration(), _vetoOverrideDuration);
-    assertEq(_vetoGovernor.vetoGuardian(), _vetoGuardian);
-    assertEq(address(_vetoGovernor.timelock()), address(_timelock));
-    assertEq(_vetoGovernor.owner(), _owner);
-    assertEq(_vetoGovernor.COUNCIL(), _council);
+    assertEq(_vetoGovernor.name(), _newParams.name);
+    assertEq(address(_vetoGovernor.token()), address(_newParams.token));
+    assertEq(_vetoGovernor.votingDelay(), _newParams.votingDelay);
+    assertEq(_vetoGovernor.votingPeriod(), _newParams.votingPeriod);
+    assertEq(_vetoGovernor.proposalThreshold(), _newParams.proposalThreshold);
+    assertEq(_vetoGovernor.vetoOverrideRole(), _newParams.vetoOverrideRole);
+    assertEq(_vetoGovernor.vetoOverrideDuration(), _newParams.vetoOverrideDuration);
+    assertEq(_vetoGovernor.vetoGuardian(), _newParams.vetoGuardian);
+    assertEq(address(_vetoGovernor.timelock()), address(_newParams.timelock));
+    assertEq(_vetoGovernor.owner(), _newParams.governorAdmin);
+    assertEq(_vetoGovernor.COUNCIL(), _newParams.council);
+    assertEq(_vetoGovernor.votingPeriodExtension(), _newParams.votingPeriodExtension);
+    assertEq(
+      _vetoGovernor.votingPeriodExtensionThresholdPct(),
+      _newParams.votingPeriodExtensionThresholdPct
+    );
   }
 }
 
@@ -227,7 +228,7 @@ contract ProposalThreshold is BasicVetoGovernorTest {
 
 contract Quorum is BasicVetoGovernorTest {
   function testFuzz_ReturnsQuorum(uint256 _timepoint) public view {
-    assertEq(vetoGovernor.quorum(_timepoint), 10_000e18);
+    assertEq(vetoGovernor.quorum(_timepoint), 0);
   }
 }
 
@@ -376,7 +377,7 @@ contract State is BasicVetoGovernorTest {
 
   function test_StateDefeatedAfterVotingPeriodWithVetoQuorum() public {
     uint256 _proposalId = _failProposal(_buildEmptyProposal());
-    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
@@ -385,7 +386,8 @@ contract State is BasicVetoGovernorTest {
     uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_buildEmptyProposal());
     vm.prank(vetoGovernor.vetoGuardian());
     vetoGovernor.vetoByGuardian(_proposalId);
-    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    // Guardian veto immediately defeats, but strict expiration check helps consistency
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     assertTrue(vetoGovernor.guardianVetoed(_proposalId));
     _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
@@ -395,14 +397,14 @@ contract State is BasicVetoGovernorTest {
     uint256 _proposalId = _failProposal(_buildEmptyProposal());
     vm.prank(vetoGovernor.vetoGuardian());
     vetoGovernor.vetoByGuardian(_proposalId);
-    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
 
   function test_StateSucceededAfterVotingPeriodWithVetoQuorumAndVetoOverride() public {
     uint256 _proposalId = _failProposal(_buildEmptyProposal());
-    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     vm.prank(vetoGovernor.vetoOverrideRole());
     vetoGovernor.overrideVeto(_proposalId);
@@ -415,7 +417,7 @@ contract State is BasicVetoGovernorTest {
     uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_buildEmptyProposal());
     vm.prank(vetoGovernor.vetoGuardian());
     vetoGovernor.vetoByGuardian(_proposalId);
-    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     vm.prank(vetoGovernor.vetoOverrideRole());
     vetoGovernor.overrideVeto(_proposalId);
@@ -430,7 +432,7 @@ contract State is BasicVetoGovernorTest {
     uint256 _proposalId = _failProposal(_buildEmptyProposal());
     vm.prank(vetoGovernor.vetoGuardian());
     vetoGovernor.vetoByGuardian(_proposalId);
-    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     vm.prank(vetoGovernor.vetoOverrideRole());
     vetoGovernor.overrideVeto(_proposalId);

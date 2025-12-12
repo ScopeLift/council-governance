@@ -7,15 +7,19 @@ import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSim
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
+import {
+  GovernorTimelockControl,
+  TimelockController
+} from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
 // Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
 import {GovernorVetoGuardian} from "src/extensions/GovernorVetoGuardian.sol";
 import {GovernorAdmin} from "src/extensions/GovernorAdmin.sol";
 import {
-  GovernorTimelockControl,
-  TimelockController
-} from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+  GovernorVotesVetoThresholdFraction
+} from "src/extensions/GovernorVotesVetoThresholdFraction.sol";
+import {GovernorExtendVetoPeriod} from "src/extensions/GovernorExtendVetoPeriod.sol";
 
 contract BasicCouncilVetoGovernor is
   Governor,
@@ -23,6 +27,8 @@ contract BasicCouncilVetoGovernor is
   GovernorVetoCountingSimple,
   GovernorVetoGuardian,
   GovernorVetoOverride,
+  GovernorVotesVetoThresholdFraction,
+  GovernorExtendVetoPeriod,
   GovernorAdmin,
   GovernorSettings,
   GovernorTimelockControl
@@ -48,6 +54,9 @@ contract BasicCouncilVetoGovernor is
     address vetoGuardian;
     address vetoOverrideRole;
     uint48 vetoOverrideDuration;
+    uint48 votingPeriodExtension;
+    uint16 votingPeriodExtensionThresholdPct;
+    uint256 vetoThresholdNumerator;
     TimelockController timelock;
     address governorAdmin;
     address council;
@@ -66,6 +75,10 @@ contract BasicCouncilVetoGovernor is
     GovernorVetoGuardian(_params.vetoGuardian)
     GovernorSettings(_params.votingDelay, _params.votingPeriod, _params.proposalThreshold)
     GovernorVetoOverride(_params.vetoOverrideRole, _params.vetoOverrideDuration)
+    GovernorVotesVetoThresholdFraction(_params.vetoThresholdNumerator)
+    GovernorExtendVetoPeriod(
+      _params.votingPeriodExtension, _params.votingPeriodExtensionThresholdPct
+    )
     GovernorTimelockControl(_params.timelock)
     GovernorAdmin(_params.governorAdmin)
   {
@@ -84,17 +97,6 @@ contract BasicCouncilVetoGovernor is
     return GovernorSettings.proposalThreshold();
   }
 
-  function quorum(
-    uint256 /*timepoint*/
-  )
-    public
-    pure
-    override
-    returns (uint256)
-  {
-    return 10_000e18;
-  }
-
   /// @notice Returns the proposal state after applying the guardian and override extensions.
   /// @dev The override order is deliberate:
   /// 1. {GovernorVetoGuardian} marks guardian-vetoed proposals as `Defeated`.
@@ -109,6 +111,32 @@ contract BasicCouncilVetoGovernor is
     returns (ProposalState)
   {
     return GovernorVetoOverride.state(_proposalId);
+  }
+
+  function proposalDeadline(uint256 _proposalId)
+    public
+    view
+    override(Governor, GovernorExtendVetoPeriod)
+    returns (uint256)
+  {
+    return GovernorExtendVetoPeriod.proposalDeadline(_proposalId);
+  }
+
+  function proposalVotes(uint256 _proposalId)
+    public
+    view
+    override(GovernorExtendVetoPeriod, GovernorVetoCountingSimple)
+    returns (uint256)
+  {
+    // GovernorExtendVetoPeriod doesn't implement `proposalVotes`
+    return GovernorVetoCountingSimple.proposalVotes(_proposalId);
+  }
+
+  function _tallyUpdated(uint256 _proposalId)
+    internal
+    override(Governor, GovernorExtendVetoPeriod)
+  {
+    GovernorExtendVetoPeriod._tallyUpdated(_proposalId);
   }
 
   function proposalNeedsQueuing(uint256 _proposalId)
@@ -190,5 +218,20 @@ contract BasicCouncilVetoGovernor is
     GovernorTimelockControl._executeOperations(
       _proposalId, _targets, _values, _calldatas, _descriptionHash
     );
+  }
+
+  function vetoThreshold(uint256 timepoint)
+    public
+    view
+    virtual
+    override(
+      GovernorVetoCountingSimple,
+      GovernorExtendVetoPeriod,
+      GovernorVotesVetoThresholdFraction
+    )
+    returns (uint256)
+  {
+    // Neither GovernorVetoCountingSimple nor GovernorExtendVetoPeriod implement `vetoThreshold`
+    return GovernorVotesVetoThresholdFraction.vetoThreshold(timepoint);
   }
 }

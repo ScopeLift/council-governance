@@ -34,6 +34,9 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
     uint256 vetoGovernorInitialProposalThreshold;
     address vetoOverrideRole;
     uint48 vetoOverrideDuration;
+    uint48 votingPeriodExtension;
+    uint16 votingPeriodExtensionThresholdPct;
+    uint256 vetoThresholdNumerator;
     address vetoGuardian;
     address vetoGovernorAdmin;
   }
@@ -103,6 +106,9 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
         _vetoConfig.vetoGuardian,
         _vetoConfig.vetoOverrideRole,
         _vetoConfig.vetoOverrideDuration,
+        _vetoConfig.votingPeriodExtension,
+        _vetoConfig.votingPeriodExtensionThresholdPct,
+        _vetoConfig.vetoThresholdNumerator,
         TimelockController(_timelock),
         _vetoConfig.vetoGovernorAdmin,
         address(councilGovernor)

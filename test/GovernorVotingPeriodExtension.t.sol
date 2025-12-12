@@ -6,22 +6,22 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 // Internal Dependencies
 import {
-  GovernorVotingPeriodExtension,
-  GovernorVotingPeriodExtensionMock
-} from "test/mocks/GovernorVotingPeriodExtensionMock.sol";
+  GovernorExtendVetoPeriod,
+  GovernorExtendVetoPeriodMock
+} from "test/mocks/GovernorExtendVetoPeriodMock.sol";
 
 // Test Dependencies
 import {Test} from "forge-std/Test.sol";
 
 contract GovernorVetoExtensionTest is Test {
-  GovernorVotingPeriodExtensionMock internal vetoMock;
+  GovernorExtendVetoPeriodMock internal vetoMock;
 
   uint48 internal constant INITIAL_VETO_PERIOD_EXTENSION = 3 days;
-  uint16 internal constant INITIAL_VETO_PERIOD_EXTENSION_THRESHOLD_BPS = 5000;
+  uint16 internal constant INITIAL_VETO_PERIOD_EXTENSION_THRESHOLD_PCT = 50;
 
   function setUp() public {
-    vetoMock = new GovernorVotingPeriodExtensionMock(
-      INITIAL_VETO_PERIOD_EXTENSION, INITIAL_VETO_PERIOD_EXTENSION_THRESHOLD_BPS
+    vetoMock = new GovernorExtendVetoPeriodMock(
+      INITIAL_VETO_PERIOD_EXTENSION, INITIAL_VETO_PERIOD_EXTENSION_THRESHOLD_PCT
     );
   }
 
@@ -57,9 +57,9 @@ contract GovernorVetoExtensionTest is Test {
 
   function _getMinorThreshold(uint256 _timestamp) internal view returns (uint256) {
     return Math.mulDiv(
-      vetoMock.quorum(_timestamp),
-      vetoMock.votingPeriodExtensionThresholdBps(),
-      vetoMock.BPS_DENOMINATOR()
+      vetoMock.vetoThreshold(_timestamp),
+      vetoMock.votingPeriodExtensionThresholdPct(),
+      vetoMock.VETO_THRESHOLD_DENOMINATOR()
     );
   }
 
@@ -118,14 +118,15 @@ contract Constructor is GovernorVetoExtensionTest {
     _initialVotingPeriodExtension = uint48(
       bound(_initialVotingPeriodExtension, 0, type(uint48).max)
     );
-    _initialVotingPeriodExtensionThreshold =
-      uint16(bound(_initialVotingPeriodExtensionThreshold, 0, vetoMock.BPS_DENOMINATOR()));
-    GovernorVotingPeriodExtensionMock _vetoMock = new GovernorVotingPeriodExtensionMock(
+    _initialVotingPeriodExtensionThreshold = uint16(
+      bound(_initialVotingPeriodExtensionThreshold, 0, vetoMock.VETO_THRESHOLD_DENOMINATOR())
+    );
+    GovernorExtendVetoPeriodMock _vetoMock = new GovernorExtendVetoPeriodMock(
       _initialVotingPeriodExtension, _initialVotingPeriodExtensionThreshold
     );
 
     assertEq(_vetoMock.votingPeriodExtension(), _initialVotingPeriodExtension);
-    assertEq(_vetoMock.votingPeriodExtensionThresholdBps(), _initialVotingPeriodExtensionThreshold);
+    assertEq(_vetoMock.votingPeriodExtensionThresholdPct(), _initialVotingPeriodExtensionThreshold);
   }
 }
 
@@ -136,9 +137,9 @@ contract VotingPeriodExtension is GovernorVetoExtensionTest {
 }
 
 contract VotingPeriodExtensionThreshold is GovernorVetoExtensionTest {
-  function test_ReturnsVotingPeriodExtensionThresholdBps() public view {
+  function test_ReturnsvotingPeriodExtensionThresholdPct() public view {
     assertEq(
-      vetoMock.votingPeriodExtensionThresholdBps(), INITIAL_VETO_PERIOD_EXTENSION_THRESHOLD_BPS
+      vetoMock.votingPeriodExtensionThresholdPct(), INITIAL_VETO_PERIOD_EXTENSION_THRESHOLD_PCT
     );
   }
 }
@@ -229,7 +230,7 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
     address _account,
     uint256 _weight
   ) public {
-    vetoMock.exposed_SetVotingPeriodExtensionThresholdBps(0);
+    vetoMock.exposed_setVetoPeriodExtensionThresholdPct(0);
     uint256 _proposalId =
       _createProposalAndCastVetoVote(_target, _value, _calldata, _account, _weight);
 
@@ -246,7 +247,7 @@ contract _setVotingPeriodExtension is GovernorVetoExtensionTest {
 
   function testFuzz_EmitsVotingPeriodExtensionSet(uint48 _newVotingPeriodExtension) public {
     vm.expectEmit();
-    emit GovernorVotingPeriodExtension.VotingPeriodExtensionSet(
+    emit GovernorExtendVetoPeriod.VotingPeriodExtensionSet(
       vetoMock.votingPeriodExtension(), _newVotingPeriodExtension
     );
 
@@ -255,43 +256,47 @@ contract _setVotingPeriodExtension is GovernorVetoExtensionTest {
 }
 
 contract _setVotingPeriodExtensionThreshold is GovernorVetoExtensionTest {
-  function testFuzz_SetVotingPeriodExtensionThresholdBps(uint16 _newVotingPeriodExtensionThreshold)
+  function testFuzz_setVetoPeriodExtensionThresholdPct(uint16 _newVotingPeriodExtensionThreshold)
     public
   {
     _newVotingPeriodExtensionThreshold =
-      uint16(bound(_newVotingPeriodExtensionThreshold, 0, vetoMock.BPS_DENOMINATOR()));
-    vetoMock.exposed_SetVotingPeriodExtensionThresholdBps(_newVotingPeriodExtensionThreshold);
+      uint16(bound(_newVotingPeriodExtensionThreshold, 0, vetoMock.VETO_THRESHOLD_DENOMINATOR()));
+    vetoMock.exposed_setVetoPeriodExtensionThresholdPct(_newVotingPeriodExtensionThreshold);
 
-    assertEq(vetoMock.votingPeriodExtensionThresholdBps(), _newVotingPeriodExtensionThreshold);
+    assertEq(vetoMock.votingPeriodExtensionThresholdPct(), _newVotingPeriodExtensionThreshold);
   }
 
-  function testFuzz_EmitsVotingPeriodExtensionThresholdBpsSet(uint16 _newVotingPeriodExtensionThresholdBps)
+  function testFuzz_EmitsvotingPeriodExtensionThresholdPctSet(uint16 _newVetoPeriodExtensionThresholdPct)
     public
   {
-    _newVotingPeriodExtensionThresholdBps =
-      uint16(bound(_newVotingPeriodExtensionThresholdBps, 0, vetoMock.BPS_DENOMINATOR()));
+    _newVetoPeriodExtensionThresholdPct =
+      uint16(bound(_newVetoPeriodExtensionThresholdPct, 0, vetoMock.VETO_THRESHOLD_DENOMINATOR()));
 
     vm.expectEmit();
-    emit GovernorVotingPeriodExtension.VotingPeriodExtensionThresholdSet(
-      vetoMock.votingPeriodExtensionThresholdBps(), _newVotingPeriodExtensionThresholdBps
+    emit GovernorExtendVetoPeriod.VotingPeriodExtensionThresholdSet(
+      vetoMock.votingPeriodExtensionThresholdPct(), _newVetoPeriodExtensionThresholdPct
     );
-    vetoMock.exposed_SetVotingPeriodExtensionThresholdBps(_newVotingPeriodExtensionThresholdBps);
+    vetoMock.exposed_setVetoPeriodExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 
-  function testFuzz_RevertIf_SetVotingPeriodExtensionAboveBpsDenominator(uint16 _newVotingPeriodExtensionThresholdBps)
+  function testFuzz_RevertIf_SetVotingPeriodExtensionAbovePercentDenominator(uint16 _newVetoPeriodExtensionThresholdPct)
     public
   {
-    _newVotingPeriodExtensionThresholdBps = uint16(
-      bound(_newVotingPeriodExtensionThresholdBps, vetoMock.BPS_DENOMINATOR() + 1, type(uint16).max)
+    _newVetoPeriodExtensionThresholdPct = uint16(
+      bound(
+        _newVetoPeriodExtensionThresholdPct,
+        vetoMock.VETO_THRESHOLD_DENOMINATOR() + 1,
+        type(uint16).max
+      )
     );
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        GovernorVotingPeriodExtension.GovernorVotingPeriodExtensionBps_InvalidThreshold.selector,
-        _newVotingPeriodExtensionThresholdBps
+        GovernorExtendVetoPeriod.GovernorExtendVetoPeriodPct_InvalidThreshold.selector,
+        _newVetoPeriodExtensionThresholdPct
       )
     );
-    vetoMock.exposed_SetVotingPeriodExtensionThresholdBps(_newVotingPeriodExtensionThresholdBps);
+    vetoMock.exposed_setVetoPeriodExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 }
 
@@ -325,7 +330,7 @@ contract _tallyUpdated is GovernorVetoExtensionTest {
     vetoMock.forceTriggerVotingPeriodExtensionThreshold();
 
     vm.expectEmit();
-    emit GovernorVotingPeriodExtension.ProposalExtended(_proposalId, uint64(_expectedDeadline));
+    emit GovernorExtendVetoPeriod.ProposalExtended(_proposalId, uint64(_expectedDeadline));
     vetoMock.exposed_TallyUpdated(_proposalId);
   }
 

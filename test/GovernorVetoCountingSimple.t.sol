@@ -10,11 +10,11 @@ import {GovernorVetoCountingSimpleMock} from "test/mocks/GovernorVetoCountingSim
 
 contract GovernorVetoCountingSimple_Test is Test {
   GovernorVetoCountingSimpleMock public governorVetoCountingSimple;
-  uint256 public quorum;
+  uint256 public vetoThreshold;
 
   function setUp() public {
     governorVetoCountingSimple = new GovernorVetoCountingSimpleMock();
-    quorum = governorVetoCountingSimple.quorum(0);
+    vetoThreshold = governorVetoCountingSimple.vetoThreshold(0);
   }
 
   modifier castVetoVoteOnProposal(uint256 _proposalId, address _account, uint256 _weight) {
@@ -156,7 +156,7 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
     uint256 _weight,
     address _voter
   ) public {
-    _weight = bound(_weight, 0, quorum - 1);
+    _weight = bound(_weight, 0, vetoThreshold - 1);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
     assertEq(governorVetoCountingSimple.exposed_voteSucceeded(_proposalId), true);
   }
@@ -167,7 +167,9 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
     bytes memory _calldata,
     address _voter
   ) public {
-    uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, quorum);
+    uint256 _proposalId = createProposalAndCastVetoVote(
+      _target, _value, _calldata, _voter, vetoThreshold
+    );
     assertEq(governorVetoCountingSimple.exposed_voteSucceeded(_proposalId), false);
   }
 
@@ -178,7 +180,7 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
     uint256 _weight,
     address _voter
   ) public {
-    _weight = bound(_weight, quorum + 1, type(uint256).max);
+    _weight = bound(_weight, vetoThreshold + 1, type(uint256).max);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
     assertEq(governorVetoCountingSimple.exposed_voteSucceeded(_proposalId), false);
   }
@@ -207,7 +209,7 @@ contract State is GovernorVetoCountingSimple_Test {
     uint256 _weight,
     address _voter
   ) public {
-    _weight = bound(_weight, 0, quorum - 1);
+    _weight = bound(_weight, 0, vetoThreshold - 1);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
 
     // Fast forward past voting period to check final state
@@ -228,7 +230,7 @@ contract State is GovernorVetoCountingSimple_Test {
     uint256 _weight,
     address _voter
   ) public {
-    _weight = bound(_weight, quorum, type(uint256).max);
+    _weight = bound(_weight, vetoThreshold, type(uint256).max);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
 
     // Fast forward past voting period to check final state

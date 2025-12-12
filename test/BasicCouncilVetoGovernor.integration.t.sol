@@ -95,7 +95,10 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
         vetoGuardian,
         deployer, // The main DAO governor is the veto overrider
         4 days,
-        timelock,
+        3 days, // votingPeriodExtension
+        50, // votingPeriodExtensionThresholdPct
+        10, // vetoThresholdNumerator
+        timelock, // timelock
         deployer, // The main DAO governor is the governor admin
         _councilGovernorAddress
       );
@@ -199,7 +202,8 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     vm.prank(whale1);
     vetoGovernor.castVote(_proposalId, 0); // 0 = Against (Veto)
 
-    skip(vetoGovernor.votingPeriod() + 1);
+    // Wait for voting period (plus potential extension) to end
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     // Assert state is Defeated
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
@@ -218,7 +222,8 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     skip(vetoGovernor.votingDelay() + 1);
     vm.prank(whale1);
     vetoGovernor.castVote(_proposalId, 0);
-    skip(vetoGovernor.votingPeriod() + 1);
+
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
 
     // Override the veto

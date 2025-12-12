@@ -51,6 +51,7 @@ abstract contract BasicCouncilGovernorTest is Test {
     councilToken = new CouncilERC20("Council Token", "CT", deployer, 1);
     vm.prank(deployer);
     daoToken = new MockERC20Votes();
+    daoToken.mint(deployer, 10_000e18);
 
     // 3. Create and fund council members
     for (uint256 _i = 0; _i < COUNCIL_SIZE; _i++) {
@@ -82,7 +83,10 @@ abstract contract BasicCouncilGovernorTest is Test {
         vetoGuardian,
         deployer, // The main DAO governor is the veto overrider
         4 days,
-        timelock,
+        3 days, // votingPeriodExtension
+        50, // votingPeriodExtensionThresholdPct
+        10, // vetoThresholdNumerator
+        timelock, // timelock
         deployer, // The main DAO governor is the governor admin
         _councilGovernorAddress
       );
