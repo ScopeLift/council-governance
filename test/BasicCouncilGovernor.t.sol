@@ -111,7 +111,8 @@ contract BasicCouncilGovernorTest is Test {
   }
 
   function _passSubmittedProposal(uint256 _proposalId) public {
-    uint256 _quorumVotesNeeded = councilGovernor.quorum(block.timestamp);
+    uint256 _quorumVotesNeeded =
+      councilGovernor.quorum(councilGovernor.proposalSnapshot(_proposalId));
     uint256 _councilMembersLength = input.COUNCIL_MEMBERS_LENGTH();
     uint256 _votesCast;
 
@@ -125,7 +126,8 @@ contract BasicCouncilGovernorTest is Test {
   }
 
   function _passSubmittedProposalWithSuperQuorum(uint256 _proposalId) public {
-    uint256 _quorumVotesNeeded = councilGovernor.superQuorum(block.timestamp);
+    uint256 _quorumVotesNeeded =
+      councilGovernor.superQuorum(councilGovernor.proposalSnapshot(_proposalId));
     uint256 _councilMembersLength = input.COUNCIL_MEMBERS_LENGTH();
     uint256 _votesCast;
     for (uint256 _i = 0; _i < _councilMembersLength; _i++) {
@@ -173,14 +175,26 @@ contract Constructor is Test {
     address _owner,
     uint48 _votingDelay,
     uint32 _votingPeriod,
-    uint256 _proposalThreshold
+    uint256 _proposalThreshold,
+    uint256 _quorumFraction,
+    uint256 _superQuorumFraction
   ) public {
     vm.assume(_owner != address(0));
     vm.assume(_votingPeriod != 0);
+    _quorumFraction = bound(_quorumFraction, 0, 100);
+    _superQuorumFraction = bound(_superQuorumFraction, _quorumFraction, 100);
 
-    BasicCouncilGovernor _councilGovernor = new BasicCouncilGovernor(
-      _name, _token, _councilVetoGovernor, _owner, _votingDelay, _votingPeriod, _proposalThreshold
-    );
+    BasicCouncilGovernor.InitialCouncilParams memory _params =
+      BasicCouncilGovernor.InitialCouncilParams({
+        initialVotingDelay: _votingDelay,
+        initialVotingPeriod: _votingPeriod,
+        initialProposalThreshold: _proposalThreshold,
+        initialQuorumFraction: _quorumFraction,
+        initialSuperQuorumFraction: _superQuorumFraction
+      });
+
+    BasicCouncilGovernor _councilGovernor =
+      new BasicCouncilGovernor(_name, _token, _councilVetoGovernor, _owner, _params);
 
     assertEq(_councilGovernor.name(), _name);
     assertEq(address(_councilGovernor.token()), address(_token));
@@ -189,6 +203,8 @@ contract Constructor is Test {
     assertEq(_councilGovernor.votingPeriod(), _votingPeriod);
     assertEq(_councilGovernor.proposalThreshold(), _proposalThreshold);
     assertEq(_councilGovernor.owner(), _owner);
+    assertEq(_councilGovernor.quorumNumerator(), _quorumFraction);
+    assertEq(_councilGovernor.superQuorumNumerator(), _superQuorumFraction);
   }
 }
 
@@ -213,14 +229,26 @@ contract ProposalThreshold is BasicCouncilGovernorTest {
 }
 
 contract Quorum is BasicCouncilGovernorTest {
-  function testFuzz_ReturnsQuorum(uint256 _timepoint) public view {
-    assertEq(councilGovernor.quorum(_timepoint), 4);
+  function test_ReturnsQuorum() public {
+    // Advance time to ensure quorum checkpoint (created at deployment, t=2) is visible
+    vm.warp(block.timestamp + 1);
+    assertEq(
+      councilGovernor.quorum(block.timestamp - 1),
+      input.COUNCIL_GOVERNOR_INITIAL_QUORUM_FRACTION() * input.COUNCIL_MEMBERS_LENGTH() / 100
+    );
   }
 }
 
 contract SuperQuorum is BasicCouncilGovernorTest {
-  function testFuzz_ReturnsSuperQuorum(uint256 _timepoint) public view {
-    assertEq(councilGovernor.superQuorum(_timepoint), 7);
+  function test_ReturnsSuperQuorum() public {
+    // Advance time to ensure super quorum checkpoint (created at deployment, t=2) is visible
+    vm.warp(block.timestamp + 1);
+
+    // 7 members, 100% super quorum -> 7 votes
+    assertEq(
+      councilGovernor.superQuorum(block.timestamp - 1),
+      input.COUNCIL_GOVERNOR_INITIAL_SUPER_QUORUM_FRACTION() * input.COUNCIL_MEMBERS_LENGTH() / 100
+    );
   }
 }
 

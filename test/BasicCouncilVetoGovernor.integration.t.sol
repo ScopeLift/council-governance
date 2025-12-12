@@ -106,8 +106,18 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
 
     // 7. Deploy the Council Governor
     vm.prank(deployer);
+
+    BasicCouncilGovernor.InitialCouncilParams memory _councilParams =
+      BasicCouncilGovernor.InitialCouncilParams({
+        initialVotingDelay: 1 days,
+        initialVotingPeriod: 1 weeks,
+        initialProposalThreshold: 1,
+        initialQuorumFraction: 60,
+        initialSuperQuorumFraction: 100
+      });
+
     councilGovernor = new BasicCouncilGovernor(
-      "BasicCouncilGovernor", councilToken, vetoGovernor, deployer, 1 days, 1 weeks, 1
+      "BasicCouncilGovernor", councilToken, vetoGovernor, deployer, _councilParams
     );
 
     // 8. Prepare a sample proposal payload
@@ -130,7 +140,11 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
 
     // 2. Pass council vote
     skip(councilGovernor.votingDelay() + 1);
-    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.quorum(councilGovernor.proposalSnapshot(_councilProposalId));
+      _i++
+    ) {
       vm.prank(councilMembers[_i]);
       councilGovernor.castVote(_councilProposalId, 1);
     }

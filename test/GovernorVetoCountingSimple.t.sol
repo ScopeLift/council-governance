@@ -136,48 +136,13 @@ contract ProposalVotes is GovernorVetoCountingSimple_Test {
 }
 
 contract QuorumReached is GovernorVetoCountingSimple_Test {
-  function testFuzz_QuorumReachedReturnsTrueWhenVetoVotesBelowThreshold(
+  function testFuzz_QuorumReachedReturnsTrue(
     address _target,
     uint256 _value,
     bytes memory _calldata,
     uint256 _weight,
     address _voter
   ) public {
-    _weight = bound(_weight, 0, quorum - 1);
-    uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
-    assertEq(governorVetoCountingSimple.exposed_quorumReached(_proposalId), true);
-  }
-
-  function testFuzz_QuorumReachedReturnsFalseWhenVetoVotesAtThreshold(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    address _voter
-  ) public {
-    uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, quorum);
-    assertEq(governorVetoCountingSimple.exposed_quorumReached(_proposalId), false);
-  }
-
-  function testFuzz_QuorumReachedReturnsFalseWhenVetoVotesAboveThreshold(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    uint256 _weight,
-    address _voter
-  ) public {
-    _weight = bound(_weight, quorum + 1, type(uint256).max);
-    uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
-    assertEq(governorVetoCountingSimple.exposed_quorumReached(_proposalId), false);
-  }
-
-  function testFuzz_QuorumReachedReturnsTrueWhenVotesBelowQuorum(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    uint256 _weight,
-    address _voter
-  ) public {
-    _weight = bound(_weight, 0, quorum - 1);
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
     assertEq(governorVetoCountingSimple.exposed_quorumReached(_proposalId), true);
   }
@@ -218,7 +183,7 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
     assertEq(governorVetoCountingSimple.exposed_voteSucceeded(_proposalId), false);
   }
 
-  function testFuzz_VoteSucceededEqualsQuorumReached(
+  function testFuzz_VoteSucceededIsInverseOfIsVetoed(
     address _target,
     uint256 _value,
     bytes memory _calldata,
@@ -229,7 +194,7 @@ contract VoteSucceeded is GovernorVetoCountingSimple_Test {
 
     assertEq(
       governorVetoCountingSimple.exposed_voteSucceeded(_proposalId),
-      governorVetoCountingSimple.exposed_quorumReached(_proposalId)
+      !governorVetoCountingSimple.exposed_isVetoed(_proposalId)
     );
   }
 }

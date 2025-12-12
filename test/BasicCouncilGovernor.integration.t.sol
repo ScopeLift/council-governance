@@ -92,8 +92,18 @@ abstract contract BasicCouncilGovernorTest is Test {
 
     // 5. Deploy the Council Governor
     vm.prank(deployer);
+
+    BasicCouncilGovernor.InitialCouncilParams memory _params =
+      BasicCouncilGovernor.InitialCouncilParams({
+        initialVotingDelay: 1 days,
+        initialVotingPeriod: 1 weeks,
+        initialProposalThreshold: 1,
+        initialQuorumFraction: 60,
+        initialSuperQuorumFraction: 100
+      });
+
     councilGovernor = new BasicCouncilGovernor(
-      "BasicCouncilGovernor", councilToken, vetoGovernor, deployer, 1 days, 1 weeks, 1
+      "BasicCouncilGovernor", councilToken, vetoGovernor, deployer, _params
     );
 
     // 6. Prepare a sample proposal payload
@@ -124,7 +134,11 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     skip(councilGovernor.votingDelay() + 1);
 
     // Cast votes to meet quorum (4)
-    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.quorum(councilGovernor.proposalSnapshot(_proposalId));
+      _i++
+    ) {
       vm.prank(councilMembers[_i]);
       councilGovernor.castVote(_proposalId, 1); // 1 = For
     }
@@ -143,7 +157,11 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     vm.prank(councilMembers[0]);
     uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
     vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
-    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.quorum(councilGovernor.proposalSnapshot(_proposalId));
+      _i++
+    ) {
       vm.prank(councilMembers[_i]);
       councilGovernor.castVote(_proposalId, 1);
     }
@@ -174,7 +192,11 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
 
     // Cast votes to meet superQuorum (7)
-    for (uint256 _i = 0; _i < councilGovernor.superQuorum(0); _i++) {
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.superQuorum(councilGovernor.proposalSnapshot(_proposalId));
+      _i++
+    ) {
       vm.prank(councilMembers[_i]);
       councilGovernor.castVote(_proposalId, 1); // 1 = For
     }
@@ -228,7 +250,11 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     vm.prank(councilMembers[0]);
     uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
     vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
-    for (uint256 _i = 0; _i < councilGovernor.quorum(0); _i++) {
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.quorum(councilGovernor.proposalSnapshot(_proposalId));
+      _i++
+    ) {
       vm.prank(councilMembers[_i]);
       councilGovernor.castVote(_proposalId, 1);
     }

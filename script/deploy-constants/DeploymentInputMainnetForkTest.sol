@@ -61,4 +61,10 @@ contract DeploymentInputMainnetForkTest {
   uint32 public constant COUNCIL_GOVERNOR_INITIAL_VOTING_PERIOD = 1 weeks;
   // Council governor proposal threshold
   uint256 public constant COUNCIL_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD = 1;
+  // Council governor quorum fraction (percentage)
+  uint256 public constant COUNCIL_GOVERNOR_INITIAL_QUORUM_FRACTION = 60; // 60% of 7 is 4.2 -> 4
+  // votes
+  // Council governor super quorum fraction (percentage)
+  uint256 public constant COUNCIL_GOVERNOR_INITIAL_SUPER_QUORUM_FRACTION = 100; // 100% of 7 is 7
+  // votes
 }

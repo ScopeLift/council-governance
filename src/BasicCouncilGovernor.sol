@@ -12,6 +12,12 @@ import {
   GovernorSuperQuorum
 } from "@openzeppelin/contracts/governance/extensions/GovernorSuperQuorum.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
+import {
+  GovernorVotesQuorumFraction
+} from "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+import {
+  GovernorVotesSuperQuorumFraction
+} from "@openzeppelin/contracts/governance/extensions/GovernorVotesSuperQuorumFraction.sol";
 
 // Internal Dependencies
 import {GovernorAdmin} from "src/extensions/GovernorAdmin.sol";
@@ -32,18 +38,18 @@ import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol"
 ///
 /// **Parent Contracts & Their Roles:**
 ///
-/// 1. **Governor** (base): Core governance lifecycle management
+/// - **Governor** (base): Core governance lifecycle management
 ///    - Manages proposal creation, voting, queuing, execution, and cancellation
 ///    - Tracks proposal states (Pending → Active → Succeeded → Queued → Executed)
 ///
-/// 2. **GovernorVotes**: Voting power integration
+/// - **GovernorVotes**: Voting power integration
 ///    - Sources voting power from an CouncilERC20 token
 ///
-/// 3. **GovernorCountingSimple**: Vote counting mechanism
+/// - **GovernorCountingSimple**: Vote counting mechanism
 ///    - Tracks three vote types: Against, For, Abstain
 ///    - Counts votes per proposal and tracks which accounts have voted
 ///
-/// 4. **GovernorCouncilQueuing**: Dual-governance integration
+/// - **GovernorCouncilQueuing**: Dual-governance integration
 ///    - **Critical**: All proposals are automatically forwarded to a veto governor
 /// (`councilVetoGovernor`)
 ///    - When a council proposal reaches `Queued` state, it creates a corresponding proposal on the
@@ -52,15 +58,23 @@ import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol"
 ///    - Execution is delegated to the veto governor (which executes through a timelock)
 ///    - Cancellation cancels both the council proposal and the corresponding veto governor proposal
 ///
-/// 5. **GovernorSuperQuorum**: Early proposal advancement
+/// - **GovernorSuperQuorum**: Early proposal advancement
 ///    - Allows proposals to advance from `Active` to `Succeeded` before the deadline
 ///
-/// 6. **GovernorSettings**: Configurable governance parameters
+/// - **GovernorSettings**: Configurable governance parameters
 ///    - Manages `votingDelay`, `votingPeriod`, and `proposalThreshold`
 ///    - These can be updated via governance proposals (restricted to admin via `GovernorAdmin`)
 ///
-/// 7. **GovernorAdmin**: Admin-restricted governance operations
+/// - **GovernorAdmin**: Admin-restricted governance operations
 ///    - Allows an external admin to maintain control over the council governor settings
+///
+/// - **GovernorVotesQuorumFraction**: Quorum calculation
+///    - Defines quorum as a fraction of total voting power
+///    - Quorum is calculated as `quorumFraction / 100`
+///
+/// - **GovernorVotesSuperQuorumFraction**: Super quorum calculation
+///    - Defines super quorum as a fraction of total voting power
+///    - Super quorum is calculated as `superQuorumFraction / 100`
 ///
 /// **Proposal Lifecycle:**
 /// 1. **Propose**: Council member creates a proposal (requires `proposalThreshold` tokens)
@@ -83,13 +97,20 @@ import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol"
 /// - Veto governor can reject proposals through its own voting mechanism
 contract BasicCouncilGovernor is
   Governor,
-  GovernorVotes,
   GovernorCountingSimple,
   GovernorCouncilQueuing,
-  GovernorSuperQuorum,
   GovernorSettings,
-  GovernorAdmin
+  GovernorAdmin,
+  GovernorVotesSuperQuorumFraction
 {
+  struct InitialCouncilParams {
+    uint48 initialVotingDelay;
+    uint32 initialVotingPeriod;
+    uint256 initialProposalThreshold;
+    uint256 initialQuorumFraction;
+    uint256 initialSuperQuorumFraction;
+  }
+
   /*///////////////////////////////////////////////////////////////
                           Constructor
   //////////////////////////////////////////////////////////////*/
@@ -99,23 +120,23 @@ contract BasicCouncilGovernor is
   /// @param _token The IERC5805 compliant token (CouncilERC20) used to vote on proposals.
   /// @param _councilVetoGovernor The veto governor contract to which proposals are forwarded.
   /// @param _governorAdmin The address authorized to change council governor parameters.
-  /// @param _initialVotingDelay The initial voting delay.
-  /// @param _initialVotingPeriod The initial voting period.
-  /// @param _initialProposalThreshold The initial proposal threshold.
+  /// @param _params The initial parameters for the council governor.
   constructor(
     string memory _name,
     IERC5805 _token,
     IGovernor _councilVetoGovernor,
     address _governorAdmin,
-    uint48 _initialVotingDelay,
-    uint32 _initialVotingPeriod,
-    uint256 _initialProposalThreshold
+    InitialCouncilParams memory _params
   )
     Governor(_name)
     GovernorVotes(_token)
     GovernorCouncilQueuing(_councilVetoGovernor)
-    GovernorSettings(_initialVotingDelay, _initialVotingPeriod, _initialProposalThreshold)
+    GovernorSettings(
+      _params.initialVotingDelay, _params.initialVotingPeriod, _params.initialProposalThreshold
+    )
     GovernorAdmin(_governorAdmin)
+    GovernorVotesQuorumFraction(_params.initialQuorumFraction)
+    GovernorVotesSuperQuorumFraction(_params.initialSuperQuorumFraction)
   {}
 
   /*///////////////////////////////////////////////////////////////
@@ -135,31 +156,6 @@ contract BasicCouncilGovernor is
   /// @inheritdoc GovernorSettings
   function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
     return GovernorSettings.proposalThreshold();
-  }
-
-  /// @inheritdoc IGovernor
-  function quorum(
-    uint256 /*timepoint*/
-  )
-    public
-    pure
-    override
-    returns (uint256)
-  {
-    return 4;
-  }
-
-  /// @inheritdoc GovernorSuperQuorum
-  function superQuorum(
-    uint256 /*timepoint*/
-  )
-    public
-    view
-    virtual
-    override
-    returns (uint256)
-  {
-    return 7;
   }
 
   /// @inheritdoc Governor
@@ -213,14 +209,14 @@ contract BasicCouncilGovernor is
     return GovernorCouncilQueuing.propose(_targets, _values, _calldatas, _description);
   }
 
-  /// @inheritdoc GovernorSuperQuorum
+  /// @inheritdoc GovernorVotesSuperQuorumFraction
   function state(uint256 _proposalId)
     public
     view
-    override(Governor, GovernorCouncilQueuing, GovernorSuperQuorum)
+    override(Governor, GovernorCouncilQueuing, GovernorVotesSuperQuorumFraction)
     returns (ProposalState)
   {
-    return GovernorSuperQuorum.state(_proposalId);
+    return GovernorVotesSuperQuorumFraction.state(_proposalId);
   }
 
   /// @inheritdoc GovernorCountingSimple
