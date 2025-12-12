@@ -8,16 +8,14 @@ import {
 } from "script/deploy-constants/DeploymentInputMainnetForkTest.sol";
 import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
 import {DeployTimelock} from "script/DeployTimelock.s.sol";
-import {DeployVetoGovernor} from "script/DeployVetoGovernor.s.sol";
-import {DeployCouncilGovernor} from "script/DeployCouncilGovernor.s.sol";
+import {DeployGovernorsAndGrantRoles} from "script/DeployGovernorsAndGrantRoles.s.sol";
 
 contract DeploymentConfigurationTest is
   DeploymentConfigurationBase,
   DeploymentInputMainnetForkTest,
   DeployAndMintCouncilERC20,
   DeployTimelock,
-  DeployVetoGovernor,
-  DeployCouncilGovernor
+  DeployGovernorsAndGrantRoles
 {
   function _getBaseDeploymentConfiguration()
     public
