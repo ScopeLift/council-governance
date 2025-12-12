@@ -50,6 +50,12 @@ contract DeploymentInputSepolia {
   address public constant VETO_OVERRIDE_ROLE = MAIN_DAO_GOVERNOR;
   // Veto governor override duration
   uint48 public constant VETO_OVERRIDE_DURATION = 4 days;
+  // Veto governor voting period extension duration
+  uint48 public constant VOTING_PERIOD_EXTENSION = 3 days;
+  // Veto governor voting period extension threshold in percent
+  uint16 public constant VOTING_PERIOD_EXTENSION_THRESHOLD_PCT = 50;
+  // Veto governor veto threshold in fraction
+  uint256 public constant VETO_GOVERNOR_INITIAL_VETO_THRESHOLD_FRACTION = 10;
   // Veto governor veto guardian
   address public VETO_GUARDIAN;
 

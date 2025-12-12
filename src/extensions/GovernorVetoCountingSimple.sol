@@ -7,8 +7,8 @@ import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.s
 /// @title GovernorVetoCountingSimple
 /// @author [ScopeLift](https://scopelift.co)
 /// @notice Extension of {Governor} that implements a simple "veto only" counting mode.
-/// @dev Only veto votes are counted towards quorum. Other vote types are ignored. Sourced from
-/// OpenZeppelin's {GovernorCountingSimple} (last updated v5.4.0)
+/// @dev Only veto votes are counted towards vetoThreshold. Other vote types are ignored. Sourced
+/// from OpenZeppelin's {GovernorCountingSimple} (last updated v5.4.0)
 /// (contracts/governance/extensions/GovernorCountingSimple.sol) with behavior adapted for
 /// veto-counting.
 abstract contract GovernorVetoCountingSimple is Governor {
@@ -37,7 +37,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
 
   /// @inheritdoc IGovernor
   /// @dev This extension uses a simple counting mode where only veto votes are counted towards
-  /// quorum.
+  /// veto threshold.
   /// solhint-disable-next-line func-name-mixedcase
   function COUNTING_MODE() public pure virtual override returns (string memory) {
     return "support=veto&quorum=veto";
@@ -62,23 +62,38 @@ abstract contract GovernorVetoCountingSimple is Governor {
     return proposalVoteData[_proposalId].vetoVotes;
   }
 
+  function vetoThreshold(uint256) public view virtual returns (uint256);
+
+  function quorum(uint256) public view virtual override returns (uint256) {
+    return 0;
+  }
+
   /*///////////////////////////////////////////////////////////////
                         Internal Functions
   //////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc Governor
-  /// @dev For council-sourced proposals this function treats proposals as being in quorum by
-  /// default. If the veto threshold is reached, quorum is considered not reached.
-  function _quorumReached(uint256 _proposalId) internal view virtual override returns (bool) {
+  /// @dev For optimistic proposals, this function treats proposals as being in quorum by
+  /// default.
+  function _quorumReached(
+    uint256 /* _proposalId */
+  )
+    internal
+    view
+    virtual
+    override
+    returns (bool)
+  {
     return true;
   }
 
   /// @notice Checks whether a proposal has been vetoed.
   /// @param _proposalId The id of the proposal to check.
-  /// @return bool True if the proposal's `vetoVotes` >= quorum at the proposal snapshot.
-  /// @dev `quorum(proposalSnapshot(proposalId))` uses the same quorum rule as the parent Governor.
+  /// @return bool True if the proposal's `vetoVotes` >= vetoThreshold at the proposal snapshot.
+  /// @dev `vetoThreshold(proposalSnapshot(proposalId))` uses the same vetoThreshold rule as the
+  /// parent Governor.
   function _isVetoed(uint256 _proposalId) internal view returns (bool) {
-    return (proposalVoteData[_proposalId].vetoVotes >= quorum(proposalSnapshot(_proposalId)));
+    return (proposalVoteData[_proposalId].vetoVotes >= vetoThreshold(proposalSnapshot(_proposalId)));
   }
 
   /// @inheritdoc Governor
@@ -87,8 +102,7 @@ abstract contract GovernorVetoCountingSimple is Governor {
   }
 
   /// @inheritdoc Governor
-  /// @dev This extension uses a simple counting mode where only veto votes are counted towards
-  /// quorum.
+  /// @dev This extension uses a simple counting mode where only veto votes are counted.
   function _countVote(
     uint256 _proposalId,
     address _account,

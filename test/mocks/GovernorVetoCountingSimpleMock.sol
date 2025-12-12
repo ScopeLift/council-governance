@@ -45,7 +45,7 @@ contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
     return 1 days;
   }
 
-  function quorum(
+  function vetoThreshold(
     uint256 /* timepoint */
   )
     public
@@ -53,7 +53,7 @@ contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
     override
     returns (uint256)
   {
-    return 100; // Return a fixed quorum value for unit tests
+    return 10_000; // Return a fixed veto threshold for unit tests
   }
 
   function clock() public view override returns (uint48) {

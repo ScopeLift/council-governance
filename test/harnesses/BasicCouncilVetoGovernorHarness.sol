@@ -32,6 +32,9 @@ contract BasicCouncilVetoGovernorHarness is BasicCouncilVetoGovernor {
       vetoGuardian: _config.vetoGuardian,
       vetoOverrideRole: _config.vetoOverrideRole,
       vetoOverrideDuration: _config.vetoOverrideDuration,
+      votingPeriodExtension: _config.votingPeriodExtension,
+      votingPeriodExtensionThresholdPct: _config.votingPeriodExtensionThresholdPct,
+      vetoThresholdNumerator: _config.vetoThresholdNumerator,
       timelock: _timelock,
       governorAdmin: _config.vetoGovernorAdmin,
       council: _council
