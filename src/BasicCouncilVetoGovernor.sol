@@ -21,16 +21,26 @@ import {
 } from "src/extensions/GovernorVotesVetoThresholdFraction.sol";
 import {GovernorExtendVetoPeriod} from "src/extensions/GovernorExtendVetoPeriod.sol";
 
+/// @title BasicCouncilVetoGovernor
+/// @author [ScopeLift](https://scopelift.co)
+/// @notice A veto governor that manages proposals through the second stage of a two-stage process:
+/// council approval → veto governor review.
+/// @dev This contract implements a proposal veto system with the following key features:
+/// - Proposals can only be proposed by the council governor.
+/// - Proposals can be vetoed by token holders.
+/// - Proposals can be vetoed by the veto guardian.
+/// - A proposal's veto period can be extended if veto votes meet the minor threshold.
+/// - A veto can be overridden by the veto override role.
 contract BasicCouncilVetoGovernor is
   Governor,
   GovernorVotes,
+  GovernorAdmin,
+  GovernorSettings,
   GovernorVetoCountingSimple,
   GovernorVetoGuardian,
   GovernorVetoOverride,
   GovernorVotesVetoThresholdFraction,
   GovernorExtendVetoPeriod,
-  GovernorAdmin,
-  GovernorSettings,
   GovernorTimelockControl
 {
   /// @notice Data structure for deploying the `CouncilVetoGovernor`.
@@ -64,8 +74,8 @@ contract BasicCouncilVetoGovernor is
 
   address public immutable COUNCIL;
 
-  modifier onlyCouncil() {
-    require(msg.sender == COUNCIL, "Only council");
+  modifier onlyCouncil() virtual {
+    require(_msgSender() == COUNCIL, "Only council");
     _;
   }
 
@@ -85,15 +95,33 @@ contract BasicCouncilVetoGovernor is
     COUNCIL = _params.council;
   }
 
-  function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
+  function votingDelay()
+    public
+    view
+    virtual
+    override(Governor, GovernorSettings)
+    returns (uint256)
+  {
     return GovernorSettings.votingDelay();
   }
 
-  function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
+  function votingPeriod()
+    public
+    view
+    virtual
+    override(Governor, GovernorSettings)
+    returns (uint256)
+  {
     return GovernorSettings.votingPeriod();
   }
 
-  function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
+  function proposalThreshold()
+    public
+    view
+    virtual
+    override(Governor, GovernorSettings)
+    returns (uint256)
+  {
     return GovernorSettings.proposalThreshold();
   }
 
@@ -107,6 +135,7 @@ contract BasicCouncilVetoGovernor is
   function state(uint256 _proposalId)
     public
     view
+    virtual
     override(Governor, GovernorTimelockControl, GovernorVetoGuardian, GovernorVetoOverride)
     returns (ProposalState)
   {
@@ -116,6 +145,7 @@ contract BasicCouncilVetoGovernor is
   function proposalDeadline(uint256 _proposalId)
     public
     view
+    virtual
     override(Governor, GovernorExtendVetoPeriod)
     returns (uint256)
   {
@@ -125,6 +155,7 @@ contract BasicCouncilVetoGovernor is
   function proposalVotes(uint256 _proposalId)
     public
     view
+    virtual
     override(GovernorExtendVetoPeriod, GovernorVetoCountingSimple)
     returns (uint256)
   {
@@ -134,6 +165,7 @@ contract BasicCouncilVetoGovernor is
 
   function _tallyUpdated(uint256 _proposalId)
     internal
+    virtual
     override(Governor, GovernorExtendVetoPeriod)
   {
     GovernorExtendVetoPeriod._tallyUpdated(_proposalId);
@@ -149,11 +181,17 @@ contract BasicCouncilVetoGovernor is
     return GovernorTimelockControl.proposalNeedsQueuing(_proposalId);
   }
 
-  function clock() public view override(Governor, GovernorVotes) returns (uint48) {
+  function clock() public view virtual override(Governor, GovernorVotes) returns (uint48) {
     return uint48(block.timestamp);
   }
 
-  function CLOCK_MODE() public pure override(Governor, GovernorVotes) returns (string memory) {
+  function CLOCK_MODE()
+    public
+    pure
+    virtual
+    override(Governor, GovernorVotes)
+    returns (string memory)
+  {
     return "mode=timestamp";
   }
 
@@ -162,7 +200,7 @@ contract BasicCouncilVetoGovernor is
     uint256[] memory _values,
     bytes[] memory _calldatas,
     string memory _description
-  ) public override onlyCouncil returns (uint256) {
+  ) public virtual override onlyCouncil returns (uint256) {
     return super.propose(_targets, _values, _calldatas, _description);
   }
 
@@ -171,7 +209,7 @@ contract BasicCouncilVetoGovernor is
     uint256[] memory _values,
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
-  ) public payable override onlyCouncil returns (uint256) {
+  ) public payable virtual override onlyCouncil returns (uint256) {
     return super.execute(_targets, _values, _calldatas, _descriptionHash);
   }
 
@@ -179,20 +217,23 @@ contract BasicCouncilVetoGovernor is
     GovernorAdmin._checkGovernance();
   }
 
-  function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
+  function _executor()
+    internal
+    view
+    virtual
+    override(Governor, GovernorTimelockControl)
+    returns (address)
+  {
     return GovernorTimelockControl._executor();
   }
 
   /// @inheritdoc GovernorTimelockControl
-  /// @dev We override this function to resolve ambiguity between inherited contracts.
-  /// @notice This internal function maintains the inheritance chain but should not be called
-  /// because the public cancel function is disabled.
   function _cancel(
     address[] memory _targets,
     uint256[] memory _values,
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
-  ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
+  ) internal virtual override(Governor, GovernorTimelockControl) returns (uint256) {
     return GovernorTimelockControl._cancel(_targets, _values, _calldatas, _descriptionHash);
   }
 
@@ -202,7 +243,7 @@ contract BasicCouncilVetoGovernor is
     uint256[] memory _values,
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
-  ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
+  ) internal virtual override(Governor, GovernorTimelockControl) returns (uint48) {
     return GovernorTimelockControl._queueOperations(
       _proposalId, _targets, _values, _calldatas, _descriptionHash
     );
@@ -214,7 +255,7 @@ contract BasicCouncilVetoGovernor is
     uint256[] memory _values,
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
-  ) internal override(Governor, GovernorTimelockControl) {
+  ) internal virtual override(Governor, GovernorTimelockControl) {
     GovernorTimelockControl._executeOperations(
       _proposalId, _targets, _values, _calldatas, _descriptionHash
     );

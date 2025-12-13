@@ -202,8 +202,7 @@ contract Constructor is Test {
     assertEq(_vetoGovernor.COUNCIL(), _newParams.council);
     assertEq(_vetoGovernor.votingPeriodExtension(), _newParams.votingPeriodExtension);
     assertEq(
-      _vetoGovernor.votingPeriodExtensionThresholdPct(),
-      _newParams.votingPeriodExtensionThresholdPct
+      _vetoGovernor.minorVetoExtensionThresholdPct(), _newParams.votingPeriodExtensionThresholdPct
     );
   }
 }

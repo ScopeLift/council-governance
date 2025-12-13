@@ -1,19 +1,19 @@
-// SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts (last updated v5.4.0)
-// (governance/extensions/GovernorVotesVetoThresholdFraction.sol)
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity ^0.8.30;
 
-pragma solidity ^0.8.24;
-
+// External Dependencies
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
 
-/**
- * @dev Extension of {Governor} for voting weight extraction from an {ERC20Votes} token and a veto
- * threshold expressed as a
- * fraction of the total supply.
- */
+/// @title GovernorVetoOverride
+/// @author [ScopeLift](https://scopelift.co)
+/// @notice Extension for {Governor} that allows overriding vetoed proposals.
+/// @dev Extension of {Governor} for voting weight extraction from an {ERC20Votes} token and a veto
+/// threshold expressed as a fraction of the total supply.
+/// Heavily borrowed from OpenZeppelin's GovernorVotesQuorumFraction (v5.4.0)
+/// (governance/extensions/GovernorVotesQuorumFraction.sol)
 abstract contract GovernorVotesVetoThresholdFraction is GovernorVotes {
   using Checkpoints for Checkpoints.Trace208;
 

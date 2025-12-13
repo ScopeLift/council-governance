@@ -76,8 +76,8 @@ contract GovernorCouncilQueuingMock is
     return _executor();
   }
 
-  function exposed_updateCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) public {
-    _updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+  function exposed_setCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) public {
+    _setCouncilVetoGovernor(_newCouncilVetoGovernor);
   }
 
   function exposed_checkVetoGovernorStateBitmap(uint256 proposalId, bytes32 allowedStates)

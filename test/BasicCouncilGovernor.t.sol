@@ -457,10 +457,10 @@ contract Propose is BasicCouncilGovernorTest {
   }
 }
 
-contract UpdateCouncilVetoGovernor is BasicCouncilGovernorTest {
+contract SetCouncilVetoGovernor is BasicCouncilGovernorTest {
   function testFuzz_AdminUpdatesCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) public {
     vm.prank(councilGovernor.owner());
-    councilGovernor.updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+    councilGovernor.setCouncilVetoGovernor(_newCouncilVetoGovernor);
 
     assertEq(address(councilGovernor.councilVetoGovernor()), address(_newCouncilVetoGovernor));
   }
@@ -472,7 +472,7 @@ contract UpdateCouncilVetoGovernor is BasicCouncilGovernorTest {
     vm.assume(_caller != councilGovernor.owner());
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, _caller));
     vm.prank(_caller);
-    councilGovernor.updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+    councilGovernor.setCouncilVetoGovernor(_newCouncilVetoGovernor);
   }
 }
 

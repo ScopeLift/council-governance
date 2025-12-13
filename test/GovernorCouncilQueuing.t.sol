@@ -640,27 +640,27 @@ contract _executor is GovernorCouncilQueuingTest {
     assertEq(councilMock.exposed_executor(), vetoGovernor);
   }
 
-  function testFuzz_UpdateCouncilVetoGovernorUpdatesExecutor(IGovernor _newCouncilVetoGovernor)
+  function testFuzz_SetCouncilVetoGovernorUpdatesExecutor(IGovernor _newCouncilVetoGovernor)
     public
   {
-    councilMock.exposed_updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+    councilMock.exposed_setCouncilVetoGovernor(_newCouncilVetoGovernor);
     assertEq(councilMock.exposed_executor(), address(_newCouncilVetoGovernor));
   }
 }
 
-contract _updateCouncilVetoGovernor is GovernorCouncilQueuingTest {
+contract _setCouncilVetoGovernor is GovernorCouncilQueuingTest {
   function testFuzz_UpdatesCouncilVetoGovernor(IGovernor _newCouncilVetoGovernor) public {
-    councilMock.exposed_updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+    councilMock.exposed_setCouncilVetoGovernor(_newCouncilVetoGovernor);
 
     assertEq(address(councilMock.councilVetoGovernor()), address(_newCouncilVetoGovernor));
   }
 
-  function testFuzz_EmitsCouncilVetoGovernorChange(IGovernor _newCouncilVetoGovernor) public {
+  function testFuzz_EmitsCouncilVetoGovernorSet(IGovernor _newCouncilVetoGovernor) public {
     IGovernor _oldCouncilVetoGovernor = councilMock.councilVetoGovernor();
     vm.expectEmit();
-    emit GovernorCouncilQueuing.CouncilVetoGovernorChange(
+    emit GovernorCouncilQueuing.CouncilVetoGovernorSet(
       address(_oldCouncilVetoGovernor), address(_newCouncilVetoGovernor)
     );
-    councilMock.exposed_updateCouncilVetoGovernor(_newCouncilVetoGovernor);
+    councilMock.exposed_setCouncilVetoGovernor(_newCouncilVetoGovernor);
   }
 }
