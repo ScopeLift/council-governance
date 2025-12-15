@@ -24,7 +24,7 @@ CG -- 3. Queues to --> VG["Veto Governor"] --> TL["Council Timelock Controller"]
 
 ```
 
-Included is a ["Council Governor"](src/BasicCouncilGovernor.sol) and a ["Veto Governor."](src/BasicCouncilVetoGovernor.sol) We imagine a proposal flow where a council member (holder of `CouncilERC20`) creates a proposal on the Council Governor. If the council members agree, then it'll be queued on the Veto Governor, where token holders can vote to veto the proposal. If the veto period expires without a veto, then it'll be executed. If the veto votes reach a minor threshold, the voting period gets extended. That being said, we've tried to be general with our extension contracts, such that certain features could be omitted, or could be used outside of a 2-governor setup (e.g. replace council governor with multisig).
+Included is a [Council Governor](src/BasicCouncilGovernor.sol) and a [Veto Governor](src/BasicCouncilVetoGovernor.sol). We imagine a proposal flow where a council member (holder of `CouncilERC20`) creates a proposal on the Council Governor. If the council members agree, then it'll be queued on the Veto Governor, where token holders can vote to veto the proposal. If the veto period expires without a veto, then it'll be executed. If the veto votes reach a minor threshold, the voting period gets extended. That being said, we've tried to be general with our extension contracts, such that certain features could be omitted, or could be used outside of a 2-governor setup (e.g. replace council governor with multisig).
 
 ## Extensions & Features
 
@@ -66,9 +66,9 @@ The primary entry point for proposals.
 
 The safety layer that protects the protocol from malicious or contentious council actions.
 
-- **Proposal Gating**: Only successful proposals from the Council Governor can be `propose`d here, via the CouncilGovernor's `queue` function.
-- **Veto-Only Voting**: Implements `GovernorVetoCountingSimple`. DAO token holders use their standard governance tokens to vote. Only `Against` votes (vetoes) are counted.
-- **Veto Threshold**: A specific veto threshold is defined for vetoes. If the number of veto votes exceeds this threshold, the proposal is defeated.
+- **Proposal Gating**: Only successful proposals from the Council Governor can be proposed here, via the CouncilGovernor's `queue` function.
+- **Veto-Only Voting**: Implements `GovernorVetoCountingSimple`. DAO token holders use their standard governance tokens to vote. Only `Against` votes (vetoes) can be casted.
+- **Veto Threshold**: A specific voting threshold is defined for vetoes. If the number of veto votes exceeds this threshold, the proposal is defeated.
 - **Veto Extension**: Implements `GovernorExtendVetoPeriod`. If a minor veto threshold is met, the voting period is automatically extended to allow more time for the community to react.
 - **Veto Override**: Implements `GovernorVetoOverride`. A trusted "Veto Override Role" (e.g., the Main DAO or a Guardian multisig) can manually override a successful veto within a specific time window, enabling the proposal to be queued. This acts as a fail-safe against veto spam or malicious blocking.
 
