@@ -59,7 +59,7 @@ contract GovernorVetoExtensionTest is Test {
     return Math.mulDiv(
       vetoMock.vetoThreshold(_timestamp),
       vetoMock.minorVetoExtensionThresholdPct(),
-      vetoMock.VETO_THRESHOLD_DENOMINATOR()
+      vetoMock.minorVetoExtensionThresholdDenominator()
     );
   }
 
@@ -119,7 +119,9 @@ contract Constructor is GovernorVetoExtensionTest {
       bound(_initialVotingPeriodExtension, 0, type(uint48).max)
     );
     _initialVotingPeriodExtensionThreshold = uint16(
-      bound(_initialVotingPeriodExtensionThreshold, 0, vetoMock.VETO_THRESHOLD_DENOMINATOR())
+      bound(
+        _initialVotingPeriodExtensionThreshold, 0, vetoMock.minorVetoExtensionThresholdDenominator()
+      )
     );
     GovernorExtendVetoPeriodMock _vetoMock = new GovernorExtendVetoPeriodMock(
       _initialVotingPeriodExtension, _initialVotingPeriodExtensionThreshold
@@ -257,8 +259,11 @@ contract _setMinorVetoExtensionThreshold is GovernorVetoExtensionTest {
   function testFuzz_setMinorVetoExtensionThresholdPct(uint16 _newVotingPeriodExtensionThreshold)
     public
   {
-    _newVotingPeriodExtensionThreshold =
-      uint16(bound(_newVotingPeriodExtensionThreshold, 0, vetoMock.VETO_THRESHOLD_DENOMINATOR()));
+    _newVotingPeriodExtensionThreshold = uint16(
+      bound(
+        _newVotingPeriodExtensionThreshold, 0, vetoMock.minorVetoExtensionThresholdDenominator()
+      )
+    );
     vetoMock.exposed_setMinorVetoExtensionThresholdPct(_newVotingPeriodExtensionThreshold);
 
     assertEq(vetoMock.minorVetoExtensionThresholdPct(), _newVotingPeriodExtensionThreshold);
@@ -267,8 +272,11 @@ contract _setMinorVetoExtensionThreshold is GovernorVetoExtensionTest {
   function testFuzz_EmitsvotingPeriodExtensionThresholdPctSet(uint16 _newVetoPeriodExtensionThresholdPct)
     public
   {
-    _newVetoPeriodExtensionThresholdPct =
-      uint16(bound(_newVetoPeriodExtensionThresholdPct, 0, vetoMock.VETO_THRESHOLD_DENOMINATOR()));
+    _newVetoPeriodExtensionThresholdPct = uint16(
+      bound(
+        _newVetoPeriodExtensionThresholdPct, 0, vetoMock.minorVetoExtensionThresholdDenominator()
+      )
+    );
 
     vm.expectEmit();
     emit GovernorExtendVetoPeriod.MinorVetoExtensionThresholdPctSet(
@@ -283,7 +291,7 @@ contract _setMinorVetoExtensionThreshold is GovernorVetoExtensionTest {
     _newVetoPeriodExtensionThresholdPct = uint16(
       bound(
         _newVetoPeriodExtensionThresholdPct,
-        vetoMock.VETO_THRESHOLD_DENOMINATOR() + 1,
+        vetoMock.minorVetoExtensionThresholdDenominator() + 1,
         type(uint16).max
       )
     );
