@@ -58,7 +58,7 @@ contract GovernorVetoExtensionTest is Test {
   function _getMinorThreshold(uint256 _timestamp) internal view returns (uint256) {
     return Math.mulDiv(
       vetoMock.vetoThreshold(_timestamp),
-      vetoMock.votingPeriodExtensionThresholdPct(),
+      vetoMock.minorVetoExtensionThresholdPct(),
       vetoMock.VETO_THRESHOLD_DENOMINATOR()
     );
   }
@@ -126,7 +126,7 @@ contract Constructor is GovernorVetoExtensionTest {
     );
 
     assertEq(_vetoMock.votingPeriodExtension(), _initialVotingPeriodExtension);
-    assertEq(_vetoMock.votingPeriodExtensionThresholdPct(), _initialVotingPeriodExtensionThreshold);
+    assertEq(_vetoMock.minorVetoExtensionThresholdPct(), _initialVotingPeriodExtensionThreshold);
   }
 }
 
@@ -138,9 +138,7 @@ contract VotingPeriodExtension is GovernorVetoExtensionTest {
 
 contract VotingPeriodExtensionThreshold is GovernorVetoExtensionTest {
   function test_ReturnsvotingPeriodExtensionThresholdPct() public view {
-    assertEq(
-      vetoMock.votingPeriodExtensionThresholdPct(), INITIAL_VETO_PERIOD_EXTENSION_THRESHOLD_PCT
-    );
+    assertEq(vetoMock.minorVetoExtensionThresholdPct(), INITIAL_VETO_PERIOD_EXTENSION_THRESHOLD_PCT);
   }
 }
 
@@ -230,7 +228,7 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
     address _account,
     uint256 _weight
   ) public {
-    vetoMock.exposed_setVetoPeriodExtensionThresholdPct(0);
+    vetoMock.exposed_setMinorVetoExtensionThresholdPct(0);
     uint256 _proposalId =
       _createProposalAndCastVetoVote(_target, _value, _calldata, _account, _weight);
 
@@ -255,15 +253,15 @@ contract _setVotingPeriodExtension is GovernorVetoExtensionTest {
   }
 }
 
-contract _setVotingPeriodExtensionThreshold is GovernorVetoExtensionTest {
-  function testFuzz_setVetoPeriodExtensionThresholdPct(uint16 _newVotingPeriodExtensionThreshold)
+contract _setMinorVetoExtensionThreshold is GovernorVetoExtensionTest {
+  function testFuzz_setMinorVetoExtensionThresholdPct(uint16 _newVotingPeriodExtensionThreshold)
     public
   {
     _newVotingPeriodExtensionThreshold =
       uint16(bound(_newVotingPeriodExtensionThreshold, 0, vetoMock.VETO_THRESHOLD_DENOMINATOR()));
-    vetoMock.exposed_setVetoPeriodExtensionThresholdPct(_newVotingPeriodExtensionThreshold);
+    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_newVotingPeriodExtensionThreshold);
 
-    assertEq(vetoMock.votingPeriodExtensionThresholdPct(), _newVotingPeriodExtensionThreshold);
+    assertEq(vetoMock.minorVetoExtensionThresholdPct(), _newVotingPeriodExtensionThreshold);
   }
 
   function testFuzz_EmitsvotingPeriodExtensionThresholdPctSet(uint16 _newVetoPeriodExtensionThresholdPct)
@@ -273,10 +271,10 @@ contract _setVotingPeriodExtensionThreshold is GovernorVetoExtensionTest {
       uint16(bound(_newVetoPeriodExtensionThresholdPct, 0, vetoMock.VETO_THRESHOLD_DENOMINATOR()));
 
     vm.expectEmit();
-    emit GovernorExtendVetoPeriod.VotingPeriodExtensionThresholdSet(
-      vetoMock.votingPeriodExtensionThresholdPct(), _newVetoPeriodExtensionThresholdPct
+    emit GovernorExtendVetoPeriod.MinorVetoExtensionThresholdPctSet(
+      vetoMock.minorVetoExtensionThresholdPct(), _newVetoPeriodExtensionThresholdPct
     );
-    vetoMock.exposed_setVetoPeriodExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
+    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 
   function testFuzz_RevertIf_SetVotingPeriodExtensionAbovePercentDenominator(uint16 _newVetoPeriodExtensionThresholdPct)
@@ -292,11 +290,11 @@ contract _setVotingPeriodExtensionThreshold is GovernorVetoExtensionTest {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        GovernorExtendVetoPeriod.GovernorExtendVetoPeriodPct_InvalidThreshold.selector,
+        GovernorExtendVetoPeriod.GovernorExtendVetoPeriod_InvalidThreshold.selector,
         _newVetoPeriodExtensionThresholdPct
       )
     );
-    vetoMock.exposed_setVetoPeriodExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
+    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 }
 

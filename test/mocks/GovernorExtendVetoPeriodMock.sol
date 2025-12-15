@@ -125,9 +125,9 @@ contract GovernorExtendVetoPeriodMock is GovernorExtendVetoPeriod, GovernorVetoC
     _setVotingPeriodExtension(_newVotingPeriodExtension);
   }
 
-  function exposed_setVetoPeriodExtensionThresholdPct(uint16 _newVetoPeriodExtensionThresholdPct)
+  function exposed_setMinorVetoExtensionThresholdPct(uint16 _newVetoPeriodExtensionThresholdPct)
     public
   {
-    _setVetoPeriodExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
+    _setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 }

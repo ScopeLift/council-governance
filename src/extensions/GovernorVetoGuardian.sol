@@ -9,7 +9,9 @@ import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.s
 /// @notice Extension of {Governor} that allows a trusted address to veto a proposal if the proposal
 /// state is pending or active.
 abstract contract GovernorVetoGuardian is Governor {
+  /// @notice The address of the veto guardian.
   address public vetoGuardian;
+  /// @dev Mapping of proposal IDs to their guardian veto status.
   mapping(uint256 => bool) public guardianVetoed;
 
   /// @notice Emitted when the veto guardian address is modified.
@@ -46,9 +48,8 @@ abstract contract GovernorVetoGuardian is Governor {
   }
 
   /// @notice Allows the guardian to veto proposals while they are `Pending` or `Active`.
-  /// Vetoed proposals evaluates to `Defeated`.
-  /// @dev This status can later be cleared by a veto override module.
-  /// @param _proposalId is the proposalId to be vetoed by the guardian.
+  /// Vetoed proposals evaluate to `Defeated`.
+  /// @param _proposalId The proposalId to be vetoed by the guardian.
   function vetoByGuardian(uint256 _proposalId) external onlyVetoGuardian {
     _validateStateBitmap(
       _proposalId,

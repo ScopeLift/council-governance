@@ -27,74 +27,12 @@ import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol"
 /// @author [ScopeLift](https://scopelift.co)
 /// @notice A dual-governance council governor that manages proposals through a two-stage process:
 /// council voting followed by veto governor review.
-///
 /// @dev This contract implements a council-based governance system with the following key features:
-///
-/// **Core Functionality:**
-/// - Proposals are created and voted on by council members using an CouncilERC20 voting token
-/// - All proposals must pass through a two-stage process: council approval → veto governor review
-/// - Uses simple vote counting (For/Against/Abstain) with fixed quorum and super quorum
-/// - Proposals that reach super quorum can advance early without waiting for the deadline
-///
-/// **Parent Contracts & Their Roles:**
-///
-/// - **Governor** (base): Core governance lifecycle management
-///    - Manages proposal creation, voting, queuing, execution, and cancellation
-///    - Tracks proposal states (Pending → Active → Succeeded → Queued → Executed)
-///
-/// - **GovernorVotes**: Voting power integration
-///    - Sources voting power from an CouncilERC20 token
-///
-/// - **GovernorCountingSimple**: Vote counting mechanism
-///    - Tracks three vote types: Against, For, Abstain
-///    - Counts votes per proposal and tracks which accounts have voted
-///
-/// - **GovernorCouncilQueuing**: Dual-governance integration
-///    - **Critical**: All proposals are automatically forwarded to a veto governor
-/// (`councilVetoGovernor`)
-///    - When a council proposal reaches `Queued` state, it creates a corresponding proposal on the
-/// veto governor
-///    - Proposal state depends on both council and veto governor states
-///    - Execution is delegated to the veto governor (which executes through a timelock)
-///    - Cancellation cancels both the council proposal and the corresponding veto governor proposal
-///
-/// - **GovernorSuperQuorum**: Early proposal advancement
-///    - Allows proposals to advance from `Active` to `Succeeded` before the deadline
-///
-/// - **GovernorSettings**: Configurable governance parameters
-///    - Manages `votingDelay`, `votingPeriod`, and `proposalThreshold`
-///    - These can be updated via governance proposals (restricted to admin via `GovernorAdmin`)
-///
-/// - **GovernorAdmin**: Admin-restricted governance operations
-///    - Allows an external admin to maintain control over the council governor settings
-///
-/// - **GovernorVotesQuorumFraction**: Quorum calculation
-///    - Defines quorum as a fraction of total voting power
-///    - Quorum is calculated as `quorumFraction / 100`
-///
-/// - **GovernorVotesSuperQuorumFraction**: Super quorum calculation
-///    - Defines super quorum as a fraction of total voting power
-///    - Super quorum is calculated as `superQuorumFraction / 100`
-///
-/// **Proposal Lifecycle:**
-/// 1. **Propose**: Council member creates a proposal (requires `proposalThreshold` tokens)
-/// 2. **Pending**: Proposal waits for `votingDelay` period
-/// 3. **Active**: Voting period begins, council members can cast votes
-///    - If `superQuorum` (7) FOR votes reached → advance to `Succeeded` early
-///    - Otherwise wait until deadline
-/// 4. **Succeeded**: Proposal passed council vote (quorum reached, FOR > AGAINST)
-/// 5. **Queued**: Proposal forwarded to veto governor, creating a corresponding proposal there
-///    - Council proposal state now depends on veto governor's proposal state
-///    - Remains `Queued` while veto governor proposal is Pending/Active/Queued/Succeeded
-///    - Becomes `Executed` if veto governor proposal is Executed
-///    - Becomes `Canceled` if veto governor proposal is Canceled/Defeated/Expired
-/// 6. **Executed**: Proposal executed through the veto governor (typically via timelock)
-///
-/// **Security Model:**
-/// - Council can create and vote on proposals
-/// - Council cannot modify governance parameters (restricted to admin)
-/// - All proposals must pass through veto governor for execution
-/// - Veto governor can reject proposals through its own voting mechanism
+/// - Proposals are created and voted on by council members using an CouncilERC20 voting token.
+/// - All proposals must pass through a two-stage process: council approval → veto governor
+/// review.
+/// - Uses simple vote counting (For/Against/Abstain) with dynamic quorum and super quorum.
+/// - Proposals that reach super quorum can advance early without waiting for the deadline.
 contract BasicCouncilGovernor is
   Governor,
   GovernorCountingSimple,
@@ -110,10 +48,6 @@ contract BasicCouncilGovernor is
     uint256 initialQuorumFraction;
     uint256 initialSuperQuorumFraction;
   }
-
-  /*///////////////////////////////////////////////////////////////
-                          Constructor
-  //////////////////////////////////////////////////////////////*/
 
   /// @notice Constructor for the BasicCouncilGovernor contract.
   /// @param _name The name of the council governor.
@@ -139,33 +73,53 @@ contract BasicCouncilGovernor is
     GovernorVotesSuperQuorumFraction(_params.initialSuperQuorumFraction)
   {}
 
-  /*///////////////////////////////////////////////////////////////
-                        Public Functions
-  //////////////////////////////////////////////////////////////*/
-
   /// @inheritdoc GovernorSettings
-  function votingDelay() public view override(Governor, GovernorSettings) returns (uint256) {
+  function votingDelay()
+    public
+    view
+    virtual
+    override(Governor, GovernorSettings)
+    returns (uint256)
+  {
     return GovernorSettings.votingDelay();
   }
 
   /// @inheritdoc GovernorSettings
-  function votingPeriod() public view override(Governor, GovernorSettings) returns (uint256) {
+  function votingPeriod()
+    public
+    view
+    virtual
+    override(Governor, GovernorSettings)
+    returns (uint256)
+  {
     return GovernorSettings.votingPeriod();
   }
 
   /// @inheritdoc GovernorSettings
-  function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
+  function proposalThreshold()
+    public
+    view
+    virtual
+    override(Governor, GovernorSettings)
+    returns (uint256)
+  {
     return GovernorSettings.proposalThreshold();
   }
 
   /// @inheritdoc Governor
-  function clock() public view override(Governor, GovernorVotes) returns (uint48) {
+  function clock() public view virtual override(Governor, GovernorVotes) returns (uint48) {
     return uint48(block.timestamp);
   }
 
   /// @notice The clock mode is set to timestamp.
   /// @return The clock mode.
-  function CLOCK_MODE() public pure override(Governor, GovernorVotes) returns (string memory) {
+  function CLOCK_MODE()
+    public
+    pure
+    virtual
+    override(Governor, GovernorVotes)
+    returns (string memory)
+  {
     return "mode=timestamp";
   }
 
@@ -193,6 +147,7 @@ contract BasicCouncilGovernor is
   function proposalNeedsQueuing(uint256 _proposalId)
     public
     view
+    virtual
     override(Governor, GovernorCouncilQueuing)
     returns (bool)
   {
@@ -205,7 +160,7 @@ contract BasicCouncilGovernor is
     uint256[] memory _values,
     bytes[] memory _calldatas,
     string memory _description
-  ) public override(Governor, GovernorCouncilQueuing) returns (uint256) {
+  ) public virtual override(Governor, GovernorCouncilQueuing) returns (uint256) {
     return GovernorCouncilQueuing.propose(_targets, _values, _calldatas, _description);
   }
 
@@ -213,6 +168,7 @@ contract BasicCouncilGovernor is
   function state(uint256 _proposalId)
     public
     view
+    virtual
     override(Governor, GovernorCouncilQueuing, GovernorVotesSuperQuorumFraction)
     returns (ProposalState)
   {
@@ -223,16 +179,13 @@ contract BasicCouncilGovernor is
   function proposalVotes(uint256 _proposalId)
     public
     view
+    virtual
     override(GovernorSuperQuorum, GovernorCountingSimple)
     returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
   {
     // GovernorSuperQuorum.proposalVotes is unimplemented.
     return GovernorCountingSimple.proposalVotes(_proposalId);
   }
-
-  /*///////////////////////////////////////////////////////////////
-                        Internal Functions
-  //////////////////////////////////////////////////////////////*/
 
   /// @inheritdoc GovernorAdmin
   function _checkGovernance() internal virtual override(Governor, GovernorAdmin) {
@@ -245,7 +198,7 @@ contract BasicCouncilGovernor is
     uint256[] memory _values,
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
-  ) internal override(Governor, GovernorCouncilQueuing) returns (uint256) {
+  ) internal virtual override(Governor, GovernorCouncilQueuing) returns (uint256) {
     return GovernorCouncilQueuing._cancel(_targets, _values, _calldatas, _descriptionHash);
   }
 
@@ -256,15 +209,21 @@ contract BasicCouncilGovernor is
     uint256[] memory _values,
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
-  ) internal override(Governor, GovernorCouncilQueuing) {
+  ) internal virtual override(Governor, GovernorCouncilQueuing) {
     GovernorCouncilQueuing._executeOperations(
       _proposalId, _targets, _values, _calldatas, _descriptionHash
     );
   }
 
   /// @inheritdoc GovernorCouncilQueuing
-  function _executor() internal view override(Governor, GovernorCouncilQueuing) returns (address) {
-    return address(councilVetoGovernor);
+  function _executor()
+    internal
+    view
+    virtual
+    override(Governor, GovernorCouncilQueuing)
+    returns (address)
+  {
+    return GovernorCouncilQueuing._executor();
   }
 
   /// @inheritdoc GovernorCouncilQueuing
@@ -274,9 +233,9 @@ contract BasicCouncilGovernor is
     uint256[] memory _values,
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
-  ) internal override(Governor, GovernorCouncilQueuing) returns (uint48) {
+  ) internal virtual override(Governor, GovernorCouncilQueuing) returns (uint48) {
     return GovernorCouncilQueuing._queueOperations(
-        _proposalId, _targets, _values, _calldatas, _descriptionHash
-      );
+      _proposalId, _targets, _values, _calldatas, _descriptionHash
+    );
   }
 }

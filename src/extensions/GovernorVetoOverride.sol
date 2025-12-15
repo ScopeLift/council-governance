@@ -11,7 +11,7 @@ import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 /// @dev This contract enables an authorized role to override defeated proposals and temporarily
 /// change their state to Succeeded. The override is only valid within a specified duration after
 /// the proposal's voting deadline. Intended to be used with {GovernorVetoCountingSimple} or similar
-/// veto mechanisms where proposals can be defeated through inverse quorum (veto votes).
+/// veto mechanisms.
 abstract contract GovernorVetoOverride is Governor {
   /// @notice Emitted when a proposal's veto is overridden.
   /// @param proposalId The ID of the proposal whose veto was overridden.
@@ -38,7 +38,7 @@ abstract contract GovernorVetoOverride is Governor {
   uint48 public vetoOverrideDuration;
 
   /// @notice Address authorized to override proposal vetoes.
-  /// @dev Only this address can call `overrideVeto()`. Typically set to a multisig or DAO.
+  /// @dev Only this address can call `overrideVeto()`.
   address public vetoOverrideRole;
 
   /// @notice Restricts function access to the veto override role.
@@ -52,7 +52,7 @@ abstract contract GovernorVetoOverride is Governor {
 
   /// @notice Initializes the veto override extension.
   /// @param _vetoOverrideRole Address authorized to override vetoes.
-  /// @param _vetoOverrideDuration Time window for overrides after proposal deadline.
+  /// @param _vetoOverrideDuration Time window allotted for overrides after proposal deadline.
   constructor(address _vetoOverrideRole, uint48 _vetoOverrideDuration) {
     vetoOverrideRole = _vetoOverrideRole;
     vetoOverrideDuration = _vetoOverrideDuration;
