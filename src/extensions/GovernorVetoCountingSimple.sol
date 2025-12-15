@@ -50,8 +50,16 @@ abstract contract GovernorVetoCountingSimple is Governor {
     return proposalVoteData[_proposalId].vetoVotes;
   }
 
-  function vetoThreshold(uint256) public view virtual returns (uint256);
+  /// @notice Returns the veto threshold for a given timepoint.
+  /// @dev Must be implemented by inheriting contracts to define the veto threshold calculation.
+  /// @param timepoint The timepoint at which to calculate the threshold (usually proposal
+  /// snapshot). @return The number of veto votes required to defeat a proposal.
+  function vetoThreshold(uint256 timepoint) public view virtual returns (uint256);
 
+  /// @notice Returns 0 because optimistic proposals do not use quorum.
+  /// @dev In veto counting, proposals succeed by default unless vetoed. The concept of quorum
+  /// (minimum participation) does not apply. This override ensures OpenZeppelin's quorum checks
+  /// always pass.
   function quorum(uint256) public view virtual override returns (uint256) {
     return 0;
   }

@@ -72,15 +72,6 @@ The safety layer that protects the protocol from malicious or contentious counci
 - **Veto Extension**: Implements `GovernorExtendVetoPeriod`. If a minor veto threshold is met, the voting period is automatically extended to allow more time for the community to react.
 - **Veto Override**: Implements `GovernorVetoOverride`. A trusted "Veto Override Role" (e.g., the Main DAO or a Guardian multisig) can manually override a successful veto within a specific time window, enabling the proposal to be queued. This acts as a fail-safe against veto spam or malicious blocking.
 
-## Notable Design Decisions
-
-GovernorAdmin
-
-- **GovernorAdmin** overrides `_checkGovernance` so that these Governors can be controlled by addresses other than themselves. This deviates from the original spirit of the `onlyGovernance` modifier, whose purpose was to "restrict a function so it can only be executed through governance proposals." However, this is a necessary tradeoff for the purposes of this system, as we want to allow external entities like DAOs to control these Governors, rather than the councils themselves.
-- **GovernorCouncilQueuing**
-
-Generally, we acknowledge that a GovernorAdmin has the potential to misconfigure either governor, leading to its failure to function as intended.
-
 ## User Flows
 
 1.  **Council Action**:
@@ -99,3 +90,70 @@ Generally, we acknowledge that a GovernorAdmin has the potential to misconfigure
       - _Optional_: Veto guardian can intervene to veto the proposal while it is pending or active.
     - **If Veto Threshold IS met**: Proposal is Defeated.
       - _Optional_: Veto Override Role can intervene to override the veto and queue the proposal, as long as the override period has not expired. This supercedes the veto guardian.
+
+## Installation
+
+```bash
+git clone https://github.com/withtally/optimistic-governance.git
+cd optimistic-governance
+forge install
+```
+
+## Build & Test
+
+```bash
+# Build
+forge build
+
+# Run tests
+forge test
+
+# Run tests with gas report
+forge test --gas-report
+
+# Generate coverage report
+forge coverage
+```
+
+## Documentation
+
+Generate API documentation from NatSpec:
+
+```bash
+forge doc --serve
+```
+
+## Deployment
+
+See the deployment scripts in `script/`:
+
+- [`DeployGovernorsAndGrantRoles.s.sol`](script/DeployGovernorsAndGrantRoles.s.sol) - Deploys both governors and configures timelock roles
+  - Set the deployment params in script/deploy-constants
+
+## Security Considerations
+
+> [!CAUTION]
+> This code has not been audited. Use at your own risk.
+
+### Key Risks
+
+1. **Admin Misconfiguration**: The `GovernorAdmin` extension allows external control over governance parameters. A malicious or compromised admin could misconfigure the governors (e.g., setting `votingPeriod` to 0).
+
+2. **Veto Threshold Manipulation**: If `vetoThresholdNumerator` is set too high, proposals become effectively un-vetoable. If set too low, proposals can be griefed.
+
+3. **Override Window**: The `vetoOverrideDuration` creates a window where a defeated proposal can be revived. This is intentional but requires careful tuning.
+
+4. **State Override Composition**: Multiple extensions override `state()`. The order of inheritance matters:
+   - `GovernorVetoGuardian` → `GovernorVetoOverride` → other extensions
+   - Override takes precedence over Guardian veto
+
+### Access Control Summary
+
+| Role                    | Permissions                                                   |
+| ----------------------- | ------------------------------------------------------------- |
+| **Council Member**      | Propose and vote on `BasicCouncilGovernor`                    |
+| **Token Holder**        | Vote to veto on `BasicCouncilVetoGovernor`                    |
+| **Veto Guardian**       | Unilaterally veto pending/active proposals                    |
+| **Veto Override Role**  | Override a veto within the override window                    |
+| **Governor Admin**      | Modify governance parameters (delay, period, thresholds, etc) |
+| **Council Token Owner** | Mint/burn council membership tokens                           |

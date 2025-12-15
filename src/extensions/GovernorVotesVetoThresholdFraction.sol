@@ -7,13 +7,15 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
 
-/// @title GovernorVetoOverride
+/// @title GovernorVotesVetoThresholdFraction
 /// @author [ScopeLift](https://scopelift.co)
-/// @notice Extension for {Governor} that allows overriding vetoed proposals.
-/// @dev Extension of {Governor} for voting weight extraction from an {ERC20Votes} token and a veto
-/// threshold expressed as a fraction of the total supply.
-/// Heavily borrowed from OpenZeppelin's GovernorVotesQuorumFraction (v5.4.0)
-/// (governance/extensions/GovernorVotesQuorumFraction.sol)
+/// @notice Extension of {Governor} that defines a veto threshold as a fraction of the token's
+/// total supply, calculated at the proposal's snapshot timepoint.
+/// @dev Heavily borrowed from OpenZeppelin's GovernorVotesQuorumFraction (v5.4.0). The veto
+/// threshold is specified as `numerator / denominator`. By default the denominator is 100, so a
+/// numerator of 10 corresponds to a veto threshold of 10% of total supply. The numerator is stored
+/// historically using checkpoints, allowing the veto threshold to change over time while existing
+/// proposals use the threshold from their creation time.
 abstract contract GovernorVotesVetoThresholdFraction is GovernorVotes {
   using Checkpoints for Checkpoints.Trace208;
 
