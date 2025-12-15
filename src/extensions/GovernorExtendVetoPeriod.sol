@@ -13,8 +13,6 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 /// (contracts/governance/extensions/GovernorPreventLateQuorum.sol) with behavior adapted for
 /// veto-counting.
 abstract contract GovernorExtendVetoPeriod is Governor {
-  uint256 public constant VETO_THRESHOLD_DENOMINATOR = 100;
-
   /// @notice Emitted when a proposal deadline is pushed back due to reaching its minor veto
   /// threshold.
   event ProposalExtended(uint256 indexed proposalId, uint64 extendedDeadline);
@@ -70,6 +68,12 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     return _minorVetoExtensionThresholdPct;
   }
 
+  /// @dev Returns the minor veto extension threshold denominator. Defaults to 100, but may be
+  /// overridden.
+  function minorVetoExtensionThresholdDenominator() public view virtual returns (uint256) {
+    return 100;
+  }
+
   /// @notice Returns the veto votes against a proposal.
   function proposalVotes(uint256 _proposalId) public view virtual returns (uint256 _againstVotes);
 
@@ -91,7 +95,7 @@ abstract contract GovernorExtendVetoPeriod is Governor {
   /// triggers an extension. Callable only by governance. Emits a
   /// {MinorVetoExtensionThresholdPctSet} event.
   /// @param _newMinorVetoExtensionThresholdPct Threshold in percentage points of veto threshold.
-  /// Must be less than or equal to VETO_THRESHOLD_DENOMINATOR.
+  /// Must be less than or equal to `minorVetoExtensionThresholdDenominator`.
   function setMinorVetoExtensionThresholdPct(uint16 _newMinorVetoExtensionThresholdPct)
     public
     virtual
@@ -114,7 +118,7 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     uint256 _minorThreshold = Math.mulDiv(
       vetoThreshold(proposalSnapshot(_proposalId)),
       _minorVetoExtensionThresholdPct,
-      VETO_THRESHOLD_DENOMINATOR
+      minorVetoExtensionThresholdDenominator()
     );
     return proposalVotes(_proposalId) >= _minorThreshold;
   }
@@ -154,12 +158,12 @@ abstract contract GovernorExtendVetoPeriod is Governor {
   /// {MinorVetoExtensionThresholdPctSet} event. Setting this value to 0 effectively turns off the
   /// extension module.
   /// @param _newMinorVetoExtensionThresholdPct Threshold in percentage points of
-  /// veto threshold. Must be less than or equal to VETO_THRESHOLD_DENOMINATOR.
+  /// veto threshold. Must be less than or equal to `minorVetoExtensionThresholdDenominator`.
   function _setMinorVetoExtensionThresholdPct(uint16 _newMinorVetoExtensionThresholdPct)
     internal
     virtual
   {
-    if (_newMinorVetoExtensionThresholdPct > VETO_THRESHOLD_DENOMINATOR) {
+    if (_newMinorVetoExtensionThresholdPct > minorVetoExtensionThresholdDenominator()) {
       revert GovernorExtendVetoPeriod_InvalidThreshold(_newMinorVetoExtensionThresholdPct);
     }
     emit MinorVetoExtensionThresholdPctSet(
