@@ -3,6 +3,7 @@ pragma solidity ^0.8.30;
 
 // External Dependencies
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
+import {Time} from "@openzeppelin/contracts/utils/types/Time.sol";
 
 // Internal Dependencies
 import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSimple.sol";
@@ -56,12 +57,12 @@ contract GovernorVetoCountingSimpleMock is GovernorVetoCountingSimple {
     return 10_000; // Return a fixed veto threshold for unit tests
   }
 
-  function clock() public view override returns (uint48) {
-    return uint48(block.timestamp);
+  function clock() public view virtual override(Governor) returns (uint48) {
+    return Time.blockNumber();
   }
 
-  function CLOCK_MODE() public pure override returns (string memory) {
-    return "mode=timestamp";
+  function CLOCK_MODE() public pure virtual override(Governor) returns (string memory) {
+    return "mode=blocknumber&from=default";
   }
 
   function _getVotes(

@@ -2,12 +2,12 @@
 pragma solidity ^0.8.30;
 
 // External Dependencies
-import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
+import {IComp} from "src/IComp.sol";
 
 abstract contract DeploymentConfigurationBase {
   struct BaseDeploymentConfiguration {
     address mainDaoGovernor;
-    IERC5805 mainDaoToken;
+    IComp mainDaoToken;
     address governorAdmin;
   }
 

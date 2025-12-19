@@ -213,8 +213,8 @@ contract State is GovernorVetoCountingSimple_Test {
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
 
     // Fast forward past voting period to check final state
-    vm.warp(
-      block.timestamp + governorVetoCountingSimple.votingDelay()
+    vm.roll(
+      block.number + governorVetoCountingSimple.votingDelay()
         + governorVetoCountingSimple.votingPeriod() + 1
     );
 
@@ -234,8 +234,8 @@ contract State is GovernorVetoCountingSimple_Test {
     uint256 _proposalId = createProposalAndCastVetoVote(_target, _value, _calldata, _voter, _weight);
 
     // Fast forward past voting period to check final state
-    vm.warp(
-      block.timestamp + governorVetoCountingSimple.votingDelay()
+    vm.roll(
+      block.number + governorVetoCountingSimple.votingDelay()
         + governorVetoCountingSimple.votingPeriod() + 1
     );
 

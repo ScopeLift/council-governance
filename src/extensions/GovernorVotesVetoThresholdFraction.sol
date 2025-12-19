@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 // External Dependencies
-import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
@@ -16,9 +16,10 @@ import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol
 /// numerator of 10 corresponds to a veto threshold of 10% of total supply. The numerator is stored
 /// historically using checkpoints, allowing the veto threshold to change over time while existing
 /// proposals use the threshold from their creation time.
-abstract contract GovernorVotesVetoThresholdFraction is GovernorVotes {
+abstract contract GovernorVotesVetoThresholdFraction is Governor {
   using Checkpoints for Checkpoints.Trace208;
 
+  uint256 public constant TOTAL_SUPPLY = 10_000_000e18;
   Checkpoints.Trace208 private _vetoThresholdNumeratorHistory;
 
   event VetoThresholdNumeratorUpdated(
@@ -41,8 +42,8 @@ abstract contract GovernorVotesVetoThresholdFraction is GovernorVotes {
    * supply. The denominator can be
    * customized by overriding {vetoThresholdDenominator}.
    */
-  constructor(uint256 vetoThresholdNumeratorValue) {
-    _updateVetoThresholdNumerator(vetoThresholdNumeratorValue);
+  constructor(uint256 _vetoThresholdNumeratorValue) {
+    _updateVetoThresholdNumerator(_vetoThresholdNumeratorValue);
   }
 
   /**
@@ -72,11 +73,7 @@ abstract contract GovernorVotesVetoThresholdFraction is GovernorVotes {
    * numerator / denominator`.
    */
   function vetoThreshold(uint256 timepoint) public view virtual returns (uint256) {
-    return Math.mulDiv(
-      token().getPastTotalSupply(timepoint),
-      vetoThresholdNumerator(timepoint),
-      vetoThresholdDenominator()
-    );
+    return Math.mulDiv(TOTAL_SUPPLY, vetoThresholdNumerator(timepoint), vetoThresholdDenominator());
   }
 
   /**

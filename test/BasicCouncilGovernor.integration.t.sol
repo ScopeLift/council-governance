@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 // External Dependencies
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+import {IComp} from "src/IComp.sol";
 
 // Internal Dependencies
 import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
@@ -12,7 +13,7 @@ import {CouncilERC20} from "src/CouncilERC20.sol";
 
 // Test Dependencies
 import {Test} from "forge-std/Test.sol";
-import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
+import {CompMock} from "test/mocks/CompMock.sol";
 import {Counter} from "test/helpers/Counter.sol";
 
 // Base contract for setting up the test environment
@@ -21,7 +22,7 @@ abstract contract BasicCouncilGovernorTest is Test {
   BasicCouncilGovernor internal councilGovernor;
   BasicCouncilVetoGovernor internal vetoGovernor;
   CouncilERC20 internal councilToken;
-  MockERC20Votes internal daoToken;
+  CompMock internal daoToken;
   TimelockController internal timelock;
   Counter internal target;
 
@@ -50,8 +51,7 @@ abstract contract BasicCouncilGovernorTest is Test {
     vm.prank(deployer);
     councilToken = new CouncilERC20("Council Token", "CT", deployer, 1);
     vm.prank(deployer);
-    daoToken = new MockERC20Votes();
-    daoToken.mint(deployer, 10_000e18);
+    daoToken = new CompMock(deployer);
 
     // 3. Create and fund council members
     for (uint256 _i = 0; _i < COUNCIL_SIZE; _i++) {
@@ -76,7 +76,7 @@ abstract contract BasicCouncilGovernorTest is Test {
     BasicCouncilVetoGovernor.ConstructorParams memory _vetoGovernorParams =
       BasicCouncilVetoGovernor.ConstructorParams(
         "BasicCouncilVetoGovernor",
-        daoToken,
+        IComp(address(daoToken)),
         1 hours, // initialVotingDelay
         1 days, // initialVotingPeriod
         0, // initialProposalThreshold

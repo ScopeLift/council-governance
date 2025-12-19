@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 // External Dependencies
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+import {IComp} from "src/IComp.sol";
 
 // Internal Dependencies
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
@@ -13,7 +14,7 @@ import {CouncilERC20} from "src/CouncilERC20.sol";
 // Test Dependencies
 import {Test} from "forge-std/Test.sol";
 import {Counter} from "test/helpers/Counter.sol";
-import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
+import {CompMock} from "test/mocks/CompMock.sol";
 
 // Base contract for setting up the full two-governor test environment
 abstract contract BasicCouncilVetoGovernorTest is Test {
@@ -21,7 +22,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
   BasicCouncilGovernor internal councilGovernor;
   BasicCouncilVetoGovernor internal vetoGovernor;
   CouncilERC20 internal councilToken;
-  MockERC20Votes internal daoToken;
+  CompMock internal daoToken;
   TimelockController internal timelock;
   Counter internal target;
 
@@ -30,8 +31,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
   address internal nonCouncilProposer = makeAddr("nonCouncilProposer");
   address[] internal councilMembers;
   address internal vetoGuardian = makeAddr("vetoGuardian");
-  address internal whale1 = makeAddr("whale1");
-  address internal whale2 = makeAddr("whale2");
+  address internal whale = makeAddr("whale");
 
   // === Proposal Details ===
   address[] internal targets;
@@ -51,7 +51,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     vm.prank(deployer);
     councilToken = new CouncilERC20("Council Token", "CT", deployer, 1);
     vm.prank(deployer);
-    daoToken = new MockERC20Votes();
+    daoToken = new CompMock(deployer);
 
     // 3. Create and fund council members for the CouncilGovernor
     for (uint256 _i = 0; _i < COUNCIL_SIZE; _i++) {
@@ -62,12 +62,10 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     }
 
     // 4. Create and fund DAO token holders for the VetoGovernor
-    daoToken.mint(whale1, VETO_QUORUM);
-    daoToken.mint(whale2, VETO_QUORUM);
-    vm.prank(whale1);
-    daoToken.delegate(whale1);
-    vm.prank(whale2);
-    daoToken.delegate(whale2);
+    vm.prank(deployer);
+    daoToken.transfer(whale, 1_000_000e18);
+    vm.prank(whale);
+    daoToken.delegate(whale);
 
     // --- This setup uses vm.computeCreateAddress to handle circular dependencies ---
     // The VetoGovernor needs the CouncilGovernor's address at deployment, and vice-versa.
@@ -88,7 +86,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     BasicCouncilVetoGovernor.ConstructorParams memory _vetoGovernorParams =
       BasicCouncilVetoGovernor.ConstructorParams(
         "BasicCouncilVetoGovernor",
-        daoToken,
+        IComp(address(daoToken)),
         1 hours, // initialVotingDelay
         1 days, // initialVotingPeriod
         0, // initialProposalThreshold
@@ -174,7 +172,7 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
   function test_HappyPath_ProposalSucceedsAndExecutes() public {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor("Succeeds");
 
-    skip(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vm.roll(block.number + vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
 
@@ -196,14 +194,14 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
   function test_VetoPath_ProposalIsSuccessfullyVetoed() public {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor("Vetoed");
 
-    skip(vetoGovernor.votingDelay() + 1);
+    vm.roll(block.number + vetoGovernor.votingDelay() + 1);
 
     // Cast one vote to meet the veto quorum
-    vm.prank(whale1);
+    vm.prank(whale);
     vetoGovernor.castVote(_proposalId, 0); // 0 = Against (Veto)
 
     // Wait for voting period (plus potential extension) to end
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vm.roll(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     // Assert state is Defeated
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
@@ -219,11 +217,11 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor("Overridden");
 
     // Veto the proposal
-    skip(vetoGovernor.votingDelay() + 1);
-    vm.prank(whale1);
+    vm.roll(block.number + vetoGovernor.votingDelay() + 1);
+    vm.prank(whale);
     vetoGovernor.castVote(_proposalId, 0);
 
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vm.roll(vetoGovernor.proposalDeadline(_proposalId) + 1);
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
 
     // Override the veto

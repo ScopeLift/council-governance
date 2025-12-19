@@ -2,13 +2,13 @@
 pragma solidity ^0.8.30;
 
 // Script Dependencies
-import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
+import {IComp} from "src/IComp.sol";
 
 contract DeploymentInputMainnetForkTest {
   // Address that controls council membership
   address public constant MAIN_DAO_GOVERNOR = 0x1111111111111111111111111111111111111111;
   // DAO token used by the veto governor for vote weight (placeholder)
-  IERC5805 public constant MAIN_DAO_TOKEN = IERC5805(0x2222222222222222222222222222222222222222);
+  IComp public constant MAIN_DAO_TOKEN = IComp(0xc00e94Cb662C3520282E6f5717214004A7f26888);
   // Admin account allowed to adjust governor settings (placeholder)
   address public constant GOVERNOR_ADMIN = MAIN_DAO_GOVERNOR;
 

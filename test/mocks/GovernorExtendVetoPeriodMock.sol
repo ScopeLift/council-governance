@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.30;
 
+// External Dependencies
+import {Time} from "@openzeppelin/contracts/utils/types/Time.sol";
+
 // Internal Dependencies
 import {Governor, GovernorExtendVetoPeriod} from "src/extensions/GovernorExtendVetoPeriod.sol";
 import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSimple.sol";
@@ -58,12 +61,12 @@ contract GovernorExtendVetoPeriodMock is GovernorExtendVetoPeriod, GovernorVetoC
     return GovernorVetoCountingSimple.proposalVotes(_proposalId);
   }
 
-  function clock() public view override returns (uint48) {
-    return uint48(block.timestamp);
+  function clock() public view virtual override(Governor) returns (uint48) {
+    return Time.blockNumber();
   }
 
-  function CLOCK_MODE() public pure override returns (string memory) {
-    return "mode=timestamp";
+  function CLOCK_MODE() public pure virtual override(Governor) returns (string memory) {
+    return "mode=blocknumber&from=default";
   }
 
   function _getVotes(

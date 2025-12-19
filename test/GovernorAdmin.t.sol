@@ -31,7 +31,7 @@ contract GovernorAdminTest is BasicCouncilGovernorTest {
 
     _proposalId = councilGovernor.queue(targets, values, calldatas, _descriptionHash);
 
-    skip(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vm.roll(block.number + vetoGovernor.proposalDeadline(_proposalId) + 1);
     vetoGovernor.queue(targets, values, calldatas, _descriptionHash);
   }
 }

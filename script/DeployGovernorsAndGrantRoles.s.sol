@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 // External Dependencies
+import {IComp} from "src/IComp.sol";
 import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
@@ -28,7 +29,7 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
 
   struct VetoGovernorDeploymentConfiguration {
     string vetoGovernorName;
-    IERC5805 mainDaoToken;
+    IComp mainDaoToken;
     uint48 vetoGovernorInitialVotingDelay;
     uint32 vetoGovernorInitialVotingPeriod;
     uint256 vetoGovernorInitialProposalThreshold;
@@ -109,7 +110,7 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
         _vetoConfig.votingPeriodExtension,
         _vetoConfig.votingPeriodExtensionThresholdPct,
         _vetoConfig.vetoThresholdNumerator,
-        TimelockController(_timelock),
+        _timelock,
         _vetoConfig.vetoGovernorAdmin,
         address(councilGovernor)
       );

@@ -75,7 +75,7 @@ contract GovernorVetoGuardianTest is Test {
     returns (uint256 _proposalId)
   {
     _proposalId = _submitProposal(_proposer, _proposal);
-    vm.warp(block.timestamp + vetoGovernor.votingDelay() + 1);
+    vm.roll(block.number + vetoGovernor.votingDelay() + 1);
   }
 
   function _submitAndPassProposal(address _proposer, Proposal memory _proposal)
@@ -83,7 +83,7 @@ contract GovernorVetoGuardianTest is Test {
     returns (uint256 _proposalId)
   {
     _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
-    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    vm.roll(block.number + vetoGovernor.votingPeriod() + 1);
   }
 
   function _submitAndFailProposal(address _proposer, Proposal memory _proposal)
@@ -91,7 +91,7 @@ contract GovernorVetoGuardianTest is Test {
     returns (uint256 _proposalId)
   {
     _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
-    vm.warp(block.timestamp + vetoGovernor.votingPeriod() + 1);
+    vm.roll(block.number + vetoGovernor.votingPeriod() + 1);
     vetoGovernor.setDefeated(_proposalId);
   }
 
@@ -117,7 +117,7 @@ contract GovernorVetoGuardianTest is Test {
   ) public returns (uint256 _proposalId) {
     _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
 
-    vm.warp(block.timestamp + 1);
+    vm.roll(block.number + 1);
     vetoGovernor.execute(
       _proposal.targets,
       _proposal.values,

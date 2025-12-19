@@ -4,13 +4,13 @@ pragma solidity 0.8.30;
 // External Dependencies
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSimple.sol";
-import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
-import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
+import {Time} from "@openzeppelin/contracts/utils/types/Time.sol";
 import {
   GovernorTimelockControl,
   TimelockController
 } from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+import {IComp} from "src/IComp.sol";
 
 // Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
@@ -33,7 +33,6 @@ import {GovernorExtendVetoPeriod} from "src/extensions/GovernorExtendVetoPeriod.
 /// - A veto can be overridden by the veto override role.
 contract BasicCouncilVetoGovernor is
   Governor,
-  GovernorVotes,
   GovernorAdmin,
   GovernorSettings,
   GovernorVetoCountingSimple,
@@ -57,7 +56,7 @@ contract BasicCouncilVetoGovernor is
   /// @param council The address of the council governor.
   struct ConstructorParams {
     string name;
-    IERC5805 token;
+    IComp token;
     uint48 votingDelay;
     uint32 votingPeriod;
     uint256 proposalThreshold;
@@ -72,6 +71,7 @@ contract BasicCouncilVetoGovernor is
     address council;
   }
 
+  IComp public token;
   address public immutable COUNCIL;
 
   modifier onlyCouncil() virtual {
@@ -81,7 +81,6 @@ contract BasicCouncilVetoGovernor is
 
   constructor(ConstructorParams memory _params)
     Governor(_params.name)
-    GovernorVotes(_params.token)
     GovernorVetoGuardian(_params.vetoGuardian)
     GovernorSettings(_params.votingDelay, _params.votingPeriod, _params.proposalThreshold)
     GovernorVetoOverride(_params.vetoOverrideRole, _params.vetoOverrideDuration)
@@ -92,6 +91,7 @@ contract BasicCouncilVetoGovernor is
     GovernorTimelockControl(_params.timelock)
     GovernorAdmin(_params.governorAdmin)
   {
+    token = _params.token;
     COUNCIL = _params.council;
   }
 
@@ -181,18 +181,12 @@ contract BasicCouncilVetoGovernor is
     return GovernorTimelockControl.proposalNeedsQueuing(_proposalId);
   }
 
-  function clock() public view virtual override(Governor, GovernorVotes) returns (uint48) {
-    return uint48(block.timestamp);
+  function clock() public view virtual override(Governor) returns (uint48) {
+    return Time.blockNumber();
   }
 
-  function CLOCK_MODE()
-    public
-    pure
-    virtual
-    override(Governor, GovernorVotes)
-    returns (string memory)
-  {
-    return "mode=timestamp";
+  function CLOCK_MODE() public pure virtual override(Governor) returns (string memory) {
+    return "mode=blocknumber&from=default";
   }
 
   function propose(
@@ -261,7 +255,7 @@ contract BasicCouncilVetoGovernor is
     );
   }
 
-  function vetoThreshold(uint256 timepoint)
+  function vetoThreshold(uint256 _timepoint)
     public
     view
     virtual
@@ -273,6 +267,16 @@ contract BasicCouncilVetoGovernor is
     returns (uint256)
   {
     // Neither GovernorVetoCountingSimple nor GovernorExtendVetoPeriod implement `vetoThreshold`
-    return GovernorVotesVetoThresholdFraction.vetoThreshold(timepoint);
+    return GovernorVotesVetoThresholdFraction.vetoThreshold(_timepoint);
+  }
+
+  function _getVotes(address _account, uint256 _timepoint, bytes memory)
+    internal
+    view
+    virtual
+    override
+    returns (uint256)
+  {
+    return token.getPriorVotes(_account, _timepoint);
   }
 }
