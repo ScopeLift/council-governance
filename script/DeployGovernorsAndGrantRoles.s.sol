@@ -62,11 +62,11 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
 
   function _grantVetoGovernorRoles(
     address _deployer,
-    BasicCouncilVetoGovernor _vetoGovernor,
+    address _vetoGovernor,
     TimelockController _timelock
   ) internal {
-    _timelock.grantRole(_timelock.EXECUTOR_ROLE(), address(_vetoGovernor));
-    _timelock.grantRole(_timelock.PROPOSER_ROLE(), address(_vetoGovernor));
+    _timelock.grantRole(_timelock.EXECUTOR_ROLE(), _vetoGovernor);
+    _timelock.grantRole(_timelock.PROPOSER_ROLE(), _vetoGovernor);
     _timelock.renounceRole(_timelock.DEFAULT_ADMIN_ROLE(), _deployer);
   }
 
@@ -116,7 +116,7 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
 
     vetoGovernor = new BasicCouncilVetoGovernor(_params);
 
-    _grantVetoGovernorRoles(_deployer, vetoGovernor, _timelock);
+    _grantVetoGovernorRoles(_deployer, address(vetoGovernor), _timelock);
     vm.stopBroadcast();
 
     _log("councilGovernor", address(councilGovernor));

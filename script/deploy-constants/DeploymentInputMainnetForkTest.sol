@@ -6,9 +6,9 @@ import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 
 contract DeploymentInputMainnetForkTest {
   // Address that controls council membership
-  address public constant MAIN_DAO_GOVERNOR = 0x1111111111111111111111111111111111111111;
+  address public constant MAIN_DAO_GOVERNOR = 0x309a862bbC1A00e45506cB8A802D1ff10004c8C0;
   // DAO token used by the veto governor for vote weight (placeholder)
-  IERC5805 public constant MAIN_DAO_TOKEN = IERC5805(0x2222222222222222222222222222222222222222);
+  IERC5805 public constant MAIN_DAO_TOKEN = IERC5805(0xc00e94Cb662C3520282E6f5717214004A7f26888);
   // Admin account allowed to adjust governor settings (placeholder)
   address public constant GOVERNOR_ADMIN = MAIN_DAO_GOVERNOR;
 
@@ -58,6 +58,13 @@ contract DeploymentInputMainnetForkTest {
   uint256 public constant VETO_GOVERNOR_INITIAL_VETO_THRESHOLD_FRACTION = 10;
   // Veto governor veto guardian
   address public VETO_GUARDIAN;
+
+  // Compound veto governor name (COMP-style `getPriorVotes`)
+  string public constant COMPOUND_VETO_GOVERNOR_NAME = "CompoundCouncilVetoGovernor";
+  // Compound veto governor voting delay (in blocks)
+  uint48 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_DELAY = 300;
+  // Compound veto governor voting period (in blocks)
+  uint32 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_PERIOD = 7200;
 
   // Council governor name
   string public constant COUNCIL_GOVERNOR_NAME = "BasicCouncilGovernor";
