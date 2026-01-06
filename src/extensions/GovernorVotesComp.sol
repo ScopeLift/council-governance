@@ -21,15 +21,15 @@ interface ICompVotes {
 /// @notice Governor vote-weight extension for COMP-style tokens that expose `getPriorVotes`.
 /// @dev COMP uses block number checkpoints and does not implement ERC-5805 snapshot methods.
 abstract contract GovernorVotesComp is Governor {
-  IERC20 private immutable _token;
+  IERC20 private immutable TOKEN;
 
   constructor(IERC20 tokenAddress) {
-    _token = tokenAddress;
+    TOKEN = tokenAddress;
   }
 
   /// @dev The token that voting power is sourced from.
   function token() public view virtual returns (IERC20) {
-    return _token;
+    return TOKEN;
   }
 
   /// @dev Matches COMP to use block number.
@@ -56,6 +56,6 @@ abstract contract GovernorVotesComp is Governor {
     override
     returns (uint256)
   {
-    return uint256(ICompVotes(address(_token)).getPriorVotes(account, timepoint));
+    return uint256(ICompVotes(address(TOKEN)).getPriorVotes(account, timepoint));
   }
 }
