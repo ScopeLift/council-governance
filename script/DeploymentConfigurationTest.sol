@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.30;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 // Script Dependencies
 import {DeploymentConfigurationBase} from "script/DeploymentConfigurationBase.sol";
 import {
@@ -9,13 +11,17 @@ import {
 import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
 import {DeployTimelock} from "script/DeployTimelock.s.sol";
 import {DeployGovernorsAndGrantRoles} from "script/DeployGovernorsAndGrantRoles.s.sol";
+import {
+  DeployCompoundGovernorsAndGrantRoles
+} from "script/DeployCompoundGovernorsAndGrantRoles.s.sol";
 
 contract DeploymentConfigurationTest is
   DeploymentConfigurationBase,
   DeploymentInputMainnetForkTest,
   DeployAndMintCouncilERC20,
   DeployTimelock,
-  DeployGovernorsAndGrantRoles
+  DeployGovernorsAndGrantRoles,
+  DeployCompoundGovernorsAndGrantRoles
 {
   function _getBaseDeploymentConfiguration()
     public
@@ -73,6 +79,27 @@ contract DeploymentConfigurationTest is
       votingPeriodExtension: VOTING_PERIOD_EXTENSION,
       votingPeriodExtensionThresholdPct: VOTING_PERIOD_EXTENSION_THRESHOLD_PCT,
       vetoThresholdNumerator: VETO_GOVERNOR_INITIAL_VETO_THRESHOLD_FRACTION,
+      vetoGuardian: VETO_GUARDIAN,
+      vetoGovernorAdmin: _baseConfig.governorAdmin
+    });
+  }
+
+  function _getCompoundVetoGovernorDeploymentConfiguration()
+    public
+    view
+    returns (CompoundVetoGovernorDeploymentConfiguration memory)
+  {
+    BaseDeploymentConfiguration memory _baseConfig = _getBaseDeploymentConfiguration();
+    return CompoundVetoGovernorDeploymentConfiguration({
+      vetoGovernorName: COMPOUND_VETO_GOVERNOR_NAME,
+      mainDaoToken: IERC20(address(_baseConfig.mainDaoToken)),
+      vetoGovernorInitialVotingDelay: COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_DELAY,
+      vetoGovernorInitialVotingPeriod: COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_PERIOD,
+      vetoGovernorInitialProposalThreshold: VETO_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD,
+      vetoOverrideRole: VETO_OVERRIDE_ROLE,
+      vetoOverrideDuration: VETO_OVERRIDE_DURATION,
+      votingPeriodExtension: VOTING_PERIOD_EXTENSION,
+      votingPeriodExtensionThresholdPct: VOTING_PERIOD_EXTENSION_THRESHOLD_PCT,
       vetoGuardian: VETO_GUARDIAN,
       vetoGovernorAdmin: _baseConfig.governorAdmin
     });

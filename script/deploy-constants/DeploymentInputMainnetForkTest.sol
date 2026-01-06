@@ -59,6 +59,13 @@ contract DeploymentInputMainnetForkTest {
   // Veto governor veto guardian
   address public VETO_GUARDIAN;
 
+  // Compound veto governor name (COMP-style `getPriorVotes`)
+  string public constant COMPOUND_VETO_GOVERNOR_NAME = "CompoundCouncilVetoGovernor";
+  // Compound veto governor voting delay (in blocks)
+  uint48 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_DELAY = 300;
+  // Compound veto governor voting period (in blocks)
+  uint32 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_PERIOD = 7200;
+
   // Council governor name
   string public constant COUNCIL_GOVERNOR_NAME = "BasicCouncilGovernor";
   // Council governor voting delay
