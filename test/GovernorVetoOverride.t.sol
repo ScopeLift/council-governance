@@ -2,7 +2,10 @@
 pragma solidity ^0.8.30;
 
 /// External Dependencies
-import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+import {
+  IGovernor,
+  GovernorCountingSimple
+} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
 /// Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
@@ -21,6 +24,7 @@ contract GovernorVetoOverrideTest is Test {
 
   GovernorVetoOverrideMock internal vetoOverrideMock;
   address mainDao = makeAddr("main DAO");
+  address whale = makeAddr("whale");
 
   address[] internal targets;
   uint256[] internal values;
@@ -29,6 +33,10 @@ contract GovernorVetoOverrideTest is Test {
   function setUp() public {
     vetoOverrideMock = new GovernorVetoOverrideMock(mainDao, 2 weeks);
     vm.label(address(vetoOverrideMock), "vetoOverrideMock");
+
+    vetoOverrideMock.daoToken().mint(whale, vetoOverrideMock.quorum(0));
+    vm.prank(whale);
+    vetoOverrideMock.daoToken().delegate(whale);
   }
 
   function _buildEmptyProposal() internal returns (Proposal memory _proposal) {
@@ -53,15 +61,82 @@ contract GovernorVetoOverrideTest is Test {
     _proposalId = vetoOverrideMock.propose(
       _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
     );
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
   }
 
-  /// @notice Manually sets proposal to defeated by manipulating the return state of
-  /// `_quorumReached`
-  /// and `_voteSucceeded`
-  function _createDefeatedProposal(address _proposer) public returns (uint256 _proposalId) {
-    _proposalId = _submitProposal(_proposer, _buildEmptyProposal());
-    vetoOverrideMock.setDefeated(_proposalId, true);
-    vm.warp(block.timestamp + vetoOverrideMock.votingDelay() + vetoOverrideMock.votingPeriod() + 1);
+  function _submitAndCancelProposal(address _proposer, Proposal memory _proposal)
+    internal
+    returns (uint256 _proposalId)
+  {
+    vm.startPrank(_proposer);
+    _proposalId = vetoOverrideMock.propose(
+      _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
+    );
+    vetoOverrideMock.cancel(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+    vm.stopPrank();
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
+  }
+
+  function _submitAndPassProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposal(_proposer, _proposal);
+    vm.warp(vetoOverrideMock.proposalSnapshot(_proposalId) + 1);
+
+    vm.prank(whale);
+    vetoOverrideMock.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.For));
+
+    vm.warp(vetoOverrideMock.proposalDeadline(_proposalId) + 1);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
+  }
+
+  /// @notice Creates a defeated proposal by having a whale vote against it
+  function _submitAndDefeatProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitProposal(_proposer, _proposal);
+    vm.warp(block.timestamp + vetoOverrideMock.votingDelay() + 1);
+
+    vm.prank(whale);
+    vetoOverrideMock.castVote(_proposalId, 0);
+
+    vm.warp(block.timestamp + vetoOverrideMock.votingPeriod() + 1);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+  }
+
+  function _queueProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _submitAndPassProposal(_proposer, _proposal);
+    vetoOverrideMock.queue(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+  }
+
+  function _queueAndExecuteProposal(address _proposer, Proposal memory _proposal)
+    public
+    returns (uint256 _proposalId)
+  {
+    _proposalId = _queueProposal(_proposer, _proposal);
+    vetoOverrideMock.execute(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
   }
 
   function _assertProposalState(uint256 _proposalId, IGovernor.ProposalState _expected)
@@ -119,31 +194,37 @@ contract _setOverrideDuration is GovernorVetoOverrideTest {
 }
 
 contract OverrideVeto is GovernorVetoOverrideTest {
-  function testFuzz_OverridesVeto(address _proposer) public {
-    uint256 _proposalId = _createDefeatedProposal(_proposer);
+  function testFuzz_OverridesVetoWhenProposalIsDefeated(address _proposer) public {
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _buildEmptyProposal());
 
     vm.prank(vetoOverrideMock.vetoOverrideRole());
     vetoOverrideMock.overrideVeto(_proposalId);
     assertEq(vetoOverrideMock.isVetoOverridden(_proposalId), true);
   }
 
-  function testFuzz_OverrideVetoWhenProposalDoesNotExist(uint256 _proposalId) public {
-    vm.prank(vetoOverrideMock.vetoOverrideRole());
-    vetoOverrideMock.overrideVeto(_proposalId);
-    assertEq(vetoOverrideMock.isVetoOverridden(_proposalId), true);
-  }
+  function testFuzz_EmitsVetoOverridden(address _proposer) public {
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _buildEmptyProposal());
 
-  function testFuzz_EmitsVetoOverridden(uint256 _proposalId) public {
     vm.expectEmit();
     emit GovernorVetoOverride.VetoOverridden(_proposalId);
     vm.prank(vetoOverrideMock.vetoOverrideRole());
     vetoOverrideMock.overrideVeto(_proposalId);
   }
 
-  function testFuzz_EmitsVetoOverriddenWhenProposalDoesNotExist(uint256 _proposalId) public {
-    vm.expectEmit();
-    emit GovernorVetoOverride.VetoOverridden(_proposalId);
+  function testFuzz_RevertIf_VetoAlreadyOverridden(address _proposer) public {
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _buildEmptyProposal());
+
     vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vetoOverrideMock.overrideVeto(_proposalId);
+
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        GovernorVetoOverride.VetoOverrideUnexpectedState.selector,
+        _proposalId,
+        IGovernor.ProposalState.Succeeded
+      )
+    );
     vetoOverrideMock.overrideVeto(_proposalId);
   }
 
@@ -151,112 +232,153 @@ contract OverrideVeto is GovernorVetoOverrideTest {
     public
   {
     vm.assume(_caller != vetoOverrideMock.vetoOverrideRole());
-    uint256 _proposalId = _createDefeatedProposal(_proposer);
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _buildEmptyProposal());
 
-    vm.expectRevert(bytes("GovernorVetoOverride: caller is not the veto override role"));
+    vm.expectRevert(
+      abi.encodeWithSelector(GovernorVetoOverride.VetoOverrideUnauthorizedAccount.selector, _caller)
+    );
     vm.prank(_caller);
+    vetoOverrideMock.overrideVeto(_proposalId);
+  }
+
+  function testFuzz_RevertIf_StateIsNotDefeated(address _proposer, uint8 _proposalState) public {
+    _proposalState = uint8(
+      bound(
+        _proposalState,
+        uint8(IGovernor.ProposalState.Pending),
+        uint8(IGovernor.ProposalState.Executed)
+      )
+    );
+    vm.assume(_proposalState != uint8(IGovernor.ProposalState.Defeated));
+    vm.assume(_proposalState != uint8(IGovernor.ProposalState.Expired));
+
+    uint256 _proposalId;
+
+    // Create the proposal in the desired state
+    if (_proposalState == uint8(IGovernor.ProposalState.Pending)) {
+      _proposalId = _submitProposal(_proposer, _buildEmptyProposal());
+    } else if (_proposalState == uint8(IGovernor.ProposalState.Canceled)) {
+      _proposalId = _submitAndCancelProposal(_proposer, _buildEmptyProposal());
+    } else if (_proposalState == uint8(IGovernor.ProposalState.Active)) {
+      _proposalId = _submitProposal(_proposer, _buildEmptyProposal());
+      vm.warp(block.timestamp + vetoOverrideMock.votingDelay() + 1);
+    } else if (_proposalState == uint8(IGovernor.ProposalState.Succeeded)) {
+      _proposalId = _submitAndPassProposal(_proposer, _buildEmptyProposal());
+    } else if (_proposalState == uint8(IGovernor.ProposalState.Queued)) {
+      _proposalId = _queueProposal(_proposer, _buildEmptyProposal());
+    } else if (_proposalState == uint8(IGovernor.ProposalState.Executed)) {
+      _proposalId = _queueAndExecuteProposal(_proposer, _buildEmptyProposal());
+    }
+
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        GovernorVetoOverride.VetoOverrideUnexpectedState.selector,
+        _proposalId,
+        IGovernor.ProposalState(_proposalState)
+      )
+    );
+    vetoOverrideMock.overrideVeto(_proposalId);
+  }
+
+  function testFuzz_RevertIf_OverrideVetoAfterOverrideWindow(
+    address _proposer,
+    uint256 _newTimepoint
+  ) public {
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _buildEmptyProposal());
+
+    _newTimepoint = bound(
+      _newTimepoint,
+      vetoOverrideMock.proposalDeadline(_proposalId) + vetoOverrideMock.vetoOverrideDuration() + 1,
+      type(uint48).max
+    );
+    vm.warp(_newTimepoint);
+
+    vm.prank(vetoOverrideMock.vetoOverrideRole());
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        GovernorVetoOverride.VetoOverrideOutsideWindow.selector, _proposalId, _newTimepoint
+      )
+    );
     vetoOverrideMock.overrideVeto(_proposalId);
   }
 }
 
 contract State is GovernorVetoOverrideTest {
-  function testFuzz_ReturnsOriginalStateWhenStateIsPending(address _proposer, uint48 _newTimestamp)
-    public
-  {
-    uint256 _proposalId = _submitProposal(_proposer, _buildEmptyProposal());
-    _newTimestamp = uint48(bound(_newTimestamp, block.timestamp, vetoOverrideMock.votingDelay()));
-    vm.warp(_newTimestamp);
-
-    vm.prank(vetoOverrideMock.vetoOverrideRole());
-    vetoOverrideMock.overrideVeto(_proposalId);
-
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Pending);
-  }
-
-  function testFuzz_ReturnsOriginalStateWhenStateIsActive(address _proposer, uint48 _newTimestamp)
-    public
-  {
-    uint256 _proposalId = _submitProposal(_proposer, _buildEmptyProposal());
-    _newTimestamp = uint48(
-      bound(
-        _newTimestamp,
-        block.timestamp + vetoOverrideMock.votingDelay() + 1,
-        block.timestamp + vetoOverrideMock.votingDelay() + vetoOverrideMock.votingPeriod()
-      )
-    );
-    vm.warp(_newTimestamp);
-
-    vm.prank(vetoOverrideMock.vetoOverrideRole());
-    vetoOverrideMock.overrideVeto(_proposalId);
-
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Active);
-  }
-
-  function testFuzz_ReturnsOriginalStateWhenStateIsSucceeded(
+  function testFuzz_StateRemainsDefeatedWhenVetoIsNotOverridden(
     address _proposer,
-    uint48 _newTimestamp
+    uint48 _newTimepoint
   ) public {
-    uint256 _proposalId = _submitProposal(_proposer, _buildEmptyProposal());
-    _newTimestamp = uint48(
-      bound(
-        _newTimestamp,
-        block.timestamp + vetoOverrideMock.votingDelay() + vetoOverrideMock.votingPeriod() + 1,
-        type(uint48).max
-      )
-    );
-    vm.warp(_newTimestamp);
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _buildEmptyProposal());
+    _newTimepoint = uint48(bound(_newTimepoint, vetoOverrideMock.clock(), type(uint48).max));
+    vm.warp(_newTimepoint);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+  }
+
+  function testFuzz_StateRemainsSucceededUponVetoOverride(address _proposer, uint48 _newTimepoint)
+    public
+  {
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _buildEmptyProposal());
 
     vm.prank(vetoOverrideMock.vetoOverrideRole());
     vetoOverrideMock.overrideVeto(_proposalId);
+
+    uint256 _currentTimepoint = vetoOverrideMock.clock();
+    _newTimepoint = uint48(bound(_newTimepoint, _currentTimepoint, type(uint48).max));
+    vm.warp(_newTimepoint);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
-  function testFuzz_ReturnsDefeatedWhenVetoIsNotOverridden(address _proposer, uint48 _newTimestamp)
+  function testFuzz_StateRemainsQueuedUponVetoOverride(address _proposer, uint256 _newTimepoint)
     public
   {
-    uint256 _proposalId = _createDefeatedProposal(_proposer);
-    _newTimestamp = uint48(bound(_newTimestamp, block.timestamp, type(uint48).max));
-    vm.warp(_newTimestamp);
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
-  }
-
-  function testFuzz_ReturnsSucceededWhenVetoOverriddenAndOverrideDurationHasNotExpired(
-    address _proposer,
-    uint48 _newTimestamp
-  ) public {
-    uint256 _proposalId = _createDefeatedProposal(_proposer);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _proposal);
 
     vm.prank(vetoOverrideMock.vetoOverrideRole());
     vetoOverrideMock.overrideVeto(_proposalId);
-    _newTimestamp = uint48(
-      bound(
-        _newTimestamp, block.timestamp, block.timestamp + vetoOverrideMock.vetoOverrideDuration()
-      )
-    );
-    vm.warp(_newTimestamp);
-
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
+
+    vetoOverrideMock.queue(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+
+    _newTimepoint = bound(_newTimepoint, block.timestamp, type(uint48).max);
+    vm.warp(_newTimepoint);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
   }
 
-  function testFuzz_ReturnsDefeatedWhenVetoOverriddenAndOverrideDurationExpired(
-    address _proposer,
-    uint48 _newTimestamp
-  ) public {
-    uint256 _proposalId = _createDefeatedProposal(_proposer);
+  function testFuzz_StateRemainsExecutedUponVetoOverride(address _proposer, uint256 _newTimepoint)
+    public
+  {
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitAndDefeatProposal(_proposer, _proposal);
 
     vm.prank(vetoOverrideMock.vetoOverrideRole());
     vetoOverrideMock.overrideVeto(_proposalId);
-    _newTimestamp = uint48(
-      bound(
-        _newTimestamp,
-        vetoOverrideMock.proposalDeadline(_proposalId) + vetoOverrideMock.vetoOverrideDuration()
-          + 1,
-        type(uint48).max
-      )
-    );
-    vm.warp(_newTimestamp);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
 
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+    vetoOverrideMock.queue(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+
+    vetoOverrideMock.execute(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+
+    _newTimepoint = bound(_newTimepoint, block.timestamp, type(uint48).max);
+    vm.warp(_newTimepoint);
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
   }
 }

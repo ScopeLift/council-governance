@@ -5,6 +5,9 @@ pragma solidity ^0.8.24;
 /// External Dependencies
 import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import {
+  GovernorCountingSimple
+} from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
 /// Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
@@ -14,9 +17,9 @@ import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
 
 /// @title GovernorVetoOverrideMock
 /// @dev Mock implementation of GovernorVetoOverride for testing purposes.
-contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
+contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes, GovernorCountingSimple {
   MockERC20Votes public daoToken;
-  mapping(uint256 => bool) internal _defeated;
+  mapping(uint256 => uint256) internal _proposalEtas;
 
   constructor(address _vetoOverrideRole, uint48 _vetoOverrideDuration)
     Governor("GovernorVetoOverrideMock")
@@ -24,21 +27,12 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     GovernorVetoOverride(_vetoOverrideRole, _vetoOverrideDuration)
   {}
 
-  /// @notice Test utility function that sets a given proposal to defeated.
-  function setDefeated(uint256 proposalId, bool defeated) public {
-    _defeated[proposalId] = defeated;
-  }
-
   function exposed_setOverrideRole(address vetoOverrideRole) public {
     _setVetoOverrideRole(vetoOverrideRole);
   }
 
   function exposed_setOverrideDuration(uint48 vetoOverrideDuration) public {
     _setVetoOverrideDuration(vetoOverrideDuration);
-  }
-
-  function COUNTING_MODE() external pure returns (string memory) {
-    return "support=veto&quorum=veto";
   }
 
   function votingDelay() public pure override returns (uint256) {
@@ -60,19 +54,6 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     return 10_000e18;
   }
 
-  function hasVoted(
-    uint256, //proposalId
-    address //account
-  )
-    public
-    view
-    virtual
-    override
-    returns (bool)
-  {
-    return false;
-  }
-
   function state(uint256 proposalId)
     public
     view
@@ -82,26 +63,20 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
     return GovernorVetoOverride.state(proposalId);
   }
 
-  function _countVote(
-    uint256, // proposalId
-    address, // account
-    uint8, // support
-    uint256, // totalWeight
-    bytes memory // params
-  )
-    internal
-    virtual
-    override
-    returns (uint256)
-  {
-    return 0;
+  // ! This is maybe problematic?
+  function _queueOperations(
+    uint256 proposalId, /*proposalId*/
+    address[] memory, /*targets*/
+    uint256[] memory, /*values*/
+    bytes[] memory, /*calldatas*/
+    bytes32 /*descriptionHash*/
+  ) internal virtual override returns (uint48 eta) {
+    eta = uint48(block.timestamp);
+    _proposalEtas[proposalId] = eta;
+    return eta;
   }
 
-  function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
-    return !_defeated[proposalId];
-  }
-
-  function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
-    return !_defeated[proposalId];
+  function proposalEta(uint256 proposalId) public view override returns (uint256) {
+    return _proposalEtas[proposalId];
   }
 }
