@@ -10,14 +10,17 @@ import {
 } from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
 /// Internal Dependencies
-import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
+import {
+  GovernorVetoCountingSimple,
+  GovernorVetoOverride
+} from "src/extensions/GovernorVetoOverride.sol";
 
 /// Test Dependencies
 import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
 
 /// @title GovernorVetoOverrideMock
 /// @dev Mock implementation of GovernorVetoOverride for testing purposes.
-contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes, GovernorCountingSimple {
+contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes {
   MockERC20Votes public daoToken;
   mapping(uint256 => uint256) internal _proposalEtas;
 
@@ -48,10 +51,10 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes, Govern
   )
     public
     pure
-    override
+    override(Governor, GovernorVetoCountingSimple)
     returns (uint256)
   {
-    return 10_000e18;
+    return 0;
   }
 
   function state(uint256 proposalId)
@@ -63,7 +66,6 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes, Govern
     return GovernorVetoOverride.state(proposalId);
   }
 
-  // ! This is maybe problematic?
   function _queueOperations(
     uint256 proposalId, /*proposalId*/
     address[] memory, /*targets*/
@@ -78,5 +80,9 @@ contract GovernorVetoOverrideMock is GovernorVetoOverride, GovernorVotes, Govern
 
   function proposalEta(uint256 proposalId) public view override returns (uint256) {
     return _proposalEtas[proposalId];
+  }
+
+  function vetoThreshold(uint256) public view virtual override returns (uint256) {
+    return 10_000e18;
   }
 }

@@ -34,7 +34,7 @@ contract GovernorVetoOverrideTest is Test {
     vetoOverrideMock = new GovernorVetoOverrideMock(mainDao, 2 weeks);
     vm.label(address(vetoOverrideMock), "vetoOverrideMock");
 
-    vetoOverrideMock.daoToken().mint(whale, vetoOverrideMock.quorum(0));
+    vetoOverrideMock.daoToken().mint(whale, vetoOverrideMock.vetoThreshold(0));
     vm.prank(whale);
     vetoOverrideMock.daoToken().delegate(whale);
   }
@@ -89,11 +89,6 @@ contract GovernorVetoOverrideTest is Test {
     returns (uint256 _proposalId)
   {
     _proposalId = _submitProposal(_proposer, _proposal);
-    vm.warp(vetoOverrideMock.proposalSnapshot(_proposalId) + 1);
-
-    vm.prank(whale);
-    vetoOverrideMock.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.For));
-
     vm.warp(vetoOverrideMock.proposalDeadline(_proposalId) + 1);
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }

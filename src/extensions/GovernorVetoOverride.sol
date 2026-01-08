@@ -3,7 +3,7 @@
 pragma solidity ^0.8.30;
 
 // External Dependencies
-import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
+import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSimple.sol";
 
 /// @title GovernorVetoOverride
 /// @author [ScopeLift](https://scopelift.co)
@@ -12,7 +12,7 @@ import {Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 /// change their state to Succeeded. The override is only valid within a specified duration after
 /// the proposal's voting deadline. Intended to be used with {GovernorVetoCountingSimple} or similar
 /// veto mechanisms.
-abstract contract GovernorVetoOverride is Governor {
+abstract contract GovernorVetoOverride is GovernorVetoCountingSimple {
   /// @notice Emitted when a proposal's veto is overridden.
   /// @param proposalId The ID of the proposal whose veto was overridden.
   event VetoOverridden(uint256 proposalId);
@@ -80,13 +80,6 @@ abstract contract GovernorVetoOverride is Governor {
   /// @return ProposalState The current state of the proposal.
   function state(uint256 _proposalId) public view virtual override returns (ProposalState) {
     ProposalState _state = super.state(_proposalId);
-    if (proposalEta(_proposalId) != 0) {
-      if (
-        _state == ProposalState.Executed || _state == ProposalState.Expired
-          || _state == ProposalState.Canceled
-      ) return _state;
-      return ProposalState.Queued;
-    }
 
     if (isVetoOverridden[_proposalId] && _state == ProposalState.Defeated) {
       return ProposalState.Succeeded;
@@ -138,5 +131,14 @@ abstract contract GovernorVetoOverride is Governor {
   function _setVetoOverrideDuration(uint48 _vetoOverrideDuration) internal virtual {
     emit VetoOverrideDurationSet(vetoOverrideDuration, _vetoOverrideDuration);
     vetoOverrideDuration = _vetoOverrideDuration;
+  }
+
+  /// @inheritdoc GovernorVetoCountingSimple
+  /// @dev If a proposal is veto-overridden, treat it as successful regardless of veto votes.
+  /// This allows the proposal to progress to `Succeeded` (and then be queued) even if it would
+  /// otherwise remain `Defeated` under the veto counting rules.
+  function _voteSucceeded(uint256 _proposalId) internal view virtual override returns (bool) {
+    if (isVetoOverridden[_proposalId]) return true;
+    return super._voteSucceeded(_proposalId);
   }
 }
