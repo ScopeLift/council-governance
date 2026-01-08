@@ -280,3 +280,49 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     councilGovernor.cancel(targets, values, calldatas, descriptionHash);
   }
 }
+
+contract ProposalEta is BasicCouncilGovernorTest {
+  function testFuzz_ReturnsCouncilGovernorEtaWhenNotQueuedOnVetoGovernor() public {
+    vm.prank(councilMembers[0]);
+    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.quorum(councilGovernor.proposalSnapshot(_proposalId));
+      _i++
+    ) {
+      vm.prank(councilMembers[_i]);
+      councilGovernor.castVote(_proposalId, 1);
+    }
+    vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
+
+    councilGovernor.queue(targets, values, calldatas, descriptionHash);
+
+    assertEq(vetoGovernor.proposalEta(_proposalId), 0);
+    assertGt(councilGovernor.proposalEta(_proposalId), vetoGovernor.proposalEta(_proposalId));
+  }
+
+  function testFuzz_ReturnsVetoGovernorEtaWhenQueuedOnVetoGovernor() public {
+    vm.prank(councilMembers[0]);
+    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.quorum(councilGovernor.proposalSnapshot(_proposalId));
+      _i++
+    ) {
+      vm.prank(councilMembers[_i]);
+      councilGovernor.castVote(_proposalId, 1);
+    }
+    vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
+
+    councilGovernor.queue(targets, values, calldatas, descriptionHash);
+    uint256 _etaBefore = councilGovernor.proposalEta(_proposalId);
+
+    vm.warp(block.timestamp + vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vetoGovernor.queue(targets, values, calldatas, descriptionHash);
+
+    assertEq(councilGovernor.proposalEta(_proposalId), vetoGovernor.proposalEta(_proposalId));
+    assertLt(_etaBefore, councilGovernor.proposalEta(_proposalId));
+  }
+}

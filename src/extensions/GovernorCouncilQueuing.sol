@@ -67,6 +67,19 @@ abstract contract GovernorCouncilQueuing is Governor {
     return true;
   }
 
+  /// @inheritdoc IGovernor
+  /// @dev If proposal is queued on both council and veto governor, return the veto governor
+  /// proposal ETA. Otherwise, return council governor ETA.
+  function proposalEta(uint256 proposalId) public view virtual override returns (uint256) {
+    uint256 _councilEta = super.proposalEta(proposalId);
+
+    if (_councilEta != 0 && councilVetoGovernor.proposalEta(proposalId) != 0) {
+      return councilVetoGovernor.proposalEta(proposalId);
+    }
+
+    return _councilEta;
+  }
+
   /// @notice Creates a proposal on the council governor.
   /// @dev Extends {Governor-propose} to store the proposal description for later use when queuing.
   /// @param _targets Array of target addresses for the proposal calls.
