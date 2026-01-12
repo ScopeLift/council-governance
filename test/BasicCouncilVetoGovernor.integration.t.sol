@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 // External Dependencies
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 // Internal Dependencies
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
@@ -129,16 +130,20 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     calldatas.push(abi.encodeWithSignature("increment()"));
   }
 
+  function _selectCouncilMember(uint256 _proposerIndex) internal view returns (address) {
+    return councilMembers[_proposerIndex % COUNCIL_SIZE];
+  }
+
   /// @notice Helper function to fully propose and forward a proposal from the CouncilGovernor to
   /// the VetoGovernor, returning the VetoGovernor's proposalId.
-  function _proposeAndForwardToVetoGovernor(string memory _description)
+  function _proposeAndForwardToVetoGovernor(uint256 _proposerIndex, string memory _description)
     internal
     returns (uint256 vetoProposalId)
   {
     bytes32 _descriptionHash = keccak256(bytes(_description));
 
-    // 1. Propose on Council Governor
-    vm.prank(councilMembers[0]);
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    vm.prank(_proposer);
     uint256 _councilProposalId = councilGovernor.propose(targets, values, calldatas, _description);
 
     // 2. Pass council vote
@@ -171,8 +176,8 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
 
   /// @notice Test 2: Verifies the happy path where a proposal is not vetoed and successfully queues
   /// and executes.
-  function test_HappyPath_ProposalSucceedsAndExecutes() public {
-    uint256 _proposalId = _proposeAndForwardToVetoGovernor("Succeeds");
+  function test_HappyPath_ProposalSucceedsAndExecutes(uint256 _proposerIndex) public {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Succeeds");
 
     skip(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
@@ -193,8 +198,8 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
   }
 
   /// @notice Test 3: Verifies that a proposal is successfully vetoed when the vetoQuorum is met.
-  function test_VetoPath_ProposalIsSuccessfullyVetoed() public {
-    uint256 _proposalId = _proposeAndForwardToVetoGovernor("Vetoed");
+  function test_VetoPath_ProposalIsSuccessfullyVetoed(uint256 _proposerIndex) public {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Vetoed");
 
     skip(vetoGovernor.votingDelay() + 1);
 
@@ -215,8 +220,10 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
 
   /// @notice Test 4: Verifies that a vetoed proposal can be overridden by the designated role and
   /// then successfully executed.
-  function test_VetoOverridePath_VetoedProposalIsOverriddenAndExecuted() public {
-    uint256 _proposalId = _proposeAndForwardToVetoGovernor("Overridden");
+  function test_VetoOverridePath_VetoedProposalIsOverriddenAndExecuted(uint256 _proposerIndex)
+    public
+  {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Overridden");
 
     // Veto the proposal
     skip(vetoGovernor.votingDelay() + 1);
@@ -250,8 +257,8 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     vetoGovernor.propose(targets, values, calldatas, "Invalid Proposal");
   }
 
-  function test_RevertIf_CancelAPendingProposal() public {
-    uint256 _proposalId = _proposeAndForwardToVetoGovernor("Overridden");
+  function test_RevertIf_CancelAPendingProposal(uint256 _proposerIndex) public {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Overridden");
 
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Pending));
 
@@ -262,5 +269,18 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     );
     vm.prank(councilMembers[0]);
     vetoGovernor.cancel(targets, values, calldatas, keccak256(bytes("Overridden")));
+  }
+}
+
+contract _IsValidDescriptionForProposer is BasicCouncilVetoGovernorTest {
+  function testFuzz_ProposalWithProposerRestrictedDescriptionCanBeForwarded(uint256 _proposerIndex)
+    public
+  {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    string memory _description =
+      string.concat("Test proposal #proposer=", Strings.toHexString(_proposer));
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, _description);
+
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Pending));
   }
 }

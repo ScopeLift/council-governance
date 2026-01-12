@@ -68,4 +68,12 @@ contract BasicCouncilVetoGovernorHarness is BasicCouncilVetoGovernor {
   ) public {
     _executeOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
   }
+
+  function exposed_IsValidDescriptionForProposer(address proposer, string memory description)
+    public
+    view
+    returns (bool)
+  {
+    return _isValidDescriptionForProposer(proposer, description);
+  }
 }

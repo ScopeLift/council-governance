@@ -9,6 +9,7 @@ import {
   GovernorCountingSimple
 } from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 // Internal Dependencies
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
@@ -731,5 +732,17 @@ contract OverrideVeto is BasicVetoGovernorTest {
       )
     );
     vetoGovernor.overrideVeto(_proposalId);
+  }
+}
+
+contract _IsValidDescriptionForProposer is BasicVetoGovernorTest {
+  function testFuzz_ProposalWithInvalidDescriptionCanBeProposed(
+    string memory description,
+    address commitProposer,
+    address actualProposer
+  ) public view {
+    vm.assume(commitProposer != actualProposer);
+    description = string.concat(description, "#proposer=", Strings.toHexString(commitProposer));
+    assertTrue(vetoGovernor.exposed_IsValidDescriptionForProposer(actualProposer, description));
   }
 }
