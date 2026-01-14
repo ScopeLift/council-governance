@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.30;
 
-// Script Dependencies
-import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
-
 contract DeploymentInputMainnetForkTest {
   // Address that controls council membership
   address public constant MAIN_DAO_GOVERNOR = 0x309a862bbC1A00e45506cB8A802D1ff10004c8C0;
   // DAO token used by the veto governor for vote weight (placeholder)
-  IERC5805 public constant MAIN_DAO_TOKEN = IERC5805(0xc00e94Cb662C3520282E6f5717214004A7f26888);
+  address public constant MAIN_DAO_TOKEN = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
   // Admin account allowed to adjust governor settings (placeholder)
   address public constant GOVERNOR_ADMIN = MAIN_DAO_GOVERNOR;
 

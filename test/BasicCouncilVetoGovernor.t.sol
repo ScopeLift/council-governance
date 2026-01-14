@@ -4,7 +4,6 @@ pragma solidity 0.8.30;
 // External Dependencies
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
-import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import {
   GovernorCountingSimple
@@ -59,7 +58,7 @@ contract BasicVetoGovernorTest is Test {
     DeploymentConfigurationTest.VetoGovernorDeploymentConfiguration memory _config,
     TimelockController _timelock
   ) internal {
-    _config.mainDaoToken = new MockERC20Votes();
+    _config.mainDaoToken = address(new MockERC20Votes());
     vetoGovernor = new BasicCouncilVetoGovernorHarness(
       _config, _timelock, councilGovernor, input.MAIN_DAO_GOVERNOR()
     );

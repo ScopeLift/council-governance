@@ -48,7 +48,7 @@ contract DeployCompoundGovernorsAndGrantRoles is DeployGovernorsAndGrantRoles {
     BasicCouncilVetoGovernor.ConstructorParams memory _params =
       BasicCouncilVetoGovernor.ConstructorParams({
         name: _vetoConfig.vetoGovernorName,
-        token: IERC5805(address(_vetoConfig.mainDaoToken)),
+        token: _vetoConfig.mainDaoToken,
         votingDelay: _vetoConfig.vetoGovernorInitialVotingDelay,
         votingPeriod: _vetoConfig.vetoGovernorInitialVotingPeriod,
         proposalThreshold: _vetoConfig.vetoGovernorInitialProposalThreshold,

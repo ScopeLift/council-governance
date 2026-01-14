@@ -28,7 +28,7 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
 
   struct VetoGovernorDeploymentConfiguration {
     string vetoGovernorName;
-    IERC5805 mainDaoToken;
+    address mainDaoToken;
     uint48 vetoGovernorInitialVotingDelay;
     uint32 vetoGovernorInitialVotingPeriod;
     uint256 vetoGovernorInitialProposalThreshold;

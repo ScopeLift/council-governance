@@ -12,6 +12,7 @@ import {
 } from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
 import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
+import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
 
@@ -77,7 +78,7 @@ contract CompoundCouncilVetoGovernorIntegrationTest is Test {
     DeployCompoundGovernorsAndGrantRoles.VetoGovernorDeploymentConfiguration memory vetoConfig =
       config._getVetoGovernorDeploymentConfiguration();
     // Override the placeholder token address in the default test config with the real COMP token.
-    vetoConfig.mainDaoToken = IERC5805(address(COMP));
+    vetoConfig.mainDaoToken = address(COMP);
 
     (councilGovernor, vetoGovernor) = governorsScript.runCompound(
       deployer,

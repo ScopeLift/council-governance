@@ -88,7 +88,7 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     BasicCouncilVetoGovernor.ConstructorParams memory _vetoGovernorParams =
       BasicCouncilVetoGovernor.ConstructorParams(
         "BasicCouncilVetoGovernor",
-        daoToken,
+        address(daoToken),
         1 hours, // initialVotingDelay
         1 days, // initialVotingPeriod
         0, // initialProposalThreshold
