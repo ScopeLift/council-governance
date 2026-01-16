@@ -39,18 +39,22 @@ contract BasicVetoGovernorTest is Test {
 
   BasicCouncilVetoGovernorHarness internal vetoGovernor;
   address internal councilGovernor = makeAddr("Council governor");
+  address internal owner = makeAddr("Owner");
+  address internal cancellerRole = makeAddr("Canceller role");
   address internal whale = makeAddr("Whale");
+  TimelockController internal timelock;
 
   function setUp() public {
+    owner = input.MAIN_DAO_GOVERNOR();
     DeploymentConfigurationTest _config = new DeploymentConfigurationTest();
-    TimelockController _timelock =
-      _deployTimelock(_config._getTimelockDeploymentConfiguration(), input.MAIN_DAO_GOVERNOR());
-    _deployVetoGovernor(_config._getVetoGovernorDeploymentConfiguration(), _timelock);
+    timelock = _deployTimelock(_config._getTimelockDeploymentConfiguration(), owner);
+    _deployVetoGovernor(_config._getVetoGovernorDeploymentConfiguration(), timelock);
 
-    vm.startPrank(input.MAIN_DAO_GOVERNOR());
-    _timelock.grantRole(_timelock.EXECUTOR_ROLE(), address(vetoGovernor));
-    _timelock.grantRole(_timelock.PROPOSER_ROLE(), address(vetoGovernor));
-    _timelock.renounceRole(_timelock.DEFAULT_ADMIN_ROLE(), input.MAIN_DAO_GOVERNOR());
+    vm.startPrank(owner);
+    timelock.grantRole(timelock.CANCELLER_ROLE(), cancellerRole);
+    timelock.grantRole(timelock.EXECUTOR_ROLE(), address(vetoGovernor));
+    timelock.grantRole(timelock.PROPOSER_ROLE(), address(vetoGovernor));
+    timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), input.MAIN_DAO_GOVERNOR());
     vm.stopPrank();
 
     MockERC20Votes(address(vetoGovernor.token())).mint(whale, 100e18);
@@ -90,6 +94,14 @@ contract BasicVetoGovernorTest is Test {
   }
 
   function _submitProposal(Proposal memory _proposal) public returns (uint256 _proposalId) {
+    vm.prank(councilGovernor);
+    _proposalId = vetoGovernor.propose(
+      _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
+    );
+  }
+
+  function _submitEmptyProposal() public returns (uint256 _proposalId) {
+    Proposal memory _proposal = _buildEmptyProposal();
     vm.prank(councilGovernor);
     _proposalId = vetoGovernor.propose(
       _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
@@ -137,9 +149,7 @@ contract BasicVetoGovernorTest is Test {
   {
     _proposalId = _passAndQueueProposal(_caller, _proposal);
 
-    vm.warp(
-      block.timestamp + TimelockController(payable(address(vetoGovernor.timelock()))).getMinDelay()
-    );
+    vm.warp(block.timestamp + timelock.getMinDelay());
     vm.prank(councilGovernor);
     vetoGovernor.execute(
       _proposal.targets,
@@ -158,6 +168,20 @@ contract BasicVetoGovernorTest is Test {
 
   function _timelockSalt(bytes32 _descriptionHash) internal view returns (bytes32) {
     return bytes20(address(vetoGovernor)) ^ _descriptionHash;
+  }
+
+  function _computeTimelockOperationId(Proposal memory _proposal)
+    internal
+    view
+    returns (bytes32 _operationId)
+  {
+    _operationId = timelock.hashOperationBatch(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      bytes32(0),
+      bytes32(bytes20(address(vetoGovernor))) ^ keccak256(bytes(_proposal.description))
+    );
   }
 }
 
@@ -498,6 +522,21 @@ contract State is BasicVetoGovernorTest {
     vm.warp(vetoGovernor.proposalDeadline(_proposalId) + vetoGovernor.vetoOverrideDuration());
     _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
   }
+
+  function test_StateCanceledAfterProposalCanceledOnTimelock(address _caller) public {
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_caller, _proposal);
+
+    bytes32 _operationId = _computeTimelockOperationId(_proposal);
+    assertEq(
+      uint8(timelock.getOperationState(_operationId)),
+      uint8(TimelockController.OperationState.Waiting)
+    );
+    vm.prank(cancellerRole);
+    timelock.cancel(_operationId);
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
+  }
 }
 
 contract Propose is BasicVetoGovernorTest {
@@ -538,7 +577,7 @@ contract Execute is BasicVetoGovernorTest {
 
     Proposal memory _proposal = _buildEmptyProposal();
     _passAndQueueProposal(_caller, _proposal);
-    vm.warp(block.timestamp + TimelockController(payable(vetoGovernor.timelock())).getMinDelay());
+    vm.warp(block.timestamp + timelock.getMinDelay());
 
     vm.expectRevert(bytes("Only council"));
     vm.prank(_caller);
@@ -646,7 +685,7 @@ contract _queueOperations is BasicVetoGovernorTest {
           _proposal.calldatas,
           0,
           _timelockSalt(keccak256(bytes(_proposal.description))),
-          TimelockController(payable(address(vetoGovernor.timelock()))).getMinDelay()
+          timelock.getMinDelay()
         )
       )
     );
