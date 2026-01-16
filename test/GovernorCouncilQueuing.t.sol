@@ -50,6 +50,14 @@ contract MockCallVetoGovernor is Test {
     );
   }
 
+  function _mockVetoGovernorProposalEta(uint256 _proposalId) internal {
+    vm.mockCall(
+      address(vetoGovernor),
+      abi.encodeWithSelector(IGovernor.proposalEta.selector, _proposalId),
+      abi.encode(1 days)
+    );
+  }
+
   function _mockVetoGovernorProposalDeadline(uint256 _proposalId, uint48 _expectedDeadline)
     internal
   {

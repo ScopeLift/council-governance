@@ -154,6 +154,7 @@ contract BasicCouncilGovernorTest is MockCallVetoGovernor {
 
   function _queueProposal(uint256 _proposalId, address _caller, Proposal memory _proposal) public {
     _mockVetoGovernorPropose(_proposalId);
+    _mockVetoGovernorProposalEta(_proposalId);
     _mockVetoGovernorProposalDeadline(_proposalId);
     _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Pending);
 
