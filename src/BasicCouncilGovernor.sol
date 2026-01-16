@@ -36,10 +36,10 @@ import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol"
 contract BasicCouncilGovernor is
   Governor,
   GovernorCountingSimple,
-  GovernorCouncilQueuing,
   GovernorSettings,
   GovernorAdmin,
-  GovernorVotesSuperQuorumFraction
+  GovernorVotesSuperQuorumFraction,
+  GovernorCouncilQueuing
 {
   struct InitialCouncilParams {
     uint48 initialVotingDelay;
@@ -182,10 +182,10 @@ contract BasicCouncilGovernor is
     public
     view
     virtual
-    override(Governor, GovernorCouncilQueuing, GovernorVotesSuperQuorumFraction)
+    override(Governor, GovernorVotesSuperQuorumFraction, GovernorCouncilQueuing)
     returns (ProposalState)
   {
-    return GovernorVotesSuperQuorumFraction.state(_proposalId);
+    return GovernorCouncilQueuing.state(_proposalId);
   }
 
   /// @inheritdoc GovernorCountingSimple

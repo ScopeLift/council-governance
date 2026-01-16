@@ -16,6 +16,7 @@ import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 
 // Test Dependencies
 import {Test} from "forge-std/Test.sol";
+import {MockCallVetoGovernor} from "test/GovernorCouncilQueuing.t.sol";
 import {BasicCouncilGovernorHarness} from "test/harnesses/BasicCouncilGovernorHarness.sol";
 
 // Script Dependencies
@@ -25,17 +26,9 @@ import {
 } from "script/deploy-constants/DeploymentInputMainnetForkTest.sol";
 import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
 
-contract BasicCouncilGovernorTest is Test {
-  struct Proposal {
-    address[] targets;
-    uint256[] values;
-    bytes[] calldatas;
-    string description;
-  }
-
+contract BasicCouncilGovernorTest is MockCallVetoGovernor {
   CouncilERC20 internal councilToken;
   BasicCouncilGovernorHarness internal councilGovernor;
-  address internal mockVetoGovernor = makeAddr("Veto governor");
 
   DeploymentInputMainnetForkTest public input;
 
@@ -56,7 +49,7 @@ contract BasicCouncilGovernorTest is Test {
   }
 
   function _deployCouncilGovernor() internal {
-    councilGovernor = new BasicCouncilGovernorHarness(councilToken, mockVetoGovernor);
+    councilGovernor = new BasicCouncilGovernorHarness(councilToken, vetoGovernor);
   }
 
   function _selectCouncilMember(uint256 _proposerIndex) internal view returns (address) {
@@ -157,6 +150,20 @@ contract BasicCouncilGovernorTest is Test {
     _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
     _passSubmittedProposal(_proposalId);
     vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
+  }
+
+  function _queueProposal(uint256 _proposalId, address _caller, Proposal memory _proposal) public {
+    _mockVetoGovernorPropose(_proposalId);
+    _mockVetoGovernorProposalDeadline(_proposalId);
+    _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Pending);
+
+    vm.prank(_caller);
+    councilGovernor.queue(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
   }
 
   function _assertProposalState(uint256 _proposalId, IGovernor.ProposalState _expected)
@@ -415,6 +422,68 @@ contract State is BasicCouncilGovernorTest {
 
     vm.warp(block.timestamp + councilGovernor.votingPeriod() + 1);
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
+  }
+
+  function testFuzz_SuperQuorumProposalStateStaysQueuedWhenVetoNonTerminal(
+    uint256 _proposerIndex,
+    address _caller,
+    uint8 _stateIndex
+  ) public {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    _passSubmittedProposalWithSuperQuorum(_proposalId);
+    _queueProposal(_proposalId, _caller, _proposal);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+
+    IGovernor.ProposalState[4] memory _nonTerminal = [
+      IGovernor.ProposalState.Pending,
+      IGovernor.ProposalState.Active,
+      IGovernor.ProposalState.Queued,
+      IGovernor.ProposalState.Succeeded
+    ];
+    IGovernor.ProposalState _vetoState = _nonTerminal[_stateIndex % _nonTerminal.length];
+
+    _mockVetoGovernorState(_proposalId, _vetoState);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+  }
+
+  function testFuzz_SuperQuorumProposalStateCanceledWhenVetoTerminalNonExecuted(
+    uint256 _proposerIndex,
+    address _caller,
+    uint8 _stateIndex
+  ) public {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    _passSubmittedProposalWithSuperQuorum(_proposalId);
+    _queueProposal(_proposalId, _caller, _proposal);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+
+    IGovernor.ProposalState[3] memory _terminal = [
+      IGovernor.ProposalState.Defeated,
+      IGovernor.ProposalState.Canceled,
+      IGovernor.ProposalState.Expired
+    ];
+    IGovernor.ProposalState _vetoState = _terminal[_stateIndex % _terminal.length];
+
+    _mockVetoGovernorState(_proposalId, _vetoState);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
+  }
+
+  function testFuzz_SuperQuorumProposalStateExecutedWhenVetoExecuted(
+    uint256 _proposerIndex,
+    address _caller
+  ) public {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_proposer, _proposal);
+    _passSubmittedProposalWithSuperQuorum(_proposalId);
+    _queueProposal(_proposalId, _caller, _proposal);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+
+    _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Executed);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
   }
 }
 
