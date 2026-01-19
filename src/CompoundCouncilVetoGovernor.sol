@@ -33,9 +33,9 @@ interface ICompVotes {
 
 /// @title CompoundCouncilVetoGovernor
 /// @author [ScopeLift](https://scopelift.co)
-/// @notice Veto governor variant for COMP-style tokens (legacy `getPriorVotes` snapshots).
+/// @notice Veto governor variant for COMP-style tokens.
 /// @dev This governor uses a block-number clock. `votingDelay`, `votingPeriod`, and all timepoints
-/// are expressed in blocks (not seconds).
+/// are expressed in blocks.
 contract CompoundCouncilVetoGovernor is BasicCouncilVetoGovernor {
   constructor(BasicCouncilVetoGovernor.ConstructorParams memory _params)
     BasicCouncilVetoGovernor(_params)

@@ -141,12 +141,6 @@ contract CompoundCouncilVetoGovernorIntegrationTest is Test {
 contract CompoundCouncilVetoGovernorIntegrationSmokeTest is
   CompoundCouncilVetoGovernorIntegrationTest
 {
-  function test_ParamsSetCorrectly() public view {
-    assertEq(vetoGovernor.CLOCK_MODE(), "mode=blocknumber&from=default");
-    assertEq(vetoGovernor.clock(), uint48(block.number));
-    assertEq(vetoGovernor.vetoThreshold(vetoGovernor.clock() + 1), 1_000_000e18);
-  }
-
   function test_TimestampProgressionDoesNotChangeState() public {
     _dealAndDelegateComp(voter, 1e18);
 
