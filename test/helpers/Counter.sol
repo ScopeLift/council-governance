@@ -11,4 +11,10 @@ contract Counter {
   function increment() public {
     number++;
   }
+
+  function deposit() public payable {}
+
+  function depositExact(uint256 amount) public payable {
+    require(msg.value == amount);
+  }
 }
