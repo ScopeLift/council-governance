@@ -13,6 +13,13 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 /// (contracts/governance/extensions/GovernorPreventLateQuorum.sol) with behavior adapted for
 /// veto-counting.
 abstract contract GovernorExtendVetoPeriod is Governor {
+  /// @dev Snapshot of extension parameters captured at proposal creation time. These values are
+  /// used instead of current state when evaluating whether to extend a proposal's voting period.
+  struct ExtensionSnapshot {
+    uint48 votingPeriodExtension;
+    uint16 minorVetoExtensionThresholdPct;
+  }
+
   /// @notice Emitted when a proposal deadline is pushed back due to reaching its minor veto
   /// threshold.
   event ProposalExtended(uint256 indexed proposalId, uint64 extendedDeadline);
@@ -36,6 +43,9 @@ abstract contract GovernorExtendVetoPeriod is Governor {
   /// @dev The minor threshold in percentage points of veto threshold required to trigger an
   /// extension.
   uint16 private _minorVetoExtensionThresholdPct;
+
+  /// @dev Mapping of proposal ID to the extension parameters snapshotted at proposal creation.
+  mapping(uint256 proposalId => ExtensionSnapshot) private _extensionSnapshots;
 
   /// @dev Mapping of proposal ID to extended deadline.
   mapping(uint256 proposalId => uint48) private _extendedDeadlines;
@@ -104,6 +114,22 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     _setMinorVetoExtensionThresholdPct(_newMinorVetoExtensionThresholdPct);
   }
 
+  /// @inheritdoc Governor
+  /// @dev Overrides the base function to snapshot the extension parameters at creation time.
+  function _propose(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    string memory description,
+    address proposer
+  ) internal virtual override returns (uint256 proposalId) {
+    proposalId = super._propose(targets, values, calldatas, description, proposer);
+    _extensionSnapshots[proposalId] = ExtensionSnapshot({
+      votingPeriodExtension: _votingPeriodExtension,
+      minorVetoExtensionThresholdPct: _minorVetoExtensionThresholdPct
+    });
+  }
+
   /// @dev Returns true when the current votes meet or exceed the extension threshold.
   /// @param _proposalId The ID of the proposal to check if voting period extension threshold is
   /// triggered.
@@ -113,11 +139,12 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     virtual
     returns (bool)
   {
-    if (_minorVetoExtensionThresholdPct == 0) return false;
+    ExtensionSnapshot memory _snapshot = _extensionSnapshots[_proposalId];
+    if (_snapshot.minorVetoExtensionThresholdPct == 0) return false;
 
     uint256 _minorThreshold = Math.mulDiv(
       vetoThreshold(proposalSnapshot(_proposalId)),
-      _minorVetoExtensionThresholdPct,
+      _snapshot.minorVetoExtensionThresholdPct,
       minorVetoExtensionThresholdDenominator()
     );
     return proposalVotes(_proposalId) >= _minorThreshold;
@@ -135,7 +162,7 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     ) {
       // Lock in the first extension decision even if it does not lengthen the deadline so later
       // tallies cannot attempt to extend the same proposal again.
-      uint48 extendedDeadline = clock() + votingPeriodExtension();
+      uint48 extendedDeadline = clock() + _extensionSnapshots[_proposalId].votingPeriodExtension;
 
       if (extendedDeadline > proposalDeadline(_proposalId)) {
         emit ProposalExtended(_proposalId, extendedDeadline);

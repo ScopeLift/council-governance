@@ -204,6 +204,16 @@ contract BasicCouncilVetoGovernor is
     return super.propose(_targets, _values, _calldatas, _description);
   }
 
+  function _propose(
+    address[] memory _targets,
+    uint256[] memory _values,
+    bytes[] memory _calldatas,
+    string memory _description,
+    address _proposer
+  ) internal virtual override(Governor, GovernorExtendVetoPeriod) returns (uint256) {
+    return GovernorExtendVetoPeriod._propose(_targets, _values, _calldatas, _description, _proposer);
+  }
+
   function execute(
     address[] memory _targets,
     uint256[] memory _values,

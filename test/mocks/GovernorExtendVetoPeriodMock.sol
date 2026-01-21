@@ -7,7 +7,7 @@ import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSim
 
 /// @title GovernorExtendVetoPeriodMock
 /// @author [ScopeLift](https://scopelift.co)
-contract GovernorExtendVetoPeriodMock is GovernorExtendVetoPeriod, GovernorVetoCountingSimple {
+contract GovernorExtendVetoPeriodMock is GovernorVetoCountingSimple, GovernorExtendVetoPeriod {
   constructor(uint48 _initialVotingPeriodExtension, uint16 _initialVotingPeriodExtensionThreshold)
     Governor("GovernorExtendVetoPeriodMock")
     GovernorExtendVetoPeriod(_initialVotingPeriodExtension, _initialVotingPeriodExtensionThreshold)
@@ -79,6 +79,16 @@ contract GovernorExtendVetoPeriodMock is GovernorExtendVetoPeriod, GovernorVetoC
     returns (uint256)
   {
     return 1; // Return a default vote weight for testing
+  }
+
+  function _propose(
+    address[] memory targets,
+    uint256[] memory values,
+    bytes[] memory calldatas,
+    string memory description,
+    address proposer
+  ) internal virtual override(Governor, GovernorExtendVetoPeriod) returns (uint256 proposalId) {
+    return GovernorExtendVetoPeriod._propose(targets, values, calldatas, description, proposer);
   }
 
   function _votingPeriodExtensionThresholdTriggered(uint256 _proposalId)
