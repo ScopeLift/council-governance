@@ -99,7 +99,7 @@ abstract contract GovernorExtendVetoPeriod is Governor {
   function proposalVotes(uint256 _proposalId) public view virtual returns (uint256 _againstVotes);
 
   /// @notice Returns the veto threshold for a proposal.
-  function vetoThreshold(uint256 _proposalId) public view virtual returns (uint256 _vetoThreshold);
+  function vetoThreshold(uint256 _timepoint) public view virtual returns (uint256 _vetoThreshold);
 
   /// @notice Updates the voting period extension duration. Callable only by governance. Emits a
   /// {VotingPeriodExtensionSet} event.
