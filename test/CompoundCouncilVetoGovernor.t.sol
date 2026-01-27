@@ -14,7 +14,7 @@ import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {ICompVotes, CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 
 // Script Dependencies
-import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
+import {DeploymentConfigurationTestCompound} from "script/DeploymentConfigurationTestCompound.sol";
 import {
   DeploymentInputMainnetForkTest
 } from "script/deploy-constants/DeploymentInputMainnetForkTest.sol";
@@ -41,7 +41,7 @@ contract CompoundCouncilVetoGovernorTest is Test {
   CompoundCouncilVetoGovernor internal vetoGovernor;
 
   function setUp() public {
-    DeploymentConfigurationTest _config = new DeploymentConfigurationTest();
+    DeploymentConfigurationTestCompound _config = new DeploymentConfigurationTestCompound();
     _deployComp();
     TimelockController _timelock =
       _deployTimelock(_config._getTimelockDeploymentConfiguration(), input.MAIN_DAO_GOVERNOR());
@@ -64,7 +64,7 @@ contract CompoundCouncilVetoGovernorTest is Test {
   }
 
   function _deployVetoGovernor(
-    DeploymentConfigurationTest.VetoGovernorDeploymentConfiguration memory _config,
+    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory _config,
     TimelockController _timelock
   ) internal {
     _config.mainDaoToken = address(COMP);
@@ -74,7 +74,7 @@ contract CompoundCouncilVetoGovernorTest is Test {
   }
 
   function _deployTimelock(
-    DeploymentConfigurationTest.TimelockDeploymentConfiguration memory _config,
+    DeploymentConfigurationTestCompound.TimelockDeploymentConfiguration memory _config,
     address _deployer
   ) internal returns (TimelockController _timelock) {
     DeployTimelock _timelockScript = new DeployTimelock();

@@ -8,18 +8,18 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 import {CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 
 // Script Dependencies
-import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
+import {DeploymentConfigurationTestCompound} from "script/DeploymentConfigurationTestCompound.sol";
 
 contract CompoundCouncilVetoGovernorHarness is CompoundCouncilVetoGovernor {
   constructor(
-    DeploymentConfigurationTest.VetoGovernorDeploymentConfiguration memory _config,
+    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory _config,
     TimelockController _timelock,
     address _council,
     address _deployer
   ) CompoundCouncilVetoGovernor(_buildParams(_config, _timelock, _council)) {}
 
   function _buildParams(
-    DeploymentConfigurationTest.VetoGovernorDeploymentConfiguration memory _config,
+    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory _config,
     TimelockController _timelock,
     address _council
   ) internal pure returns (ConstructorParams memory params) {

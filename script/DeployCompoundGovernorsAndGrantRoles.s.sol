@@ -13,10 +13,65 @@ import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 
 // Script Dependencies
-import {DeployGovernorsAndGrantRoles} from "script/DeployGovernorsAndGrantRoles.s.sol";
+import {BaseLogger} from "script/BaseLogger.sol";
+import {Script} from "forge-std/Script.sol";
 
-contract DeployCompoundGovernorsAndGrantRoles is DeployGovernorsAndGrantRoles {
-  function runCompound(
+contract DeployCompoundGovernorsAndGrantRoles is Script, BaseLogger {
+  struct CouncilGovernorDeploymentConfiguration {
+    string councilGovernorName;
+    uint48 councilGovernorInitialVotingDelay;
+    uint32 councilGovernorInitialVotingPeriod;
+    uint256 councilGovernorInitialProposalThreshold;
+    uint256 councilGovernorInitialQuorumFraction;
+    uint256 councilGovernorInitialSuperQuorumFraction;
+    address councilGovernorAdmin;
+  }
+
+  struct VetoGovernorDeploymentConfiguration {
+    string vetoGovernorName;
+    address mainDaoToken;
+    uint48 vetoGovernorInitialVotingDelay;
+    uint32 vetoGovernorInitialVotingPeriod;
+    uint256 vetoGovernorInitialProposalThreshold;
+    address vetoOverrideRole;
+    uint48 vetoOverrideDuration;
+    uint48 votingPeriodExtension;
+    uint16 votingPeriodExtensionThresholdPct;
+    uint256 vetoThresholdNumerator;
+    address vetoGuardian;
+    address vetoGovernorAdmin;
+  }
+
+  function _getCouncilGovernorDeploymentConfiguration()
+    public
+    view
+    virtual
+    returns (CouncilGovernorDeploymentConfiguration memory)
+  {}
+
+  function _getVetoGovernorDeploymentConfiguration()
+    public
+    view
+    virtual
+    returns (VetoGovernorDeploymentConfiguration memory)
+  {}
+
+  function _predictVetoGovernorAddress(address _deployer) internal view returns (address) {
+    uint256 _nextNonce = vm.getNonce(_deployer) + 1;
+    return vm.computeCreateAddress(_deployer, _nextNonce);
+  }
+
+  function _grantVetoGovernorRoles(
+    address _deployer,
+    address _vetoGovernor,
+    TimelockController _timelock
+  ) internal {
+    _timelock.grantRole(_timelock.EXECUTOR_ROLE(), _vetoGovernor);
+    _timelock.grantRole(_timelock.PROPOSER_ROLE(), _vetoGovernor);
+    _timelock.renounceRole(_timelock.DEFAULT_ADMIN_ROLE(), _deployer);
+  }
+
+  function run(
     address _deployer,
     TimelockController _timelock,
     CouncilGovernorDeploymentConfiguration memory _councilConfig,

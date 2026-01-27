@@ -21,7 +21,7 @@ import {DeployTimelock} from "script/DeployTimelock.s.sol";
 import {
   DeployCompoundGovernorsAndGrantRoles
 } from "script/DeployCompoundGovernorsAndGrantRoles.s.sol";
-import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
+import {DeploymentConfigurationTestCompound} from "script/DeploymentConfigurationTestCompound.sol";
 
 interface IComp is IERC20 {
   function delegate(address delegatee) external;
@@ -49,14 +49,14 @@ contract CompoundCouncilVetoGovernorIntegrationTest is Test {
   CouncilERC20 internal councilToken;
   BasicCouncilGovernor internal councilGovernor;
   CompoundCouncilVetoGovernor internal vetoGovernor;
-  DeploymentConfigurationTest internal config;
+  DeploymentConfigurationTestCompound internal config;
 
   function setUp() public {
     string memory rpcUrl = vm.rpcUrl("mainnet");
     uint256 forkBlock = 23_810_240;
     vm.createSelectFork(rpcUrl, forkBlock);
 
-    config = new DeploymentConfigurationTest();
+    config = new DeploymentConfigurationTestCompound();
     deployer = config.MAIN_DAO_GOVERNOR();
     councilMember = config.COUNCIL_MEMBERS(0);
 
@@ -75,12 +75,12 @@ contract CompoundCouncilVetoGovernorIntegrationTest is Test {
       new DeployCompoundGovernorsAndGrantRoles();
     governorsScript.setLoggingSilenced(true);
 
-    DeployCompoundGovernorsAndGrantRoles.VetoGovernorDeploymentConfiguration memory vetoConfig =
+    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory vetoConfig =
       config._getVetoGovernorDeploymentConfiguration();
     // Override the placeholder token address in the default test config with the real COMP token.
     vetoConfig.mainDaoToken = address(COMP);
 
-    (councilGovernor, vetoGovernor) = governorsScript.runCompound(
+    (councilGovernor, vetoGovernor) = governorsScript.run(
       deployer,
       timelock,
       config._getCouncilGovernorDeploymentConfiguration(),
