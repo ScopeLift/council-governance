@@ -285,4 +285,16 @@ contract BasicCouncilVetoGovernor is
   {
     return GovernorVetoOverride._voteSucceeded(_proposalId);
   }
+
+  /// @dev We expect front-running protection already enforced at the council governor level. Always
+  /// returns true to prevent proposals suffixed with `#proposer=<council_member>` from failing.
+  function _isValidDescriptionForProposer(address, string memory)
+    internal
+    view
+    virtual
+    override
+    returns (bool)
+  {
+    return true;
+  }
 }
