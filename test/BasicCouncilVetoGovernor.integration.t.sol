@@ -270,6 +270,68 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     vm.prank(councilMembers[0]);
     vetoGovernor.cancel(targets, values, calldatas, keccak256(bytes("Overridden")));
   }
+
+  function testFuzz_ExecutionSucceedsWithPrefundedTimelock(uint256 _proposerIndex, uint256 _value)
+    public
+  {
+    vm.assume(_value > 0);
+    values[0] = _value;
+    calldatas[0] = abi.encodeWithSignature("depositExact(uint256)", _value);
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "");
+
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("")));
+    skip(timelock.getMinDelay());
+
+    vm.deal(address(timelock), _value);
+    vm.prank(councilMembers[0]);
+    councilGovernor.execute(targets, values, calldatas, keccak256(bytes("")));
+
+    assertEq(address(timelock).balance, 0);
+    assertEq(targets[0].balance, _value);
+  }
+
+  function testFuzz_ExecutionSucceedsWithCallerValue(uint256 _proposerIndex, uint256 _value)
+    public
+  {
+    vm.assume(_value > 0);
+    values[0] = _value;
+    calldatas[0] = abi.encodeWithSignature("depositExact(uint256)", _value);
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "");
+
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("")));
+    skip(timelock.getMinDelay());
+
+    vm.deal(councilMembers[0], _value);
+    vm.prank(councilMembers[0]);
+    councilGovernor.execute{value: _value}(targets, values, calldatas, keccak256(bytes("")));
+
+    assertEq(councilMembers[0].balance, 0);
+    assertEq(targets[0].balance, _value);
+  }
+
+  function testFuzz_ExecutionSucceedsWithSplitFunding(uint256 _proposerIndex, uint256 _callerValue)
+    public
+  {
+    vm.assume(0 < _callerValue && _callerValue < 1e18);
+    values[0] = 1e18;
+    calldatas[0] = abi.encodeWithSignature("deposit()");
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "");
+
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("")));
+    skip(timelock.getMinDelay());
+
+    vm.deal(councilMembers[0], _callerValue);
+    vm.deal(address(timelock), 1e18 - _callerValue);
+    vm.prank(councilMembers[0]);
+    councilGovernor.execute{value: _callerValue}(targets, values, calldatas, keccak256(bytes("")));
+
+    assertEq(councilMembers[0].balance, 0);
+    assertEq(address(timelock).balance, 0);
+    assertEq(targets[0].balance, 1e18);
+  }
 }
 
 contract _IsValidDescriptionForProposer is BasicCouncilVetoGovernorTest {

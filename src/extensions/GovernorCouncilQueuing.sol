@@ -163,7 +163,7 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal virtual override {
-    councilVetoGovernor.execute(_targets, _values, _calldatas, _descriptionHash);
+    councilVetoGovernor.execute{value: msg.value}(_targets, _values, _calldatas, _descriptionHash);
   }
 
   /// @dev Overridden version of the {Governor-_cancel} function to cancel a proposal and clean up
