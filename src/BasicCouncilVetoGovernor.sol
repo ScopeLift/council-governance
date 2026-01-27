@@ -275,4 +275,14 @@ contract BasicCouncilVetoGovernor is
     // Neither GovernorVetoCountingSimple nor GovernorExtendVetoPeriod implement `vetoThreshold`
     return GovernorVotesVetoThresholdFraction.vetoThreshold(timepoint);
   }
+
+  function _voteSucceeded(uint256 _proposalId)
+    internal
+    view
+    virtual
+    override(Governor, GovernorVetoCountingSimple, GovernorVetoOverride)
+    returns (bool)
+  {
+    return GovernorVetoOverride._voteSucceeded(_proposalId);
+  }
 }

@@ -12,6 +12,7 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 
 // Internal Dependencies
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
+import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
 
 // Test Dependencies
 import {Test} from "forge-std/Test.sol";
@@ -400,6 +401,24 @@ contract State is BasicVetoGovernorTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
 
+  function test_VetoedProposalSucceededBeforeProposalDeadlineWithVetoOverride() public {
+    uint256 _proposalId = _submitProposal(_buildEmptyProposal());
+
+    vm.prank(vetoGovernor.vetoGuardian());
+    vetoGovernor.vetoByGuardian(_proposalId);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+
+    uint256 _currentTimepoint = vetoGovernor.clock();
+    vm.prank(vetoGovernor.vetoOverrideRole());
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        GovernorVetoOverride.VetoOverrideOutsideWindow.selector, _proposalId, _currentTimepoint
+      )
+    );
+    vetoGovernor.overrideVeto(_proposalId);
+    assertLt(_currentTimepoint, vetoGovernor.proposalDeadline(_proposalId));
+  }
+
   function test_StateSucceededAfterVotingPeriodWithVetoQuorumAndVetoOverride() public {
     uint256 _proposalId = _failProposal(_buildEmptyProposal());
     vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
@@ -439,7 +458,7 @@ contract State is BasicVetoGovernorTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
-  function test_StateDefeatedAfterVetoOverrideDurationExpires() public {
+  function test_StateSucceededAfterVetoOverrideDurationExpires() public {
     uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_buildEmptyProposal());
     vm.prank(vetoGovernor.vetoGuardian());
     vetoGovernor.vetoByGuardian(_proposalId);
@@ -450,10 +469,10 @@ contract State is BasicVetoGovernorTest {
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
 
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + vetoGovernor.vetoOverrideDuration());
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + vetoGovernor.vetoOverrideDuration() + 1);
 
     assertTrue(vetoGovernor.isVetoOverridden(_proposalId));
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
   function test_StateQueuedAfterVetoOverrideDurationExpires() public {
@@ -651,5 +670,66 @@ contract _executeOperations is BasicVetoGovernorTest {
       )
     );
     _passQueueAndExecuteProposal(_caller, _proposal);
+  }
+}
+
+contract OverrideVeto is BasicVetoGovernorTest {
+  function testFuzz_QueuedProposalIsGuaranteedToBeExecutable(uint256 _newTimepoint) public {
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _failProposal(_proposal);
+
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vm.prank(vetoGovernor.vetoOverrideRole());
+    vetoGovernor.overrideVeto(_proposalId);
+
+    vetoGovernor.queue(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+
+    uint256 _afterMinDelay = vetoGovernor.proposalEta(_proposalId) + 1;
+    uint256 _afterOverrideWindow =
+      vetoGovernor.proposalDeadline(_proposalId) + vetoGovernor.vetoOverrideDuration() + 1;
+    _newTimepoint =
+      (_afterOverrideWindow > _afterMinDelay) ? _afterOverrideWindow : _afterOverrideWindow;
+
+    _newTimepoint = bound(_newTimepoint, _newTimepoint, type(uint48).max);
+    vm.warp(_newTimepoint);
+
+    vm.prank(vetoGovernor.COUNCIL());
+    vetoGovernor.execute(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
+  }
+
+  /// @notice State before proposal deadline can be Defeated with `GovernorVetoCountingSimple`, but
+  /// not with vanilla Governor. Therefore this test is included in the integration test suite.
+  function testFuzz_RevertIf_OverrideVetoBeforeOverrideWindow(uint256 _newTimepoint) public {
+    uint256 _proposalId = _submitProposal(_buildEmptyProposal());
+
+    vm.prank(vetoGovernor.vetoGuardian());
+    vetoGovernor.vetoByGuardian(_proposalId);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+
+    uint256 _currentTimepoint = vetoGovernor.clock();
+    _newTimepoint =
+      bound(_newTimepoint, _currentTimepoint, vetoGovernor.proposalDeadline(_proposalId) - 1);
+    vm.warp(_newTimepoint);
+
+    vm.prank(vetoGovernor.vetoOverrideRole());
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        GovernorVetoOverride.VetoOverrideOutsideWindow.selector, _proposalId, _newTimepoint
+      )
+    );
+    vetoGovernor.overrideVeto(_proposalId);
   }
 }
