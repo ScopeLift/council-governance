@@ -57,7 +57,7 @@ contract BasicCouncilVetoGovernor is
   /// @param council The address of the council governor.
   struct ConstructorParams {
     string name;
-    IERC5805 token;
+    address token;
     uint48 votingDelay;
     uint32 votingPeriod;
     uint256 proposalThreshold;
@@ -81,7 +81,7 @@ contract BasicCouncilVetoGovernor is
 
   constructor(ConstructorParams memory _params)
     Governor(_params.name)
-    GovernorVotes(_params.token)
+    GovernorVotes(IERC5805(_params.token))
     GovernorVetoGuardian(_params.vetoGuardian)
     GovernorSettings(_params.votingDelay, _params.votingPeriod, _params.proposalThreshold)
     GovernorVetoOverride(_params.vetoOverrideRole, _params.vetoOverrideDuration)
