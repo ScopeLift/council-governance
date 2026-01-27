@@ -279,6 +279,28 @@ contract BasicCouncilGovernorSmokeTest is BasicCouncilGovernorTest {
     vm.prank(councilMembers[0]);
     councilGovernor.cancel(targets, values, calldatas, descriptionHash);
   }
+
+  function test_CouncilStateIsCanceledAfterVetoDefeat() public {
+    vm.prank(councilMembers[0]);
+    uint256 _proposalId = councilGovernor.propose(targets, values, calldatas, description);
+    vm.warp(block.timestamp + councilGovernor.votingDelay() + 1);
+    for (
+      uint256 _i = 0;
+      _i < councilGovernor.superQuorum(councilGovernor.proposalSnapshot(_proposalId));
+      _i++
+    ) {
+      vm.prank(councilMembers[_i]);
+      councilGovernor.castVote(_proposalId, 1);
+    }
+
+    councilGovernor.queue(targets, values, calldatas, descriptionHash);
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Queued));
+
+    vm.prank(vetoGuardian);
+    vetoGovernor.vetoByGuardian(_proposalId);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
+    assertEq(uint8(councilGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Canceled));
+  }
 }
 
 contract ProposalEta is BasicCouncilGovernorTest {
