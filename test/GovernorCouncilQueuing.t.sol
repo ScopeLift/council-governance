@@ -42,6 +42,14 @@ contract MockCallVetoGovernor is Test {
     );
   }
 
+  function _mockVetoGovernorProposalEta(uint256 _proposalId, uint48 _expectedEta) internal {
+    vm.mockCall(
+      address(vetoGovernor),
+      abi.encodeWithSelector(IGovernor.proposalEta.selector, _proposalId),
+      abi.encode(_expectedEta)
+    );
+  }
+
   function _mockVetoGovernorProposalDeadline(uint256 _proposalId, uint48 _expectedDeadline)
     internal
   {
@@ -333,6 +341,7 @@ contract State is GovernorCouncilQueuingTest {
   function testFuzz_CouncilProposalStateIsQueuedWhenProposalStateIsNonTerminalOnTheVetoGovernor(
     uint256 _councilMemberIndex,
     uint8 _proposalStateIndex,
+    uint48 _proposalEta,
     address _caller
   ) public {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
@@ -342,19 +351,22 @@ contract State is GovernorCouncilQueuingTest {
     IGovernor.ProposalState _proposalState =
       _getNonTerminalVetoGovernorProposalState(_proposalStateIndex);
     _mockVetoGovernorState(_proposalId, _proposalState);
+    _mockVetoGovernorProposalEta(_proposalId, _proposalEta);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
   }
 
   function testFuzz_CouncilProposalStateIsExecutedWhenProposalStateIsExecutedOnTheVetoGovernor(
     uint256 _councilMemberIndex,
-    address _caller
+    address _caller,
+    uint48 _proposalEta
   ) public {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
     Proposal memory _proposal = _buildEmptyProposal();
 
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
     _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Executed);
+    _mockVetoGovernorProposalEta(_proposalId, _proposalEta);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
   }
@@ -362,6 +374,7 @@ contract State is GovernorCouncilQueuingTest {
   function testFuzz_CouncilProposalStateIsCanceledWhenProposalFailedOnTheVetoGovernor(
     uint256 _councilMemberIndex,
     uint8 _proposalStateIndex,
+    uint48 _proposalEta,
     address _caller
   ) public {
     address _proposer = _selectCouncilMember(_councilMemberIndex);
@@ -371,8 +384,45 @@ contract State is GovernorCouncilQueuingTest {
     IGovernor.ProposalState _proposalState =
       _getFailedVetoGovernorProposalState(_proposalStateIndex);
     _mockVetoGovernorState(_proposalId, _proposalState);
+    _mockVetoGovernorProposalEta(_proposalId, _proposalEta);
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
+  }
+}
+
+contract ProposalEta is GovernorCouncilQueuingTest {
+  function testFuzz_ReturnsCouncilGovernorEtaWhenNotQueuedOnVetoGovernor(
+    uint256 _proposerIndex,
+    address _caller
+  ) public {
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+    vm.mockCall(
+      address(councilMock.councilVetoGovernor()),
+      abi.encodeWithSelector(IGovernor.proposalEta.selector, _proposalId),
+      abi.encode(0)
+    );
+    assertGt(councilMock.proposalEta(_proposalId), 0);
+  }
+
+  function testFuzz_ReturnsVetoGovernorEtaWhenQueuedOnVetoGovernor(
+    uint256 _proposerIndex,
+    address _caller,
+    uint256 _vetoGovernorProposalEta
+  ) public {
+    vm.assume(_vetoGovernorProposalEta != 0);
+
+    address _proposer = _selectCouncilMember(_proposerIndex);
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
+
+    vm.mockCall(
+      address(councilMock.councilVetoGovernor()),
+      abi.encodeWithSelector(IGovernor.proposalEta.selector, _proposalId),
+      abi.encode(_vetoGovernorProposalEta)
+    );
+    assertEq(councilMock.proposalEta(_proposalId), _vetoGovernorProposalEta);
   }
 }
 
@@ -620,6 +670,7 @@ contract _cancel is GovernorCouncilQueuingTest {
     uint256 _proposalId = _passAndQueueProposal(_proposer, _caller, _proposal);
 
     _mockVetoGovernorState(_proposalId, IGovernor.ProposalState.Pending);
+    _mockVetoGovernorProposalEta(_proposalId, 0);
 
     vm.expectRevert(
       abi.encodeWithSelector(IGovernor.GovernorUnableToCancel.selector, _proposalId, _proposer)

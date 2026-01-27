@@ -97,6 +97,16 @@ contract GovernorCouncilQueuingMock is
     return 5;
   }
 
+  function proposalEta(uint256 proposalId)
+    public
+    view
+    virtual
+    override(Governor, GovernorCouncilQueuing)
+    returns (uint256)
+  {
+    return GovernorCouncilQueuing.proposalEta(proposalId);
+  }
+
   function state(uint256 proposalId)
     public
     view
