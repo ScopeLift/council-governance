@@ -36,12 +36,12 @@ contract BasicCouncilVetoGovernor is
   GovernorVotes,
   GovernorAdmin,
   GovernorSettings,
+  GovernorTimelockControl,
   GovernorVetoCountingSimple,
   GovernorVetoGuardian,
   GovernorVetoOverride,
   GovernorVotesVetoThresholdFraction,
-  GovernorExtendVetoPeriod,
-  GovernorTimelockControl
+  GovernorExtendVetoPeriod
 {
   /// @notice Data structure for deploying the `CouncilVetoGovernor`.
   /// @param name The name of the council veto governor.
