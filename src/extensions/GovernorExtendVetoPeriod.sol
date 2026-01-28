@@ -62,16 +62,31 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     return Math.max(super.proposalDeadline(_proposalId), _extendedDeadlines[_proposalId]);
   }
 
-  /// @notice Returns the current voting period extension duration applied when the minor veto
-  /// threshold is triggered.
+  /// @notice Returns the latest voting period extension duration.
   function votingPeriodExtension() public view virtual returns (uint256) {
     return _votingPeriodExtension.latest();
   }
 
-  /// @notice Returns the minor veto threshold expressed in percentage points of the real veto
-  /// threshold that must be reached to extend the voting period.
+  /// @notice Returns the voting period extension duration at a specific timepoint.
+  /// @dev Use {proposalSnapshot} for snapshot-based semantics.
+  function votingPeriodExtension(uint256 _timepoint) public view virtual returns (uint256) {
+    return _optimisticUpperLookupRecent(_votingPeriodExtension, _timepoint);
+  }
+
+  /// @notice Returns the latest minor veto threshold percentage.
   function minorVetoExtensionThresholdPct() public view virtual returns (uint256) {
     return _minorVetoExtensionThresholdPct.latest();
+  }
+
+  /// @notice Returns the minor veto threshold percentage at a specific timepoint.
+  /// @dev Use {proposalSnapshot} for snapshot-based semantics.
+  function minorVetoExtensionThresholdPct(uint256 _timepoint)
+    public
+    view
+    virtual
+    returns (uint256)
+  {
+    return _optimisticUpperLookupRecent(_minorVetoExtensionThresholdPct, _timepoint);
   }
 
   /// @dev Returns the minor veto extension threshold denominator. Defaults to 100, but may be
@@ -119,18 +134,14 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     virtual
     returns (bool)
   {
-    uint16 _minorThresholdPct = SafeCast.toUint16(
-      _optimisticUpperLookupRecent(
-        _minorVetoExtensionThresholdPct, SafeCast.toUint48(proposalSnapshot(_proposalId))
-      )
-    );
-    if (_minorThresholdPct == 0) return false;
+    uint256 _proposalSnapshot = proposalSnapshot(_proposalId);
 
+    uint16 _minorThresholdPct = SafeCast.toUint16(minorVetoExtensionThresholdPct(_proposalSnapshot));
+    if (_minorThresholdPct == 0) return false;
     uint256 _minorThreshold = Math.mulDiv(
-      vetoThreshold(proposalSnapshot(_proposalId)),
-      _minorThresholdPct,
-      minorVetoExtensionThresholdDenominator()
+      vetoThreshold(_proposalSnapshot), _minorThresholdPct, minorVetoExtensionThresholdDenominator()
     );
+
     return proposalVotes(_proposalId) >= _minorThreshold;
   }
 
@@ -146,12 +157,8 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     ) {
       // Lock in the first extension decision even if it does not lengthen the deadline so later
       // tallies cannot attempt to extend the same proposal again.
-      uint48 extendedDeadline = clock()
-        + SafeCast.toUint48(
-          _optimisticUpperLookupRecent(
-            _votingPeriodExtension, SafeCast.toUint48(proposalSnapshot(_proposalId))
-          )
-        );
+      uint48 extendedDeadline =
+        clock() + SafeCast.toUint48(votingPeriodExtension(proposalSnapshot(_proposalId)));
 
       if (extendedDeadline > proposalDeadline(_proposalId)) {
         emit ProposalExtended(_proposalId, extendedDeadline);
