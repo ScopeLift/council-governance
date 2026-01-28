@@ -11,6 +11,8 @@ import {
   GovernorTimelockControl,
   TimelockController
 } from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
@@ -204,16 +206,6 @@ contract BasicCouncilVetoGovernor is
     return super.propose(_targets, _values, _calldatas, _description);
   }
 
-  function _propose(
-    address[] memory _targets,
-    uint256[] memory _values,
-    bytes[] memory _calldatas,
-    string memory _description,
-    address _proposer
-  ) internal virtual override(Governor, GovernorExtendVetoPeriod) returns (uint256) {
-    return GovernorExtendVetoPeriod._propose(_targets, _values, _calldatas, _description, _proposer);
-  }
-
   function execute(
     address[] memory _targets,
     uint256[] memory _values,
@@ -307,4 +299,19 @@ contract BasicCouncilVetoGovernor is
   {
     return true;
   }
+
+  /// @dev Resolves the conflict between GovernorExtendVetoPeriod and
+  /// GovernorVotesVetoThresholdFraction which both define this function with identical
+  /// implementations.
+  function _optimisticUpperLookupRecent(Checkpoints.Trace208 storage ckpts, uint256 timepoint)
+    internal
+    view
+    virtual
+    override(GovernorExtendVetoPeriod, GovernorVotesVetoThresholdFraction)
+    returns (uint256)
+  {
+    // Both parent implementations are identical, delegate to GovernorVotesVetoThresholdFraction
+    return GovernorVotesVetoThresholdFraction._optimisticUpperLookupRecent(ckpts, timepoint);
+  }
 }
+

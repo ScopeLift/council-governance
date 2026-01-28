@@ -188,68 +188,6 @@ contract ProposalDeadline is GovernorVetoExtensionTest {
   }
 }
 
-contract _propose is GovernorVetoExtensionTest {
-  function testFuzz_ProposalUsesSnapshotExtension(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    uint48 _oldExtension,
-    uint48 _newExtension
-  ) public {
-    _oldExtension = uint48(
-      bound(_oldExtension, 1, vetoMock.votingDelay() + vetoMock.votingPeriod())
-    );
-    _newExtension =
-      uint48(bound(_newExtension, 1, vetoMock.votingDelay() + vetoMock.votingPeriod()));
-    vm.assume(_oldExtension != _newExtension);
-
-    vetoMock.exposed_SetVotingPeriodExtension(_oldExtension);
-    uint256 _proposalId = _createProposal(_target, _value, _calldata);
-
-    vetoMock.exposed_SetVotingPeriodExtension(_newExtension);
-
-    uint256 _timestamp = _triggerExtensionInWindow(_proposalId, _oldExtension);
-    assertEq(vetoMock.proposalDeadline(_proposalId), _timestamp + _oldExtension);
-    assertNotEq(vetoMock.proposalDeadline(_proposalId), _timestamp + _newExtension);
-  }
-
-  function testFuzz_ProposalWithHighSnapshotThresholdDoesNotTriggerExtension(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    uint16 _hightThresholdPct,
-    uint16 _lowThresholdPct,
-    address _voter
-  ) public {
-    _hightThresholdPct = uint16(
-      bound(_hightThresholdPct, 51, vetoMock.minorVetoExtensionThresholdDenominator())
-    );
-    _lowThresholdPct = uint16(bound(_lowThresholdPct, 1, 50));
-
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_hightThresholdPct);
-    uint256 _proposalId = _createProposal(_target, _value, _calldata);
-    uint256 _proposalSnapshot = vetoMock.proposalSnapshot(_proposalId);
-
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_lowThresholdPct);
-
-    uint256 _highMinorThreshold = Math.mulDiv(
-      vetoMock.vetoThreshold(_proposalSnapshot),
-      _hightThresholdPct,
-      vetoMock.minorVetoExtensionThresholdDenominator()
-    );
-    uint256 _lowMinorThreshold = Math.mulDiv(
-      vetoMock.vetoThreshold(_proposalSnapshot),
-      _lowThresholdPct,
-      vetoMock.minorVetoExtensionThresholdDenominator()
-    );
-
-    uint256 _weight = (_highMinorThreshold + _lowMinorThreshold) / 2;
-    _castVoteOnProposal(_proposalId, _voter, _weight);
-
-    assertFalse(vetoMock.exposed_VotingPeriodExtensionThresholdTriggered(_proposalId));
-  }
-}
-
 contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
   function testFuzz_VotingPeriodNotExtendedWhenThresholdNotReached(
     uint256 _timestamp,
@@ -294,6 +232,39 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
       _createProposalAndCastVetoVote(_target, _value, _calldata, _account, _weight);
 
     assertTrue(vetoMock.exposed_VotingPeriodExtensionThresholdTriggered(_proposalId));
+  }
+
+  function testFuzz_CheckpointedValueUsedWhenCalculatingVetoExtensionThresholdPct(
+    address _target,
+    uint256 _value,
+    bytes memory _calldata,
+    uint16 _highThresholdPct,
+    uint16 _lowThresholdPct,
+    address _voter,
+    uint256 _voteWeight
+  ) public {
+    _highThresholdPct = uint16(
+      bound(_highThresholdPct, 51, vetoMock.minorVetoExtensionThresholdDenominator())
+    );
+    _lowThresholdPct = uint16(bound(_lowThresholdPct, 1, _highThresholdPct - 1));
+
+    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_highThresholdPct);
+    uint256 _proposalId = _createProposal(_target, _value, _calldata);
+    uint256 _proposalSnapshot = vetoMock.proposalSnapshot(_proposalId);
+
+    vm.warp(vetoMock.proposalSnapshot(_proposalId) + 1);
+    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_lowThresholdPct);
+
+    uint256 _highMinorThreshold = Math.mulDiv(
+      vetoMock.vetoThreshold(_proposalSnapshot),
+      _highThresholdPct,
+      vetoMock.minorVetoExtensionThresholdDenominator()
+    );
+
+    _voteWeight = bound(_voteWeight, 1, _highMinorThreshold - 1);
+    _castVoteOnProposal(_proposalId, _voter, _voteWeight);
+
+    assertFalse(vetoMock.exposed_VotingPeriodExtensionThresholdTriggered(_proposalId));
   }
 
   function test_ExtensionDisabledWhenThresholdIsZero(

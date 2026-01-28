@@ -124,6 +124,7 @@ abstract contract GovernorVotesVetoThresholdFraction is GovernorVotes {
   function _optimisticUpperLookupRecent(Checkpoints.Trace208 storage ckpts, uint256 timepoint)
     internal
     view
+    virtual
     returns (uint256)
   {
     // If trace is empty, key and value are both equal to 0.

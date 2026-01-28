@@ -81,16 +81,6 @@ contract GovernorExtendVetoPeriodMock is GovernorVetoCountingSimple, GovernorExt
     return 1; // Return a default vote weight for testing
   }
 
-  function _propose(
-    address[] memory targets,
-    uint256[] memory values,
-    bytes[] memory calldatas,
-    string memory description,
-    address proposer
-  ) internal virtual override(Governor, GovernorExtendVetoPeriod) returns (uint256 proposalId) {
-    return GovernorExtendVetoPeriod._propose(targets, values, calldatas, description, proposer);
-  }
-
   function _votingPeriodExtensionThresholdTriggered(uint256 _proposalId)
     internal
     view
