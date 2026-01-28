@@ -16,6 +16,10 @@ contract DeploymentInputMainnetForkTest {
   // Council token admin
   address public constant COUNCIL_TOKEN_ADMIN = MAIN_DAO_GOVERNOR;
   // Max tokens per council member needed to create a proposal
+  // NOTE: Quorum and super-quorum use integer math over total supply. If each member holds a very
+  // small balance (e.g., 1 unit), rounding can reduce effective thresholds. Consider minting
+  // per‑member balances in multiples of the quorum denominator. (e.g., 100 units when the
+  // denominator is 100)
   uint256 public constant MAX_TOKENS_PER_MEMBER = 1;
   // Initial council membership roster used in scripts/tests
   address[] public COUNCIL_MEMBERS = [
