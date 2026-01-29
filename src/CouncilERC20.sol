@@ -35,6 +35,9 @@ contract CouncilERC20 is ERC20, ERC20Votes, Ownable {
   //////////////////////////////////////////////////////////////*/
 
   /// @notice The maximum number of tokens that a member can hold.
+  /// @dev Quorum and super-quorum use integer math over total supply. If each member holds a very
+  /// small balance (e.g., 1 unit), rounding can reduce effective thresholds. Consider minting
+  /// per‑member balances with, say, 18 decimals (i.e. 1e18 = 1 vote).
   uint256 public immutable MAX_TOKENS_PER_MEMBER;
 
   /*///////////////////////////////////////////////////////////////
