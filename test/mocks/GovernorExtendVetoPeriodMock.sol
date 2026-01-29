@@ -120,14 +120,4 @@ contract GovernorExtendVetoPeriodMock is GovernorVetoCountingSimple, GovernorExt
   function exposed_TallyUpdated(uint256 _proposalId) public {
     _tallyUpdated(_proposalId);
   }
-
-  function exposed_SetVotingPeriodExtension(uint48 _newVotingPeriodExtension) public {
-    _setVotingPeriodExtension(_newVotingPeriodExtension);
-  }
-
-  function exposed_setMinorVetoExtensionThresholdPct(uint16 _newVetoPeriodExtensionThresholdPct)
-    public
-  {
-    _setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
-  }
 }

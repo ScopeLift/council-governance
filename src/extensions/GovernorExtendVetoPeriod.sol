@@ -47,9 +47,8 @@ abstract contract GovernorExtendVetoPeriod is Governor {
   mapping(uint256 proposalId => uint48) private _extendedDeadlines;
 
   /// @dev Initializes the voting period extension parameters.
-  /// @param _initialVoteExtension Minimum time (seconds or blocks, depending on clock mode) from
-  /// threshold trigger until the proposal deadline. The deadline is extended only if this exceeds
-  /// the original deadline.
+  /// @param _initialVoteExtension Time (seconds or blocks, depending on clock mode) added to the
+  /// proposal deadline when the minor veto threshold is met.
   /// @param _initialVotingPeriodExtensionThresholdPct Threshold in percentage points of the veto
   /// threshold required to trigger an extension.
   constructor(uint48 _initialVoteExtension, uint16 _initialVotingPeriodExtensionThresholdPct) {
@@ -146,8 +145,8 @@ abstract contract GovernorExtendVetoPeriod is Governor {
   }
 
   /// @dev Vote tally updated and detects if it caused the minor veto threshold to be reached,
-  /// potentially extending the voting period. Emits a {ProposalExtended} event when the extended
-  /// deadline is greater than the original proposal deadline.
+  /// potentially extending the voting period. Emits a {ProposalExtended} event when the deadline is
+  /// extended.
   /// @param _proposalId The ID of the proposal to check if voting period extension threshold is
   /// triggered.
   function _tallyUpdated(uint256 _proposalId) internal virtual override {
@@ -155,15 +154,9 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     if (
       _extendedDeadlines[_proposalId] == 0 && _votingPeriodExtensionThresholdTriggered(_proposalId)
     ) {
-      // Lock in the first extension decision even if it does not lengthen the deadline so later
-      // tallies cannot attempt to extend the same proposal again.
-      uint48 extendedDeadline =
-        clock() + SafeCast.toUint48(votingPeriodExtension(proposalSnapshot(_proposalId)));
-
-      if (extendedDeadline > proposalDeadline(_proposalId)) {
-        emit ProposalExtended(_proposalId, extendedDeadline);
-      }
-
+      uint48 extendedDeadline = SafeCast.toUint48(proposalDeadline(_proposalId))
+        + SafeCast.toUint48(votingPeriodExtension(proposalSnapshot(_proposalId)));
+      emit ProposalExtended(_proposalId, extendedDeadline);
       _extendedDeadlines[_proposalId] = extendedDeadline;
     }
   }

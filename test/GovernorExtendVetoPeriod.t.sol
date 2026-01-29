@@ -55,67 +55,16 @@ contract GovernorVetoExtensionTest is Test {
     _castVoteOnProposal(_proposalId, _account, _weight);
   }
 
-  function _getMinorThreshold(uint256 _timestamp) internal view returns (uint256) {
+  function _minorThresholdAtProposal(uint256 _proposalId) internal view returns (uint256) {
+    uint256 _snapshot = vetoMock.proposalSnapshot(_proposalId);
     return Math.mulDiv(
-      vetoMock.vetoThreshold(_timestamp),
-      vetoMock.minorVetoExtensionThresholdPct(),
+      vetoMock.vetoThreshold(_snapshot),
+      vetoMock.minorVetoExtensionThresholdPct(_snapshot),
       vetoMock.minorVetoExtensionThresholdDenominator()
     );
   }
 
-  function _assumeVetoVoteBelowMinorThreshold(uint256 _timestamp, uint256 _weight)
-    internal
-    view
-    returns (uint256)
-  {
-    return bound(_weight, 0, _getMinorThreshold(_timestamp) - 1);
-  }
-
-  function _assumeVetoVoteAboveMinorThreshold(uint256 _timestamp, uint256 _weight)
-    internal
-    view
-    returns (uint256)
-  {
-    return bound(_weight, _getMinorThreshold(_timestamp), type(uint256).max);
-  }
-
-  function _boundToIncreaseExtendedDeadline(uint256 _proposalId, uint256 _timestamp)
-    internal
-    view
-    returns (uint256)
-  {
-    return bound(
-      _timestamp,
-      vetoMock.proposalDeadline(_proposalId) - vetoMock.votingPeriodExtension() + 1,
-      vetoMock.proposalDeadline(_proposalId)
-    );
-  }
-
-  function _boundBeforeExtensionWindow(uint256 _proposalId, uint256 _timestamp)
-    internal
-    view
-    returns (uint256)
-  {
-    return bound(
-      _timestamp,
-      vetoMock.clock(),
-      vetoMock.proposalDeadline(_proposalId) - vetoMock.votingPeriodExtension()
-    );
-  }
-
-  function _warpAndTriggerExtension(uint256 _proposalId, uint256 _timestamp) internal {
-    vm.warp(_timestamp);
-    vetoMock.forceTriggerVotingPeriodExtensionThreshold();
-    vetoMock.exposed_TallyUpdated(_proposalId);
-  }
-
-  function _triggerExtensionInWindow(uint256 _proposalId, uint48 _extension)
-    internal
-    returns (uint256 _timestamp)
-  {
-    uint256 _deadline = vetoMock.proposalDeadline(_proposalId);
-    _timestamp = bound(block.timestamp, _deadline - _extension, _deadline);
-    vm.warp(_timestamp);
+  function _triggerExtension(uint256 _proposalId) internal {
     vetoMock.forceTriggerVotingPeriodExtensionThreshold();
     vetoMock.exposed_TallyUpdated(_proposalId);
   }
@@ -143,52 +92,84 @@ contract Constructor is GovernorVetoExtensionTest {
   }
 }
 
+contract ProposalDeadline is GovernorVetoExtensionTest {
+  function testFuzz_PendingProposalUsesNewVotingPeriodExtension(
+    address _target,
+    uint256 _value,
+    bytes memory _calldata,
+    uint48 _newExtension
+  ) public {
+    uint48 _oldExtension = uint48(vetoMock.votingPeriodExtension());
+    vm.assume(_oldExtension != _newExtension);
+
+    uint256 _proposalId = _createProposal(_target, _value, _calldata);
+    uint256 _initialDeadline = vetoMock.proposalDeadline(_proposalId);
+    vm.assume(_initialDeadline + _newExtension <= type(uint48).max);
+
+    vm.prank(address(vetoMock));
+    vetoMock.setVotingPeriodExtension(_newExtension);
+
+    _triggerExtension(_proposalId);
+
+    assertEq(vetoMock.proposalDeadline(_proposalId), _initialDeadline + _newExtension);
+  }
+
+  function testFuzz_ActiveProposalUsesCheckpointedVotingPeriodExtension(
+    address _target,
+    uint256 _value,
+    bytes memory _calldata,
+    uint48 _newExtension
+  ) public {
+    uint48 _oldExtension = uint48(vetoMock.votingPeriodExtension());
+    vm.assume(_oldExtension != _newExtension);
+
+    uint256 _proposalId = _createProposal(_target, _value, _calldata);
+    uint256 _initialDeadline = vetoMock.proposalDeadline(_proposalId);
+
+    vm.warp(vetoMock.proposalSnapshot(_proposalId) + 1);
+
+    vm.prank(address(vetoMock));
+    vetoMock.setVotingPeriodExtension(_newExtension);
+    _triggerExtension(_proposalId);
+
+    assertEq(vetoMock.proposalDeadline(_proposalId), _initialDeadline + _oldExtension);
+  }
+}
+
 contract VotingPeriodExtension is GovernorVetoExtensionTest {
-  function test_ReturnsVotingPeriodExtension() public view {
-    assertEq(vetoMock.votingPeriodExtension(), INITIAL_VETO_PERIOD_EXTENSION);
-  }
-
-  function testFuzz_PendingProposalUseNewVotingPeriodExtension(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    uint48 _newExtension
+  function testFuzz_ReturnsCheckpointedVotingPeriodExtension(
+    uint48 _newVotingPeriodExtension,
+    uint48 _newTimepoint
   ) public {
-    uint48 _oldExtension = uint48(vetoMock.votingPeriodExtension());
-    vm.assume(_oldExtension != _newExtension);
+    vm.assume(_newTimepoint > vetoMock.clock());
 
-    uint256 _proposalId = _createProposal(_target, _value, _calldata);
-    vm.assume(_newExtension < vetoMock.proposalDeadline(_proposalId));
-    vetoMock.exposed_SetVotingPeriodExtension(_newExtension);
+    uint48 _oldVotingPeriodExtension = uint48(vetoMock.votingPeriodExtension(vetoMock.clock()));
 
-    // Return the timepoint when extension is trigged and voting period is extended
-    uint256 ts = _triggerExtensionInWindow(_proposalId, _newExtension);
+    vm.warp(_newTimepoint);
+    vm.prank(address(vetoMock));
+    vetoMock.setVotingPeriodExtension(_newVotingPeriodExtension);
 
-    assertEq(vetoMock.proposalDeadline(_proposalId), ts + _newExtension);
-    assertNotEq(vetoMock.proposalDeadline(_proposalId), ts + _oldExtension);
+    assertEq(vetoMock.votingPeriodExtension(_newTimepoint - 1), _oldVotingPeriodExtension);
+    assertEq(vetoMock.votingPeriodExtension(_newTimepoint), _newVotingPeriodExtension);
   }
+}
 
-  function testFuzz_ProposalBeyondActiveUseCheckpointedValueWhenCalculatingProposalDeadline(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    uint48 _newExtension
+contract MinorVetoExtensionThresholdPct is GovernorVetoExtensionTest {
+  function testFuzz_ReturnsCheckpointedMinorVetoExtensionThresholdPct(
+    uint16 _newMinorThreshold,
+    uint48 _newTimepoint
   ) public {
-    uint48 _oldExtension = uint48(vetoMock.votingPeriodExtension());
-    vm.assume(_oldExtension != _newExtension);
+    vm.assume(_newMinorThreshold <= vetoMock.minorVetoExtensionThresholdDenominator());
+    vm.assume(_newTimepoint > vetoMock.clock());
 
-    uint256 _proposalId = _createProposal(_target, _value, _calldata);
-    uint256 _snapshot = vetoMock.proposalSnapshot(_proposalId);
+    uint16 _oldMinorThreshold = uint16(vetoMock.minorVetoExtensionThresholdPct());
+    vm.warp(_newTimepoint);
 
-    vm.warp(_snapshot + 1);
+    vm.prank(address(vetoMock));
+    vetoMock.setMinorVetoExtensionThresholdPct(_newMinorThreshold);
 
-    vetoMock.exposed_SetVotingPeriodExtension(_newExtension);
-
-    // Return the time when extension is trigged and voting period is extended
-    uint256 ts = _triggerExtensionInWindow(_proposalId, _oldExtension);
-
-    assertEq(vetoMock.proposalDeadline(_proposalId), ts + _oldExtension);
-    assertNotEq(vetoMock.proposalDeadline(_proposalId), ts + _newExtension);
+    assertEq(vetoMock.minorVetoExtensionThresholdPct(_newTimepoint - 1), _oldMinorThreshold);
+    assertEq(vetoMock.minorVetoExtensionThresholdPct(_newTimepoint), _newMinorThreshold);
   }
 }
 
@@ -198,81 +179,51 @@ contract VotingPeriodExtensionThreshold is GovernorVetoExtensionTest {
   }
 }
 
-contract ProposalDeadline is GovernorVetoExtensionTest {
-  function testFuzz_ProposalDeadlineUnchangedBeforeExtensionWindow(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    uint48 _timestamp
-  ) public {
-    uint256 _proposalId = _createProposal(_target, _value, _calldata);
-    uint256 _oldDeadline = vetoMock.proposalDeadline(_proposalId);
-    _timestamp = uint48(_boundBeforeExtensionWindow(_proposalId, _timestamp));
-    _warpAndTriggerExtension(_proposalId, _timestamp);
-
-    assertEq(vetoMock.proposalDeadline(_proposalId), _oldDeadline);
-  }
-
-  function testFuzz_ProposalDeadlineExtendedInsideExtensionWindow(
-    address _target,
-    uint256 _value,
-    bytes memory _calldata,
-    uint48 _timestamp
-  ) public {
-    uint256 _proposalId = _createProposal(_target, _value, _calldata);
-    uint256 _oldDeadline = vetoMock.proposalDeadline(_proposalId);
-    _timestamp = uint48(_boundToIncreaseExtendedDeadline(_proposalId, _timestamp));
-    _warpAndTriggerExtension(_proposalId, _timestamp);
-
-    uint256 _expectedDeadline = _timestamp + vetoMock.votingPeriodExtension();
-
-    assertGt(_expectedDeadline, _oldDeadline);
-    assertEq(vetoMock.proposalDeadline(_proposalId), _expectedDeadline);
-  }
-}
-
 contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
   function testFuzz_VotingPeriodNotExtendedWhenThresholdNotReached(
-    uint256 _timestamp,
     address _target,
     uint256 _value,
     bytes memory _calldata,
     address _account,
     uint256 _weight
   ) public {
-    _weight = _assumeVetoVoteBelowMinorThreshold(_timestamp, _weight);
-    uint256 _proposalId =
-      _createProposalAndCastVetoVote(_target, _value, _calldata, _account, _weight);
+    uint256 _proposalId = _createProposal(_target, _value, _calldata);
+    uint256 _threshold = _minorThresholdAtProposal(_proposalId);
+    vm.assume(_threshold > 0);
+
+    _weight = bound(_weight, 0, _threshold - 1);
+    _castVoteOnProposal(_proposalId, _account, _weight);
 
     assertFalse(vetoMock.exposed_VotingPeriodExtensionThresholdTriggered(_proposalId));
   }
 
   function testFuzz_VotingPeriodExtendedWhenVetoVotesAtThreshold(
-    uint256 _timestamp,
     address _target,
     uint256 _value,
     bytes memory _calldata,
     address _account
   ) public {
-    uint256 _proposalId = _createProposalAndCastVetoVote(
-      _target, _value, _calldata, _account, _getMinorThreshold(_timestamp)
-    );
+    uint256 _proposalId = _createProposal(_target, _value, _calldata);
+    uint256 _threshold = _minorThresholdAtProposal(_proposalId);
+    vm.assume(_threshold > 0);
+    _castVoteOnProposal(_proposalId, _account, _threshold);
 
     assertTrue(vetoMock.exposed_VotingPeriodExtensionThresholdTriggered(_proposalId));
   }
 
   function testFuzz_VotingPeriodExtendedWhenVetoVotesAboveThreshold(
-    uint256 _timestamp,
     address _target,
     uint256 _value,
     bytes memory _calldata,
     address _account,
     uint256 _weight
   ) public {
-    _weight = _assumeVetoVoteAboveMinorThreshold(_timestamp, _weight);
+    uint256 _proposalId = _createProposal(_target, _value, _calldata);
+    uint256 _threshold = _minorThresholdAtProposal(_proposalId);
+    vm.assume(_threshold > 0);
 
-    uint256 _proposalId =
-      _createProposalAndCastVetoVote(_target, _value, _calldata, _account, _weight);
+    _weight = bound(_weight, _threshold, type(uint256).max);
+    _castVoteOnProposal(_proposalId, _account, _weight);
 
     assertTrue(vetoMock.exposed_VotingPeriodExtensionThresholdTriggered(_proposalId));
   }
@@ -288,7 +239,8 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
     uint256 _highThresholdPct = vetoMock.minorVetoExtensionThresholdPct();
     _lowThresholdPct = uint16(bound(_lowThresholdPct, 1, _highThresholdPct - 1));
 
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_lowThresholdPct);
+    vm.prank(address(vetoMock));
+    vetoMock.setMinorVetoExtensionThresholdPct(_lowThresholdPct);
     uint256 _proposalId = _createProposal(_target, _value, _calldata);
 
     uint256 _lowMinorThreshold = Math.mulDiv(
@@ -309,7 +261,7 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
     assertTrue(vetoMock.exposed_VotingPeriodExtensionThresholdTriggered(_proposalId));
   }
 
-  function testFuzz_CheckpointedValueUsedWhenCalculatingVetoExtensionThresholdPct(
+  function testFuzz_UseCheckpointedValueWhenCalculatingVetoExtensionThresholdPct(
     address _target,
     uint256 _value,
     bytes memory _calldata,
@@ -323,12 +275,21 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
     );
     _lowThresholdPct = uint16(bound(_lowThresholdPct, 1, _highThresholdPct - 1));
 
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_highThresholdPct);
+    vm.prank(address(vetoMock));
+    vetoMock.setMinorVetoExtensionThresholdPct(_highThresholdPct);
     uint256 _proposalId = _createProposal(_target, _value, _calldata);
     uint256 _proposalSnapshot = vetoMock.proposalSnapshot(_proposalId);
 
     vm.warp(_proposalSnapshot + 1);
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_lowThresholdPct);
+
+    vm.prank(address(vetoMock));
+    vetoMock.setMinorVetoExtensionThresholdPct(_lowThresholdPct);
+
+    uint256 _lowMinorThreshold = Math.mulDiv(
+      vetoMock.vetoThreshold(_proposalSnapshot),
+      _lowThresholdPct,
+      vetoMock.minorVetoExtensionThresholdDenominator()
+    );
 
     uint256 _highMinorThreshold = Math.mulDiv(
       vetoMock.vetoThreshold(_proposalSnapshot),
@@ -336,7 +297,7 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
       vetoMock.minorVetoExtensionThresholdDenominator()
     );
 
-    _voteWeight = bound(_voteWeight, 1, _highMinorThreshold - 1);
+    _voteWeight = bound(_voteWeight, _lowMinorThreshold, _highMinorThreshold - 1);
     _castVoteOnProposal(_proposalId, _voter, _voteWeight);
 
     assertFalse(vetoMock.exposed_VotingPeriodExtensionThresholdTriggered(_proposalId));
@@ -349,7 +310,8 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
     address _account,
     uint256 _weight
   ) public {
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(0);
+    vm.prank(address(vetoMock));
+    vetoMock.setMinorVetoExtensionThresholdPct(0);
     uint256 _proposalId =
       _createProposalAndCastVetoVote(_target, _value, _calldata, _account, _weight);
 
@@ -359,7 +321,8 @@ contract _votingPeriodExtensionThresholdTriggered is GovernorVetoExtensionTest {
 
 contract _setVotingPeriodExtension is GovernorVetoExtensionTest {
   function testFuzz_SetVotingPeriodExtension(uint48 _newVotingPeriodExtension) public {
-    vetoMock.exposed_SetVotingPeriodExtension(_newVotingPeriodExtension);
+    vm.prank(address(vetoMock));
+    vetoMock.setVotingPeriodExtension(_newVotingPeriodExtension);
 
     assertEq(vetoMock.votingPeriodExtension(), _newVotingPeriodExtension);
   }
@@ -370,7 +333,8 @@ contract _setVotingPeriodExtension is GovernorVetoExtensionTest {
       vetoMock.votingPeriodExtension(), _newVotingPeriodExtension
     );
 
-    vetoMock.exposed_SetVotingPeriodExtension(_newVotingPeriodExtension);
+    vm.prank(address(vetoMock));
+    vetoMock.setVotingPeriodExtension(_newVotingPeriodExtension);
   }
 }
 
@@ -383,7 +347,8 @@ contract _setMinorVetoExtensionThreshold is GovernorVetoExtensionTest {
         _newVotingPeriodExtensionThreshold, 0, vetoMock.minorVetoExtensionThresholdDenominator()
       )
     );
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_newVotingPeriodExtensionThreshold);
+    vm.prank(address(vetoMock));
+    vetoMock.setMinorVetoExtensionThresholdPct(_newVotingPeriodExtensionThreshold);
 
     assertEq(vetoMock.minorVetoExtensionThresholdPct(), _newVotingPeriodExtensionThreshold);
   }
@@ -401,7 +366,8 @@ contract _setMinorVetoExtensionThreshold is GovernorVetoExtensionTest {
     emit GovernorExtendVetoPeriod.MinorVetoExtensionThresholdPctSet(
       vetoMock.minorVetoExtensionThresholdPct(), _newVetoPeriodExtensionThresholdPct
     );
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
+    vm.prank(address(vetoMock));
+    vetoMock.setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 
   function testFuzz_RevertIf_SetVotingPeriodExtensionAbovePercentDenominator(uint16 _newVetoPeriodExtensionThresholdPct)
@@ -421,55 +387,52 @@ contract _setMinorVetoExtensionThreshold is GovernorVetoExtensionTest {
         _newVetoPeriodExtensionThresholdPct
       )
     );
-    vetoMock.exposed_setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
+
+    vm.prank(address(vetoMock));
+    vetoMock.setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 }
 
 contract _tallyUpdated is GovernorVetoExtensionTest {
-  function testFuzz_DeadlineExtendedWhenVetoExtensionTriggered(
-    uint256 _timestamp,
+  function testFuzz_ProposalDeadlineExtendedWhenVetoExtensionTriggered(
     address _target,
     uint256 _value,
     bytes memory _calldata
   ) public {
     uint256 _proposalId = _createProposal(_target, _value, _calldata);
     uint256 _oldDeadline = vetoMock.proposalDeadline(_proposalId);
-    _timestamp = _boundToIncreaseExtendedDeadline(_proposalId, _timestamp);
-    _warpAndTriggerExtension(_proposalId, _timestamp);
 
-    uint256 _expectedDeadline = _timestamp + vetoMock.votingPeriodExtension();
+    _triggerExtension(_proposalId);
+
+    uint256 _expectedDeadline = _oldDeadline + vetoMock.votingPeriodExtension();
     assertGt(_expectedDeadline, _oldDeadline);
     assertEq(vetoMock.proposalDeadline(_proposalId), _expectedDeadline);
   }
 
   function testFuzz_EmitsProposalDeadlineExtended(
-    uint256 _timestamp,
     address _target,
     uint256 _value,
     bytes memory _calldata
   ) public {
     uint256 _proposalId = _createProposal(_target, _value, _calldata);
-    _timestamp = _boundToIncreaseExtendedDeadline(_proposalId, _timestamp);
-    uint256 _expectedDeadline = _timestamp + vetoMock.votingPeriodExtension();
-    vm.warp(_timestamp);
+    uint256 _expectedDeadline =
+      vetoMock.proposalDeadline(_proposalId) + vetoMock.votingPeriodExtension();
     vetoMock.forceTriggerVotingPeriodExtensionThreshold();
 
     vm.expectEmit();
-    emit GovernorExtendVetoPeriod.ProposalExtended(_proposalId, uint64(_expectedDeadline));
+    emit GovernorExtendVetoPeriod.ProposalExtended(_proposalId, _expectedDeadline);
     vetoMock.exposed_TallyUpdated(_proposalId);
   }
 
   function testFuzz_DeadlineNotExtendedWhenVetoExtensionAlreadyTriggered(
-    uint256 _timestamp,
     address _target,
     uint256 _value,
     bytes memory _calldata
   ) public {
     uint256 _proposalId = _createProposal(_target, _value, _calldata);
     uint256 _oldDeadline = vetoMock.proposalDeadline(_proposalId);
-    _timestamp = _boundToIncreaseExtendedDeadline(_proposalId, _timestamp);
-    _warpAndTriggerExtension(_proposalId, _timestamp);
-    uint256 _expectedDeadline = _timestamp + vetoMock.votingPeriodExtension();
+    _triggerExtension(_proposalId);
+    uint256 _expectedDeadline = _oldDeadline + vetoMock.votingPeriodExtension();
     assertGt(_expectedDeadline, _oldDeadline);
 
     vetoMock.exposed_TallyUpdated(_proposalId);
