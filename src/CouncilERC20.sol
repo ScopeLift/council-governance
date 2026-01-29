@@ -82,7 +82,7 @@ contract CouncilERC20 is ERC20, ERC20Votes, Ownable {
     _burn(_account, _value);
   }
 
-  /// @notice Returns the current block number as the clock.
+  /// @notice Returns the current block timestamp as the clock.
   function clock() public view override returns (uint48) {
     return uint48(block.timestamp);
   }
