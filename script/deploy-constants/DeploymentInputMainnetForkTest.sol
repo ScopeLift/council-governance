@@ -18,8 +18,9 @@ contract DeploymentInputMainnetForkTest {
   // Max tokens per council member needed to create a proposal
   // NOTE: Quorum and super-quorum use integer math over total supply. If each member holds a very
   // small balance (e.g., 1 unit), rounding can reduce effective thresholds. Consider minting
-  // per‑member balances in multiples of the quorum denominator. (e.g., 100 units when the
-  // denominator is 100)
+  // per‑member balances in multiples of the quorum denominator (e.g., 100 units when the
+  // denominator is 100), or minting per‑member balances with, say, 18 decimals (i.e. 1e18 = 1
+  // vote).
   uint256 public constant MAX_TOKENS_PER_MEMBER = 1;
   // Initial council membership roster used in scripts/tests
   address[] public COUNCIL_MEMBERS = [
