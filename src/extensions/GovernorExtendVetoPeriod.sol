@@ -4,6 +4,8 @@ pragma solidity ^0.8.30;
 // External Dependencies
 import {IGovernor, Governor} from "@openzeppelin/contracts/governance/Governor.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @title GovernorExtendVetoPeriod
 /// @author [ScopeLift](https://scopelift.co)
@@ -13,16 +15,20 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 /// (contracts/governance/extensions/GovernorPreventLateQuorum.sol) with behavior adapted for
 /// veto-counting.
 abstract contract GovernorExtendVetoPeriod is Governor {
+  using Checkpoints for Checkpoints.Trace208;
+
   /// @notice Emitted when a proposal deadline is pushed back due to reaching its minor veto
   /// threshold.
-  event ProposalExtended(uint256 indexed proposalId, uint64 extendedDeadline);
+  event ProposalExtended(uint256 indexed proposalId, uint256 extendedDeadline);
 
   /// @notice Emitted when the {_votingPeriodExtension} parameter is changed.
-  event VotingPeriodExtensionSet(uint64 oldVotingPeriodExtension, uint64 newVotingPeriodExtension);
+  event VotingPeriodExtensionSet(
+    uint256 oldVotingPeriodExtension, uint256 newVotingPeriodExtension
+  );
 
   /// @notice Emitted when the {_votingPeriodExtensionThresholdPct} parameter is changed.
   event MinorVetoExtensionThresholdPctSet(
-    uint16 oldVotingPeriodExtensionThresholdPct, uint16 newVotingPeriodExtensionThresholdPct
+    uint256 oldVotingPeriodExtensionThresholdPct, uint256 newVotingPeriodExtensionThresholdPct
   );
 
   /// @dev Reverts when a minor veto extension threshold exceeds the percent denominator.
@@ -31,11 +37,11 @@ abstract contract GovernorExtendVetoPeriod is Governor {
 
   /// @dev The extra time (seconds or blocks, depending on the governor clock mode) that may be
   /// added when the minor veto threshold is met.
-  uint48 private _votingPeriodExtension;
+  Checkpoints.Trace208 private _votingPeriodExtension;
 
   /// @dev The minor threshold in percentage points of veto threshold required to trigger an
   /// extension.
-  uint16 private _minorVetoExtensionThresholdPct;
+  Checkpoints.Trace208 private _minorVetoExtensionThresholdPct;
 
   /// @dev Mapping of proposal ID to extended deadline.
   mapping(uint256 proposalId => uint48) private _extendedDeadlines;
@@ -56,16 +62,31 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     return Math.max(super.proposalDeadline(_proposalId), _extendedDeadlines[_proposalId]);
   }
 
-  /// @notice Returns the current voting period extension duration applied when the minor veto
-  /// threshold is triggered.
-  function votingPeriodExtension() public view virtual returns (uint48) {
-    return _votingPeriodExtension;
+  /// @notice Returns the latest voting period extension duration.
+  function votingPeriodExtension() public view virtual returns (uint256) {
+    return _votingPeriodExtension.latest();
   }
 
-  /// @notice Returns the minor veto threshold expressed in percentage points of the real veto
-  /// threshold that must be reached to extend the voting period.
-  function minorVetoExtensionThresholdPct() public view virtual returns (uint16) {
-    return _minorVetoExtensionThresholdPct;
+  /// @notice Returns the voting period extension duration at a specific timepoint.
+  /// @dev Use {proposalSnapshot} for snapshot-based semantics.
+  function votingPeriodExtension(uint256 _timepoint) public view virtual returns (uint256) {
+    return _optimisticUpperLookupRecent(_votingPeriodExtension, _timepoint);
+  }
+
+  /// @notice Returns the latest minor veto threshold percentage.
+  function minorVetoExtensionThresholdPct() public view virtual returns (uint256) {
+    return _minorVetoExtensionThresholdPct.latest();
+  }
+
+  /// @notice Returns the minor veto threshold percentage at a specific timepoint.
+  /// @dev Use {proposalSnapshot} for snapshot-based semantics.
+  function minorVetoExtensionThresholdPct(uint256 _timepoint)
+    public
+    view
+    virtual
+    returns (uint256)
+  {
+    return _optimisticUpperLookupRecent(_minorVetoExtensionThresholdPct, _timepoint);
   }
 
   /// @dev Returns the minor veto extension threshold denominator. Defaults to 100, but may be
@@ -113,13 +134,14 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     virtual
     returns (bool)
   {
-    if (_minorVetoExtensionThresholdPct == 0) return false;
+    uint256 _proposalSnapshot = proposalSnapshot(_proposalId);
 
+    uint16 _minorThresholdPct = SafeCast.toUint16(minorVetoExtensionThresholdPct(_proposalSnapshot));
+    if (_minorThresholdPct == 0) return false;
     uint256 _minorThreshold = Math.mulDiv(
-      vetoThreshold(proposalSnapshot(_proposalId)),
-      _minorVetoExtensionThresholdPct,
-      minorVetoExtensionThresholdDenominator()
+      vetoThreshold(_proposalSnapshot), _minorThresholdPct, minorVetoExtensionThresholdDenominator()
     );
+
     return proposalVotes(_proposalId) >= _minorThreshold;
   }
 
@@ -135,7 +157,8 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     ) {
       // Lock in the first extension decision even if it does not lengthen the deadline so later
       // tallies cannot attempt to extend the same proposal again.
-      uint48 extendedDeadline = clock() + votingPeriodExtension();
+      uint48 extendedDeadline =
+        clock() + SafeCast.toUint48(votingPeriodExtension(proposalSnapshot(_proposalId)));
 
       if (extendedDeadline > proposalDeadline(_proposalId)) {
         emit ProposalExtended(_proposalId, extendedDeadline);
@@ -149,9 +172,9 @@ abstract contract GovernorExtendVetoPeriod is Governor {
   /// event.
   /// @param _newVotingPeriodExtension Duration to extend when triggered.
   function _setVotingPeriodExtension(uint48 _newVotingPeriodExtension) internal virtual {
-    emit VotingPeriodExtensionSet(_votingPeriodExtension, _newVotingPeriodExtension);
-
-    _votingPeriodExtension = _newVotingPeriodExtension;
+    (uint208 oldValue, uint208 newValue) =
+      _votingPeriodExtension.push(clock(), SafeCast.toUint208(_newVotingPeriodExtension));
+    emit VotingPeriodExtensionSet(oldValue, newValue);
   }
 
   /// @dev Internal setter for {_minorVetoExtensionThresholdPct}. Emits a
@@ -166,9 +189,24 @@ abstract contract GovernorExtendVetoPeriod is Governor {
     if (_newMinorVetoExtensionThresholdPct > minorVetoExtensionThresholdDenominator()) {
       revert GovernorExtendVetoPeriod_InvalidThreshold(_newMinorVetoExtensionThresholdPct);
     }
-    emit MinorVetoExtensionThresholdPctSet(
-      _minorVetoExtensionThresholdPct, _newMinorVetoExtensionThresholdPct
+    (uint208 oldValue, uint208 newValue) = _minorVetoExtensionThresholdPct.push(
+      clock(), SafeCast.toUint208(_newMinorVetoExtensionThresholdPct)
     );
-    _minorVetoExtensionThresholdPct = _newMinorVetoExtensionThresholdPct;
+    emit MinorVetoExtensionThresholdPctSet(oldValue, newValue);
+  }
+
+  /**
+   * @dev Returns the numerator at a specific timepoint.
+   */
+  function _optimisticUpperLookupRecent(Checkpoints.Trace208 storage ckpts, uint256 timepoint)
+    internal
+    view
+    virtual
+    returns (uint256)
+  {
+    // If trace is empty, key and value are both equal to 0.
+    // In that case `key <= timepoint` is true, and it is ok to return 0.
+    (, uint48 key, uint208 value) = ckpts.latestCheckpoint();
+    return key <= timepoint ? value : ckpts.upperLookupRecent(SafeCast.toUint48(timepoint));
   }
 }

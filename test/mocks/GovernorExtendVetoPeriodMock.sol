@@ -7,7 +7,7 @@ import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSim
 
 /// @title GovernorExtendVetoPeriodMock
 /// @author [ScopeLift](https://scopelift.co)
-contract GovernorExtendVetoPeriodMock is GovernorExtendVetoPeriod, GovernorVetoCountingSimple {
+contract GovernorExtendVetoPeriodMock is GovernorVetoCountingSimple, GovernorExtendVetoPeriod {
   constructor(uint48 _initialVotingPeriodExtension, uint16 _initialVotingPeriodExtensionThreshold)
     Governor("GovernorExtendVetoPeriodMock")
     GovernorExtendVetoPeriod(_initialVotingPeriodExtension, _initialVotingPeriodExtensionThreshold)
