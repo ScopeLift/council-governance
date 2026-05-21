@@ -42,7 +42,7 @@ abstract contract GovernorVetoGuardian is Governor {
 
     if (
       guardianVetoed[_proposalId] && _currentState != ProposalState.Queued
-        && _currentState != ProposalState.Executed
+        && _currentState != ProposalState.Executed && _currentState != ProposalState.Canceled
     ) return ProposalState.Defeated;
     return _currentState;
   }
