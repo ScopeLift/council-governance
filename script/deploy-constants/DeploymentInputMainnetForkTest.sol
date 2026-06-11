@@ -67,6 +67,12 @@ contract DeploymentInputMainnetForkTest {
   uint48 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_DELAY = 300;
   // Compound veto governor voting period (in blocks)
   uint32 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_PERIOD = 7200;
+  // Compound veto governor override duration (in blocks)
+  uint48 public constant COMPOUND_VETO_OVERRIDE_DURATION = 28_800; // 4 days * 24 * 60 * 60 / 12
+  // second blocks
+  // Compound veto governor voting period extension duration (in blocks)
+  uint48 public constant COMPOUND_VOTING_PERIOD_EXTENSION = 21_600; // 3 days * 24 * 60 * 60 / 12
+  // second blocks
 
   // Council governor name
   string public constant COUNCIL_GOVERNOR_NAME = "BasicCouncilGovernor";

@@ -65,14 +65,14 @@ contract DeploymentConfigurationTestCompound is
   {
     BaseDeploymentConfiguration memory _baseConfig = _getBaseDeploymentConfiguration();
     return VetoGovernorDeploymentConfiguration({
-      vetoGovernorName: VETO_GOVERNOR_NAME,
+      vetoGovernorName: COMPOUND_VETO_GOVERNOR_NAME,
       mainDaoToken: _baseConfig.mainDaoToken,
-      vetoGovernorInitialVotingDelay: VETO_GOVERNOR_INITIAL_VOTING_DELAY,
-      vetoGovernorInitialVotingPeriod: VETO_GOVERNOR_INITIAL_VOTING_PERIOD,
+      vetoGovernorInitialVotingDelay: COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_DELAY,
+      vetoGovernorInitialVotingPeriod: COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_PERIOD,
       vetoGovernorInitialProposalThreshold: VETO_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD,
       vetoOverrideRole: VETO_OVERRIDE_ROLE,
-      vetoOverrideDuration: VETO_OVERRIDE_DURATION,
-      votingPeriodExtension: VOTING_PERIOD_EXTENSION,
+      vetoOverrideDuration: COMPOUND_VETO_OVERRIDE_DURATION,
+      votingPeriodExtension: COMPOUND_VOTING_PERIOD_EXTENSION,
       votingPeriodExtensionThresholdPct: VOTING_PERIOD_EXTENSION_THRESHOLD_PCT,
       vetoThresholdNumerator: VETO_GOVERNOR_INITIAL_VETO_THRESHOLD_FRACTION,
       vetoGuardian: VETO_GUARDIAN,
