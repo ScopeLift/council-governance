@@ -10,12 +10,13 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 import {CouncilERC20} from "src/CouncilERC20.sol";
 import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
+import {CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 
 // Script Dependencies
-import {Script} from "forge-std/Script.sol";
 import {BaseLogger} from "script/BaseLogger.sol";
+import {Script} from "forge-std/Script.sol";
 
-contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
+contract DeployCompoundGovernorsAndGrantRoles is Script, BaseLogger {
   struct CouncilGovernorDeploymentConfiguration {
     string councilGovernorName;
     uint48 councilGovernorInitialVotingDelay;
@@ -76,7 +77,10 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
     CouncilGovernorDeploymentConfiguration memory _councilConfig,
     VetoGovernorDeploymentConfiguration memory _vetoConfig,
     CouncilERC20 _councilToken
-  ) public returns (BasicCouncilGovernor councilGovernor, BasicCouncilVetoGovernor vetoGovernor) {
+  )
+    public
+    returns (BasicCouncilGovernor councilGovernor, CompoundCouncilVetoGovernor vetoGovernor)
+  {
     vm.startBroadcast(_deployer);
 
     BasicCouncilGovernor.InitialCouncilParams memory _councilParams =
@@ -97,24 +101,24 @@ contract DeployGovernorsAndGrantRoles is Script, BaseLogger {
     );
 
     BasicCouncilVetoGovernor.ConstructorParams memory _params =
-      BasicCouncilVetoGovernor.ConstructorParams(
-        _vetoConfig.vetoGovernorName,
-        _vetoConfig.mainDaoToken,
-        _vetoConfig.vetoGovernorInitialVotingDelay,
-        _vetoConfig.vetoGovernorInitialVotingPeriod,
-        _vetoConfig.vetoGovernorInitialProposalThreshold,
-        _vetoConfig.vetoGuardian,
-        _vetoConfig.vetoOverrideRole,
-        _vetoConfig.vetoOverrideDuration,
-        _vetoConfig.votingPeriodExtension,
-        _vetoConfig.votingPeriodExtensionThresholdPct,
-        _vetoConfig.vetoThresholdNumerator,
-        TimelockController(_timelock),
-        _vetoConfig.vetoGovernorAdmin,
-        address(councilGovernor)
-      );
+      BasicCouncilVetoGovernor.ConstructorParams({
+        name: _vetoConfig.vetoGovernorName,
+        token: _vetoConfig.mainDaoToken,
+        votingDelay: _vetoConfig.vetoGovernorInitialVotingDelay,
+        votingPeriod: _vetoConfig.vetoGovernorInitialVotingPeriod,
+        proposalThreshold: _vetoConfig.vetoGovernorInitialProposalThreshold,
+        vetoGuardian: _vetoConfig.vetoGuardian,
+        vetoOverrideRole: _vetoConfig.vetoOverrideRole,
+        vetoOverrideDuration: _vetoConfig.vetoOverrideDuration,
+        votingPeriodExtension: _vetoConfig.votingPeriodExtension,
+        votingPeriodExtensionThresholdPct: _vetoConfig.votingPeriodExtensionThresholdPct,
+        vetoThresholdNumerator: _vetoConfig.vetoThresholdNumerator,
+        timelock: TimelockController(_timelock),
+        governorAdmin: _vetoConfig.vetoGovernorAdmin,
+        council: address(councilGovernor)
+      });
 
-    vetoGovernor = new BasicCouncilVetoGovernor(_params);
+    vetoGovernor = new CompoundCouncilVetoGovernor(_params);
 
     _grantVetoGovernorRoles(_deployer, address(vetoGovernor), _timelock);
     vm.stopBroadcast();

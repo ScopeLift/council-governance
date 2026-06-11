@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
 // External Dependencies
@@ -124,6 +124,7 @@ abstract contract GovernorVotesVetoThresholdFraction is GovernorVotes {
   function _optimisticUpperLookupRecent(Checkpoints.Trace208 storage ckpts, uint256 timepoint)
     internal
     view
+    virtual
     returns (uint256)
   {
     // If trace is empty, key and value are both equal to 0.

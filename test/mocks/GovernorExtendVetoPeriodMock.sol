@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
 // Internal Dependencies
@@ -7,7 +7,7 @@ import {GovernorVetoCountingSimple} from "src/extensions/GovernorVetoCountingSim
 
 /// @title GovernorExtendVetoPeriodMock
 /// @author [ScopeLift](https://scopelift.co)
-contract GovernorExtendVetoPeriodMock is GovernorExtendVetoPeriod, GovernorVetoCountingSimple {
+contract GovernorExtendVetoPeriodMock is GovernorVetoCountingSimple, GovernorExtendVetoPeriod {
   constructor(uint48 _initialVotingPeriodExtension, uint16 _initialVotingPeriodExtensionThreshold)
     Governor("GovernorExtendVetoPeriodMock")
     GovernorExtendVetoPeriod(_initialVotingPeriodExtension, _initialVotingPeriodExtensionThreshold)
@@ -119,15 +119,5 @@ contract GovernorExtendVetoPeriodMock is GovernorExtendVetoPeriod, GovernorVetoC
 
   function exposed_TallyUpdated(uint256 _proposalId) public {
     _tallyUpdated(_proposalId);
-  }
-
-  function exposed_SetVotingPeriodExtension(uint48 _newVotingPeriodExtension) public {
-    _setVotingPeriodExtension(_newVotingPeriodExtension);
-  }
-
-  function exposed_setMinorVetoExtensionThresholdPct(uint16 _newVetoPeriodExtensionThresholdPct)
-    public
-  {
-    _setMinorVetoExtensionThresholdPct(_newVetoPeriodExtensionThresholdPct);
   }
 }

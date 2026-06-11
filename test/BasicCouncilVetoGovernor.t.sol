@@ -1,18 +1,19 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
 // External Dependencies
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/Governor.sol";
-import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {GovernorSettings} from "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import {
   GovernorCountingSimple
 } from "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 // Internal Dependencies
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
+import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
 
 // Test Dependencies
 import {Test} from "forge-std/Test.sol";
@@ -38,18 +39,22 @@ contract BasicVetoGovernorTest is Test {
 
   BasicCouncilVetoGovernorHarness internal vetoGovernor;
   address internal councilGovernor = makeAddr("Council governor");
+  address internal owner = makeAddr("Owner");
+  address internal cancellerRole = makeAddr("Canceller role");
   address internal whale = makeAddr("Whale");
+  TimelockController internal timelock;
 
   function setUp() public {
+    owner = input.MAIN_DAO_GOVERNOR();
     DeploymentConfigurationTest _config = new DeploymentConfigurationTest();
-    TimelockController _timelock =
-      _deployTimelock(_config._getTimelockDeploymentConfiguration(), input.MAIN_DAO_GOVERNOR());
-    _deployVetoGovernor(_config._getVetoGovernorDeploymentConfiguration(), _timelock);
+    timelock = _deployTimelock(_config._getTimelockDeploymentConfiguration(), owner);
+    _deployVetoGovernor(_config._getVetoGovernorDeploymentConfiguration(), timelock);
 
-    vm.startPrank(input.MAIN_DAO_GOVERNOR());
-    _timelock.grantRole(_timelock.EXECUTOR_ROLE(), address(vetoGovernor));
-    _timelock.grantRole(_timelock.PROPOSER_ROLE(), address(vetoGovernor));
-    _timelock.renounceRole(_timelock.DEFAULT_ADMIN_ROLE(), input.MAIN_DAO_GOVERNOR());
+    vm.startPrank(owner);
+    timelock.grantRole(timelock.CANCELLER_ROLE(), cancellerRole);
+    timelock.grantRole(timelock.EXECUTOR_ROLE(), address(vetoGovernor));
+    timelock.grantRole(timelock.PROPOSER_ROLE(), address(vetoGovernor));
+    timelock.renounceRole(timelock.DEFAULT_ADMIN_ROLE(), input.MAIN_DAO_GOVERNOR());
     vm.stopPrank();
 
     MockERC20Votes(address(vetoGovernor.token())).mint(whale, 100e18);
@@ -59,7 +64,7 @@ contract BasicVetoGovernorTest is Test {
     DeploymentConfigurationTest.VetoGovernorDeploymentConfiguration memory _config,
     TimelockController _timelock
   ) internal {
-    _config.mainDaoToken = new MockERC20Votes();
+    _config.mainDaoToken = address(new MockERC20Votes());
     vetoGovernor = new BasicCouncilVetoGovernorHarness(
       _config, _timelock, councilGovernor, input.MAIN_DAO_GOVERNOR()
     );
@@ -89,6 +94,14 @@ contract BasicVetoGovernorTest is Test {
   }
 
   function _submitProposal(Proposal memory _proposal) public returns (uint256 _proposalId) {
+    vm.prank(councilGovernor);
+    _proposalId = vetoGovernor.propose(
+      _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
+    );
+  }
+
+  function _submitEmptyProposal() public returns (uint256 _proposalId) {
+    Proposal memory _proposal = _buildEmptyProposal();
     vm.prank(councilGovernor);
     _proposalId = vetoGovernor.propose(
       _proposal.targets, _proposal.values, _proposal.calldatas, _proposal.description
@@ -136,9 +149,7 @@ contract BasicVetoGovernorTest is Test {
   {
     _proposalId = _passAndQueueProposal(_caller, _proposal);
 
-    vm.warp(
-      block.timestamp + TimelockController(payable(address(vetoGovernor.timelock()))).getMinDelay()
-    );
+    vm.warp(block.timestamp + timelock.getMinDelay());
     vm.prank(councilGovernor);
     vetoGovernor.execute(
       _proposal.targets,
@@ -157,6 +168,20 @@ contract BasicVetoGovernorTest is Test {
 
   function _timelockSalt(bytes32 _descriptionHash) internal view returns (bytes32) {
     return bytes20(address(vetoGovernor)) ^ _descriptionHash;
+  }
+
+  function _computeTimelockOperationId(Proposal memory _proposal)
+    internal
+    view
+    returns (bytes32 _operationId)
+  {
+    _operationId = timelock.hashOperationBatch(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      bytes32(0),
+      bytes32(bytes20(address(vetoGovernor))) ^ keccak256(bytes(_proposal.description))
+    );
   }
 }
 
@@ -401,6 +426,24 @@ contract State is BasicVetoGovernorTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
 
+  function test_VetoedProposalSucceededBeforeProposalDeadlineWithVetoOverride() public {
+    uint256 _proposalId = _submitProposal(_buildEmptyProposal());
+
+    vm.prank(vetoGovernor.vetoGuardian());
+    vetoGovernor.vetoByGuardian(_proposalId);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+
+    uint256 _currentTimepoint = vetoGovernor.clock();
+    vm.prank(vetoGovernor.vetoOverrideRole());
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        GovernorVetoOverride.VetoOverrideOutsideWindow.selector, _proposalId, _currentTimepoint
+      )
+    );
+    vetoGovernor.overrideVeto(_proposalId);
+    assertLt(_currentTimepoint, vetoGovernor.proposalDeadline(_proposalId));
+  }
+
   function test_StateSucceededAfterVotingPeriodWithVetoQuorumAndVetoOverride() public {
     uint256 _proposalId = _failProposal(_buildEmptyProposal());
     vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
@@ -440,7 +483,7 @@ contract State is BasicVetoGovernorTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
-  function test_StateDefeatedAfterVetoOverrideDurationExpires() public {
+  function test_StateSucceededAfterVetoOverrideDurationExpires() public {
     uint256 _proposalId = _submitProposalAndWarpPastVotingDelay(_buildEmptyProposal());
     vm.prank(vetoGovernor.vetoGuardian());
     vetoGovernor.vetoByGuardian(_proposalId);
@@ -451,10 +494,10 @@ contract State is BasicVetoGovernorTest {
 
     _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
 
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + vetoGovernor.vetoOverrideDuration());
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + vetoGovernor.vetoOverrideDuration() + 1);
 
     assertTrue(vetoGovernor.isVetoOverridden(_proposalId));
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Succeeded);
   }
 
   function test_StateQueuedAfterVetoOverrideDurationExpires() public {
@@ -478,6 +521,21 @@ contract State is BasicVetoGovernorTest {
 
     vm.warp(vetoGovernor.proposalDeadline(_proposalId) + vetoGovernor.vetoOverrideDuration());
     _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+  }
+
+  function test_StateCanceledAfterProposalCanceledOnTimelock(address _caller) public {
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _passAndQueueProposal(_caller, _proposal);
+
+    bytes32 _operationId = _computeTimelockOperationId(_proposal);
+    assertEq(
+      uint8(timelock.getOperationState(_operationId)),
+      uint8(TimelockController.OperationState.Waiting)
+    );
+    vm.prank(cancellerRole);
+    timelock.cancel(_operationId);
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
   }
 }
 
@@ -519,7 +577,7 @@ contract Execute is BasicVetoGovernorTest {
 
     Proposal memory _proposal = _buildEmptyProposal();
     _passAndQueueProposal(_caller, _proposal);
-    vm.warp(block.timestamp + TimelockController(payable(vetoGovernor.timelock())).getMinDelay());
+    vm.warp(block.timestamp + timelock.getMinDelay());
 
     vm.expectRevert(bytes("Only council"));
     vm.prank(_caller);
@@ -627,7 +685,7 @@ contract _queueOperations is BasicVetoGovernorTest {
           _proposal.calldatas,
           0,
           _timelockSalt(keccak256(bytes(_proposal.description))),
-          TimelockController(payable(address(vetoGovernor.timelock()))).getMinDelay()
+          timelock.getMinDelay()
         )
       )
     );
@@ -652,5 +710,78 @@ contract _executeOperations is BasicVetoGovernorTest {
       )
     );
     _passQueueAndExecuteProposal(_caller, _proposal);
+  }
+}
+
+contract OverrideVeto is BasicVetoGovernorTest {
+  function testFuzz_QueuedProposalIsGuaranteedToBeExecutable(uint256 _newTimepoint) public {
+    Proposal memory _proposal = _buildEmptyProposal();
+    uint256 _proposalId = _failProposal(_proposal);
+
+    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    vm.prank(vetoGovernor.vetoOverrideRole());
+    vetoGovernor.overrideVeto(_proposalId);
+
+    vetoGovernor.queue(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Queued);
+
+    uint256 _afterMinDelay = vetoGovernor.proposalEta(_proposalId) + 1;
+    uint256 _afterOverrideWindow =
+      vetoGovernor.proposalDeadline(_proposalId) + vetoGovernor.vetoOverrideDuration() + 1;
+    _newTimepoint =
+      (_afterOverrideWindow > _afterMinDelay) ? _afterOverrideWindow : _afterOverrideWindow;
+
+    _newTimepoint = bound(_newTimepoint, _newTimepoint, type(uint48).max);
+    vm.warp(_newTimepoint);
+
+    vm.prank(vetoGovernor.COUNCIL());
+    vetoGovernor.execute(
+      _proposal.targets,
+      _proposal.values,
+      _proposal.calldatas,
+      keccak256(bytes(_proposal.description))
+    );
+
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Executed);
+  }
+
+  /// @notice State before proposal deadline can be Defeated with `GovernorVetoCountingSimple`, but
+  /// not with vanilla Governor. Therefore this test is included in the integration test suite.
+  function testFuzz_RevertIf_OverrideVetoBeforeOverrideWindow(uint256 _newTimepoint) public {
+    uint256 _proposalId = _submitProposal(_buildEmptyProposal());
+
+    vm.prank(vetoGovernor.vetoGuardian());
+    vetoGovernor.vetoByGuardian(_proposalId);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+
+    uint256 _currentTimepoint = vetoGovernor.clock();
+    _newTimepoint =
+      bound(_newTimepoint, _currentTimepoint, vetoGovernor.proposalDeadline(_proposalId) - 1);
+    vm.warp(_newTimepoint);
+
+    vm.prank(vetoGovernor.vetoOverrideRole());
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        GovernorVetoOverride.VetoOverrideOutsideWindow.selector, _proposalId, _newTimepoint
+      )
+    );
+    vetoGovernor.overrideVeto(_proposalId);
+  }
+}
+
+contract _IsValidDescriptionForProposer is BasicVetoGovernorTest {
+  function testFuzz_ProposalWithInvalidDescriptionCanBeProposed(
+    string memory description,
+    address commitProposer,
+    address actualProposer
+  ) public view {
+    vm.assume(commitProposer != actualProposer);
+    description = string.concat(description, "#proposer=", Strings.toHexString(commitProposer));
+    assertTrue(vetoGovernor.exposed_IsValidDescriptionForProposer(actualProposer, description));
   }
 }

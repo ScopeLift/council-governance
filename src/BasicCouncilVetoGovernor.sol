@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
 // External Dependencies
@@ -11,6 +11,8 @@ import {
   GovernorTimelockControl,
   TimelockController
 } from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
@@ -36,12 +38,12 @@ contract BasicCouncilVetoGovernor is
   GovernorVotes,
   GovernorAdmin,
   GovernorSettings,
+  GovernorTimelockControl,
   GovernorVetoCountingSimple,
   GovernorVetoGuardian,
   GovernorVetoOverride,
   GovernorVotesVetoThresholdFraction,
-  GovernorExtendVetoPeriod,
-  GovernorTimelockControl
+  GovernorExtendVetoPeriod
 {
   /// @notice Data structure for deploying the `CouncilVetoGovernor`.
   /// @param name The name of the council veto governor.
@@ -57,7 +59,7 @@ contract BasicCouncilVetoGovernor is
   /// @param council The address of the council governor.
   struct ConstructorParams {
     string name;
-    IERC5805 token;
+    address token;
     uint48 votingDelay;
     uint32 votingPeriod;
     uint256 proposalThreshold;
@@ -81,7 +83,7 @@ contract BasicCouncilVetoGovernor is
 
   constructor(ConstructorParams memory _params)
     Governor(_params.name)
-    GovernorVotes(_params.token)
+    GovernorVotes(IERC5805(_params.token))
     GovernorVetoGuardian(_params.vetoGuardian)
     GovernorSettings(_params.votingDelay, _params.votingPeriod, _params.proposalThreshold)
     GovernorVetoOverride(_params.vetoOverrideRole, _params.vetoOverrideDuration)
@@ -275,4 +277,41 @@ contract BasicCouncilVetoGovernor is
     // Neither GovernorVetoCountingSimple nor GovernorExtendVetoPeriod implement `vetoThreshold`
     return GovernorVotesVetoThresholdFraction.vetoThreshold(timepoint);
   }
+
+  function _voteSucceeded(uint256 _proposalId)
+    internal
+    view
+    virtual
+    override(Governor, GovernorVetoCountingSimple, GovernorVetoOverride)
+    returns (bool)
+  {
+    return GovernorVetoOverride._voteSucceeded(_proposalId);
+  }
+
+  /// @dev We expect front-running protection already enforced at the council governor level. Always
+  /// returns true to prevent proposals suffixed with `#proposer=<council_member>` from failing.
+  function _isValidDescriptionForProposer(address, string memory)
+    internal
+    view
+    virtual
+    override
+    returns (bool)
+  {
+    return true;
+  }
+
+  /// @dev Resolves the conflict between GovernorExtendVetoPeriod and
+  /// GovernorVotesVetoThresholdFraction which both define this function with identical
+  /// implementations.
+  function _optimisticUpperLookupRecent(Checkpoints.Trace208 storage ckpts, uint256 timepoint)
+    internal
+    view
+    virtual
+    override(GovernorExtendVetoPeriod, GovernorVotesVetoThresholdFraction)
+    returns (uint256)
+  {
+    // Both parent implementations are identical, delegate to GovernorVotesVetoThresholdFraction
+    return GovernorVotesVetoThresholdFraction._optimisticUpperLookupRecent(ckpts, timepoint);
+  }
 }
+

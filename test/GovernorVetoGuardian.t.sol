@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
 // External Dependencies
@@ -161,13 +161,13 @@ contract State is GovernorVetoGuardianTest {
     _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
   }
 
-  function testFuzz_StateIsDefeatedWhenCanceledProposalIsVetoed(address _proposer) public {
+  function testFuzz_StateIsCanceledWhenCanceledProposalIsVetoed(address _proposer) public {
     uint256 _proposalId = _submitAndCancelProposal(_proposer, _buildEmptyProposal());
     _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
 
     stdstore.target(address(vetoGovernor)).sig("guardianVetoed(uint256)").with_key(_proposalId)
       .checked_write(true);
-    _assertProposalState(_proposalId, IGovernor.ProposalState.Defeated);
+    _assertProposalState(_proposalId, IGovernor.ProposalState.Canceled);
   }
 
   function testFuzz_StateIsDefeatedWhenSucceededProposalIsVetoed(address _proposer) public {

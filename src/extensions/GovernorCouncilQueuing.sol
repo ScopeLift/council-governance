@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
 // External Dependencies
@@ -65,6 +65,19 @@ abstract contract GovernorCouncilQueuing is Governor {
   /// @dev All proposals are required to be queued (forwarded to the veto governor).
   function proposalNeedsQueuing(uint256) public view virtual override returns (bool) {
     return true;
+  }
+
+  /// @inheritdoc IGovernor
+  /// @dev If proposal is queued on both council and veto governor, return the veto governor
+  /// proposal ETA. Otherwise, return council governor ETA.
+  function proposalEta(uint256 proposalId) public view virtual override returns (uint256) {
+    uint256 _councilEta = super.proposalEta(proposalId);
+
+    if (_councilEta != 0 && councilVetoGovernor.proposalEta(proposalId) != 0) {
+      return councilVetoGovernor.proposalEta(proposalId);
+    }
+
+    return _councilEta;
   }
 
   /// @notice Creates a proposal on the council governor.
@@ -150,7 +163,7 @@ abstract contract GovernorCouncilQueuing is Governor {
     bytes[] memory _calldatas,
     bytes32 _descriptionHash
   ) internal virtual override {
-    councilVetoGovernor.execute(_targets, _values, _calldatas, _descriptionHash);
+    councilVetoGovernor.execute{value: msg.value}(_targets, _values, _calldatas, _descriptionHash);
   }
 
   /// @dev Overridden version of the {Governor-_cancel} function to cancel a proposal and clean up

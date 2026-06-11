@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
 // External Dependencies
@@ -42,7 +42,7 @@ abstract contract GovernorVetoGuardian is Governor {
 
     if (
       guardianVetoed[_proposalId] && _currentState != ProposalState.Queued
-        && _currentState != ProposalState.Executed
+        && _currentState != ProposalState.Executed && _currentState != ProposalState.Canceled
     ) return ProposalState.Defeated;
     return _currentState;
   }

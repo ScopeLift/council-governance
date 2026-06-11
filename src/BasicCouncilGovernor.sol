@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
 // External Dependencies
@@ -36,10 +36,10 @@ import {GovernorCouncilQueuing} from "src/extensions/GovernorCouncilQueuing.sol"
 contract BasicCouncilGovernor is
   Governor,
   GovernorCountingSimple,
-  GovernorCouncilQueuing,
   GovernorSettings,
   GovernorAdmin,
-  GovernorVotesSuperQuorumFraction
+  GovernorVotesSuperQuorumFraction,
+  GovernorCouncilQueuing
 {
   struct InitialCouncilParams {
     uint48 initialVotingDelay;
@@ -106,6 +106,19 @@ contract BasicCouncilGovernor is
     return GovernorSettings.proposalThreshold();
   }
 
+  /// @inheritdoc IGovernor
+  /// @dev If proposal is queued on both council and veto governor, return the veto governor
+  /// proposal ETA. Otherwise, return council governor ETA.
+  function proposalEta(uint256 proposalId)
+    public
+    view
+    virtual
+    override(Governor, GovernorCouncilQueuing)
+    returns (uint256)
+  {
+    return GovernorCouncilQueuing.proposalEta(proposalId);
+  }
+
   /// @inheritdoc Governor
   function clock() public view virtual override(Governor, GovernorVotes) returns (uint48) {
     return uint48(block.timestamp);
@@ -169,10 +182,10 @@ contract BasicCouncilGovernor is
     public
     view
     virtual
-    override(Governor, GovernorCouncilQueuing, GovernorVotesSuperQuorumFraction)
+    override(Governor, GovernorVotesSuperQuorumFraction, GovernorCouncilQueuing)
     returns (ProposalState)
   {
-    return GovernorVotesSuperQuorumFraction.state(_proposalId);
+    return GovernorCouncilQueuing.state(_proposalId);
   }
 
   /// @inheritdoc GovernorCountingSimple

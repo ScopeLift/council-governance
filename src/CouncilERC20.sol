@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
 // External Dependencies
@@ -35,6 +35,9 @@ contract CouncilERC20 is ERC20, ERC20Votes, Ownable {
   //////////////////////////////////////////////////////////////*/
 
   /// @notice The maximum number of tokens that a member can hold.
+  /// @dev Quorum and super-quorum use integer math over total supply. If each member holds a very
+  /// small balance (e.g., 1 unit), rounding can reduce effective thresholds. Consider minting
+  /// per‑member balances with, say, 18 decimals (i.e. 1e18 = 1 vote).
   uint256 public immutable MAX_TOKENS_PER_MEMBER;
 
   /*///////////////////////////////////////////////////////////////
@@ -82,7 +85,7 @@ contract CouncilERC20 is ERC20, ERC20Votes, Ownable {
     _burn(_account, _value);
   }
 
-  /// @notice Returns the current block number as the clock.
+  /// @notice Returns the current block timestamp as the clock.
   function clock() public view override returns (uint48) {
     return uint48(block.timestamp);
   }

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.24;
 
@@ -95,6 +95,16 @@ contract GovernorCouncilQueuingMock is
     returns (uint256)
   {
     return 5;
+  }
+
+  function proposalEta(uint256 proposalId)
+    public
+    view
+    virtual
+    override(Governor, GovernorCouncilQueuing)
+    returns (uint256)
+  {
+    return GovernorCouncilQueuing.proposalEta(proposalId);
   }
 
   function state(uint256 proposalId)

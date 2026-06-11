@@ -1,14 +1,11 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
-
-// Script Dependencies
-import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 
 contract DeploymentInputMainnetForkTest {
   // Address that controls council membership
-  address public constant MAIN_DAO_GOVERNOR = 0x1111111111111111111111111111111111111111;
+  address public constant MAIN_DAO_GOVERNOR = 0x309a862bbC1A00e45506cB8A802D1ff10004c8C0;
   // DAO token used by the veto governor for vote weight (placeholder)
-  IERC5805 public constant MAIN_DAO_TOKEN = IERC5805(0x2222222222222222222222222222222222222222);
+  address public constant MAIN_DAO_TOKEN = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
   // Admin account allowed to adjust governor settings (placeholder)
   address public constant GOVERNOR_ADMIN = MAIN_DAO_GOVERNOR;
 
@@ -19,6 +16,11 @@ contract DeploymentInputMainnetForkTest {
   // Council token admin
   address public constant COUNCIL_TOKEN_ADMIN = MAIN_DAO_GOVERNOR;
   // Max tokens per council member needed to create a proposal
+  // NOTE: Quorum and super-quorum use integer math over total supply. If each member holds a very
+  // small balance (e.g., 1 unit), rounding can reduce effective thresholds. Consider minting
+  // per‑member balances in multiples of the quorum denominator (e.g., 100 units when the
+  // denominator is 100), or minting per‑member balances with, say, 18 decimals (i.e. 1e18 = 1
+  // vote).
   uint256 public constant MAX_TOKENS_PER_MEMBER = 1;
   // Initial council membership roster used in scripts/tests
   address[] public COUNCIL_MEMBERS = [
@@ -58,6 +60,19 @@ contract DeploymentInputMainnetForkTest {
   uint256 public constant VETO_GOVERNOR_INITIAL_VETO_THRESHOLD_FRACTION = 10;
   // Veto governor veto guardian
   address public VETO_GUARDIAN;
+
+  // Compound veto governor name (COMP-style `getPriorVotes`)
+  string public constant COMPOUND_VETO_GOVERNOR_NAME = "CompoundCouncilVetoGovernor";
+  // Compound veto governor voting delay (in blocks)
+  uint48 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_DELAY = 300;
+  // Compound veto governor voting period (in blocks)
+  uint32 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_PERIOD = 7200;
+  // Compound veto governor override duration (in blocks)
+  uint48 public constant COMPOUND_VETO_OVERRIDE_DURATION = 28_800; // 4 days * 24 * 60 * 60 / 12
+  // second blocks
+  // Compound veto governor voting period extension duration (in blocks)
+  uint48 public constant COMPOUND_VOTING_PERIOD_EXTENSION = 21_600; // 3 days * 24 * 60 * 60 / 12
+  // second blocks
 
   // Council governor name
   string public constant COUNCIL_GOVERNOR_NAME = "BasicCouncilGovernor";

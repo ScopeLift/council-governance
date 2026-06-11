@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
 // Script Dependencies
@@ -58,6 +58,19 @@ contract DeploymentInputSepolia {
   uint256 public constant VETO_GOVERNOR_INITIAL_VETO_THRESHOLD_FRACTION = 10;
   // Veto governor veto guardian
   address public VETO_GUARDIAN;
+
+  // Compound veto governor name (COMP-style `getPriorVotes`)
+  string public constant COMPOUND_VETO_GOVERNOR_NAME = "CompoundCouncilVetoGovernor";
+  // Compound veto governor voting delay (in blocks)
+  uint48 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_DELAY = 300;
+  // Compound veto governor voting period (in blocks)
+  uint32 public constant COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_PERIOD = 7200;
+  // Compound veto governor override duration (in blocks)
+  uint48 public constant COMPOUND_VETO_OVERRIDE_DURATION = 28_800; // 4 days * 24 * 60 * 60 / 12
+  // second blocks
+  // Compound veto governor voting period extension duration (in blocks)
+  uint48 public constant COMPOUND_VOTING_PERIOD_EXTENSION = 21_600; // 3 days * 24 * 60 * 60 / 12
+  // second blocks
 
   // Council governor name
   string public constant COUNCIL_GOVERNOR_NAME = "BasicCouncilGovernor";

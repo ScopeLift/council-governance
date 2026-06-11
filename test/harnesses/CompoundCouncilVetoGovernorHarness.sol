@@ -5,21 +5,21 @@ pragma solidity ^0.8.30;
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 
 // Internal Dependencies
-import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
+import {CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 
 // Script Dependencies
-import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
+import {DeploymentConfigurationTestCompound} from "script/DeploymentConfigurationTestCompound.sol";
 
-contract BasicCouncilVetoGovernorHarness is BasicCouncilVetoGovernor {
+contract CompoundCouncilVetoGovernorHarness is CompoundCouncilVetoGovernor {
   constructor(
-    DeploymentConfigurationTest.VetoGovernorDeploymentConfiguration memory _config,
+    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory _config,
     TimelockController _timelock,
     address _council,
     address _deployer
-  ) BasicCouncilVetoGovernor(_buildParams(_config, _timelock, _council)) {}
+  ) CompoundCouncilVetoGovernor(_buildParams(_config, _timelock, _council)) {}
 
   function _buildParams(
-    DeploymentConfigurationTest.VetoGovernorDeploymentConfiguration memory _config,
+    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory _config,
     TimelockController _timelock,
     address _council
   ) internal pure returns (ConstructorParams memory params) {
@@ -67,13 +67,5 @@ contract BasicCouncilVetoGovernorHarness is BasicCouncilVetoGovernor {
     bytes32 _descriptionHash
   ) public {
     _executeOperations(_proposalId, _targets, _values, _calldatas, _descriptionHash);
-  }
-
-  function exposed_IsValidDescriptionForProposer(address proposer, string memory description)
-    public
-    view
-    returns (bool)
-  {
-    return _isValidDescriptionForProposer(proposer, description);
   }
 }
