@@ -132,8 +132,7 @@ See the deployment scripts in `script/`:
 
 ## Security Considerations
 
-> [!CAUTION]
-> This code has not been audited. Use at your own risk.
+This codebase has been audited by Certora. The report is [available here](audits/certora-optimistic-governance-december-2025.pdf).
 
 ### Key Risks
 
