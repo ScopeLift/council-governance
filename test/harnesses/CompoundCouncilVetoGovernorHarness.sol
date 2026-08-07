@@ -7,39 +7,8 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 // Internal Dependencies
 import {CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 
-// Script Dependencies
-import {DeploymentConfigurationTestCompound} from "script/DeploymentConfigurationTestCompound.sol";
-
 contract CompoundCouncilVetoGovernorHarness is CompoundCouncilVetoGovernor {
-  constructor(
-    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory _config,
-    TimelockController _timelock,
-    address _council,
-    address _deployer
-  ) CompoundCouncilVetoGovernor(_buildParams(_config, _timelock, _council)) {}
-
-  function _buildParams(
-    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory _config,
-    TimelockController _timelock,
-    address _council
-  ) internal pure returns (ConstructorParams memory params) {
-    params = ConstructorParams({
-      name: _config.vetoGovernorName,
-      token: _config.mainDaoToken,
-      votingDelay: _config.vetoGovernorInitialVotingDelay,
-      votingPeriod: _config.vetoGovernorInitialVotingPeriod,
-      proposalThreshold: _config.vetoGovernorInitialProposalThreshold,
-      vetoGuardian: _config.vetoGuardian,
-      vetoOverrideRole: _config.vetoOverrideRole,
-      vetoOverrideDuration: _config.vetoOverrideDuration,
-      votingPeriodExtension: _config.votingPeriodExtension,
-      votingPeriodExtensionThresholdPct: _config.votingPeriodExtensionThresholdPct,
-      vetoThresholdNumerator: _config.vetoThresholdNumerator,
-      timelock: _timelock,
-      governorAdmin: _config.vetoGovernorAdmin,
-      council: _council
-    });
-  }
+  constructor(ConstructorParams memory _params) CompoundCouncilVetoGovernor(_params) {}
 
   function exposed_CheckGovernance() public {
     _checkGovernance();

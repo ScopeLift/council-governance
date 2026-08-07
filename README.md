@@ -127,8 +127,22 @@ forge doc --serve
 
 See the deployment scripts in `script/`:
 
-- [`DeployGovernorsAndGrantRoles.s.sol`](script/DeployGovernorsAndGrantRoles.s.sol) - Deploys both governors and configures timelock roles
-  - Set the deployment params in script/deploy-constants
+- [`DeployCouncilGovernanceBase.s.sol`](script/DeployCouncilGovernanceBase.s.sol) contains the shared,
+  full-system deployment mechanics.
+- [`DeployErc5805CouncilGovernance.s.sol`](script/DeployErc5805CouncilGovernance.s.sol) deploys a
+  veto governor for ERC-5805 voting tokens, adopting the token's timestamp or block-number clock.
+- [`DeployLegacyCompoundCouncilGovernance.s.sol`](script/DeployLegacyCompoundCouncilGovernance.s.sol)
+  deploys the legacy COMP-compatible, block-clock veto governor.
+
+Network-specific deployment configurations should inherit one of the two adapters and provide the
+four internal parameter getters. Run the concrete configuration without `--broadcast` first and
+review every generated transaction before broadcasting it. Successful production configurations
+and broadcast artifacts are deployment records and should be committed.
+
+The council stage always uses timestamps, while the legacy Compound veto stage uses block numbers.
+As a proposal crosses stages, `BasicCouncilGovernor.proposalEta()` changes meaning and, on the
+Compound path, units. Integrators must account for this lifecycle behavior; see
+[issue #88](https://github.com/ScopeLift/council-governance/issues/88).
 
 ## Security Considerations
 

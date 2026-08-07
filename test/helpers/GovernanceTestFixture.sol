@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-contract DeploymentInputMainnetForkTest {
+contract GovernanceTestFixture {
   // Address that controls council membership
   address public constant MAIN_DAO_GOVERNOR = 0x309a862bbC1A00e45506cB8A802D1ff10004c8C0;
   // DAO token used by the veto governor for vote weight (placeholder)

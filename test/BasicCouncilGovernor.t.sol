@@ -19,37 +19,48 @@ import {Test} from "forge-std/Test.sol";
 import {MockCallVetoGovernor} from "test/GovernorCouncilQueuing.t.sol";
 import {BasicCouncilGovernorHarness} from "test/harnesses/BasicCouncilGovernorHarness.sol";
 
-// Script Dependencies
-import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
-import {
-  DeploymentInputMainnetForkTest
-} from "script/deploy-constants/DeploymentInputMainnetForkTest.sol";
-import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
+import {GovernanceTestFixture} from "test/helpers/GovernanceTestFixture.sol";
 
 contract BasicCouncilGovernorTest is MockCallVetoGovernor {
   CouncilERC20 internal councilToken;
   BasicCouncilGovernorHarness internal councilGovernor;
 
-  DeploymentInputMainnetForkTest public input;
+  GovernanceTestFixture public input;
 
   function setUp() public {
-    input = new DeploymentInputMainnetForkTest();
+    input = new GovernanceTestFixture();
 
     _deployCouncilTokenAndMint();
     _deployCouncilGovernor();
   }
 
   function _deployCouncilTokenAndMint() internal {
-    DeploymentConfigurationTest.CouncilERC20DeploymentConfiguration memory _config =
-      (new DeploymentConfigurationTest())._getCouncilERC20DeploymentConfiguration();
-
-    DeployAndMintCouncilERC20 _script = new DeployAndMintCouncilERC20();
-    councilToken = _script.run(input.MAIN_DAO_GOVERNOR(), _config);
+    councilToken = new CouncilERC20(
+      input.COUNCIL_TOKEN_NAME(),
+      input.COUNCIL_TOKEN_SYMBOL(),
+      input.MAIN_DAO_GOVERNOR(),
+      input.MAX_TOKENS_PER_MEMBER()
+    );
+    vm.startPrank(input.MAIN_DAO_GOVERNOR());
+    for (uint256 _i = 0; _i < input.COUNCIL_MEMBERS_LENGTH(); _i += 1) {
+      councilToken.mint(input.COUNCIL_MEMBERS(_i), input.MAX_TOKENS_PER_MEMBER());
+    }
+    vm.stopPrank();
     vm.warp(block.timestamp + 1);
   }
 
   function _deployCouncilGovernor() internal {
-    councilGovernor = new BasicCouncilGovernorHarness(councilToken, vetoGovernor);
+    BasicCouncilGovernor.InitialCouncilParams memory _params =
+      BasicCouncilGovernor.InitialCouncilParams({
+        initialVotingDelay: input.COUNCIL_GOVERNOR_INITIAL_VOTING_DELAY(),
+        initialVotingPeriod: input.COUNCIL_GOVERNOR_INITIAL_VOTING_PERIOD(),
+        initialProposalThreshold: input.COUNCIL_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD(),
+        initialQuorumFraction: input.COUNCIL_GOVERNOR_INITIAL_QUORUM_FRACTION(),
+        initialSuperQuorumFraction: input.COUNCIL_GOVERNOR_INITIAL_SUPER_QUORUM_FRACTION()
+      });
+    councilGovernor = new BasicCouncilGovernorHarness(
+      councilToken, vetoGovernor, input.COUNCIL_GOVERNOR_NAME(), input.GOVERNOR_ADMIN(), _params
+    );
   }
 
   function _selectCouncilMember(uint256 _proposerIndex) internal view returns (address) {
