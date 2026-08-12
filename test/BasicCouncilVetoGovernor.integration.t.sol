@@ -15,18 +15,17 @@ import {CouncilERC20} from "src/CouncilERC20.sol";
 import {Test} from "forge-std/Test.sol";
 import {Counter} from "test/helpers/Counter.sol";
 import {MockERC20Votes} from "test/helpers/MockERC20Votes.sol";
+import {MockERC20VotesBlockNumber} from "test/helpers/MockERC20VotesBlockNumber.sol";
+import {MockERC20VotesNoClock} from "test/helpers/MockERC20VotesNoClock.sol";
 
-// Base contract for setting up the full two-governor test environment
 abstract contract BasicCouncilVetoGovernorTest is Test {
-  // === Contracts ===
   BasicCouncilGovernor internal councilGovernor;
   BasicCouncilVetoGovernor internal vetoGovernor;
   CouncilERC20 internal councilToken;
-  MockERC20Votes internal daoToken;
+  address internal daoTokenAddress;
   TimelockController internal timelock;
   Counter internal target;
 
-  // === Users ===
   address internal deployer = makeAddr("deployer");
   address internal nonCouncilProposer = makeAddr("nonCouncilProposer");
   address[] internal councilMembers;
@@ -34,81 +33,65 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
   address internal whale1 = makeAddr("whale1");
   address internal whale2 = makeAddr("whale2");
 
-  // === Proposal Details ===
   address[] internal targets;
   uint256[] internal values;
   bytes[] internal calldatas;
 
-  // === Constants ===
   uint256 constant COUNCIL_SIZE = 7;
   uint256 constant TIMELOCK_MIN_DELAY = 1 days;
   uint256 constant VETO_QUORUM = 10_000e18;
 
+  function _deployDaoToken() internal virtual returns (address);
+
+  function _vetoGovernorParams()
+    internal
+    view
+    virtual
+    returns (BasicCouncilVetoGovernor.ConstructorParams memory);
+
+  function _advanceTo(uint256 timepoint) internal virtual;
+
   function setUp() public virtual {
-    // 1. Deploy target contract
     target = new Counter();
 
-    // 2. Deploy tokens
     vm.prank(deployer);
     councilToken = new CouncilERC20("Council Token", "CT", deployer, 1);
-    vm.prank(deployer);
-    daoToken = new MockERC20Votes();
 
-    // 3. Create and fund council members for the CouncilGovernor
+    daoTokenAddress = _deployDaoToken();
+
     for (uint256 _i = 0; _i < COUNCIL_SIZE; _i++) {
       address _member = makeAddr(string(abi.encodePacked("councilMember", vm.toString(_i + 1))));
       councilMembers.push(_member);
       vm.prank(deployer);
-      councilToken.mint(_member, 1); // 1 address = 1 vote
+      councilToken.mint(_member, 1);
     }
 
-    // 4. Create and fund DAO token holders for the VetoGovernor
-    daoToken.mint(whale1, VETO_QUORUM);
-    daoToken.mint(whale2, VETO_QUORUM);
-    vm.prank(whale1);
-    daoToken.delegate(whale1);
-    vm.prank(whale2);
-    daoToken.delegate(whale2);
+    // DAO token holders — mint with auto-delegate when mock supports it
+    _mintDaoTokens(whale1, VETO_QUORUM);
+    _mintDaoTokens(whale2, VETO_QUORUM);
 
-    // --- This setup uses vm.computeCreateAddress to handle circular dependencies ---
-    // The VetoGovernor needs the CouncilGovernor's address at deployment, and vice-versa.
     skip(1);
     uint256 _nonce = vm.getNonce(address(deployer));
     address _vetoGovernorAddress = vm.computeCreateAddress(address(deployer), _nonce + 1);
     address _councilGovernorAddress = vm.computeCreateAddress(address(deployer), _nonce + 2);
 
-    // 5. Deploy Timelock, giving the future VetoGovernor the PROPOSER role
     address[] memory _proposers = new address[](1);
     address[] memory _executors = new address[](1);
     _proposers[0] = _vetoGovernorAddress;
-    _executors[0] = address(0); // Anyone can execute
+    _executors[0] = address(0);
 
     vm.prank(deployer);
     timelock = new TimelockController(TIMELOCK_MIN_DELAY, _proposers, _executors, address(0));
 
-    BasicCouncilVetoGovernor.ConstructorParams memory _vetoGovernorParams =
-      BasicCouncilVetoGovernor.ConstructorParams(
-        "BasicCouncilVetoGovernor",
-        address(daoToken),
-        1 hours, // initialVotingDelay
-        1 days, // initialVotingPeriod
-        0, // initialProposalThreshold
-        vetoGuardian,
-        deployer, // The main DAO governor is the veto overrider
-        4 days,
-        3 days, // votingPeriodExtension
-        50, // votingPeriodExtensionThresholdPct
-        10, // vetoThresholdNumerator
-        timelock, // timelock
-        deployer, // The main DAO governor is the governor admin
-        _councilGovernorAddress
-      );
+    BasicCouncilVetoGovernor.ConstructorParams memory _vp = _vetoGovernorParams();
+    _vp.token = daoTokenAddress;
+    _vp.timelock = timelock;
+    _vp.governorAdmin = deployer;
+    _vp.council = _councilGovernorAddress;
 
-    // 6. Deploy the Veto Governor, passing it the pre-computed council address
     vm.prank(deployer);
-    vetoGovernor = new BasicCouncilVetoGovernor(_vetoGovernorParams);
+    vetoGovernor = new BasicCouncilVetoGovernor(_vp);
 
-    // 7. Deploy the Council Governor
     vm.prank(deployer);
 
     BasicCouncilGovernor.InitialCouncilParams memory _councilParams =
@@ -124,18 +107,17 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
       "BasicCouncilGovernor", councilToken, vetoGovernor, deployer, _councilParams
     );
 
-    // 8. Prepare a sample proposal payload
     targets.push(address(target));
     values.push(0);
     calldatas.push(abi.encodeWithSignature("increment()"));
   }
 
+  function _mintDaoTokens(address _holder, uint256 _amount) internal virtual;
+
   function _selectCouncilMember(uint256 _proposerIndex) internal view returns (address) {
     return councilMembers[_proposerIndex % COUNCIL_SIZE];
   }
 
-  /// @notice Helper function to fully propose and forward a proposal from the CouncilGovernor to
-  /// the VetoGovernor, returning the VetoGovernor's proposalId.
   function _proposeAndForwardToVetoGovernor(uint256 _proposerIndex, string memory _description)
     internal
     returns (uint256 vetoProposalId)
@@ -146,7 +128,6 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     vm.prank(_proposer);
     uint256 _councilProposalId = councilGovernor.propose(targets, values, calldatas, _description);
 
-    // 2. Pass council vote
     skip(councilGovernor.votingDelay() + 1);
     for (
       uint256 _i = 0;
@@ -158,89 +139,113 @@ abstract contract BasicCouncilVetoGovernorTest is Test {
     }
     skip(councilGovernor.votingPeriod() + 1);
 
-    // 3. Queue (forward) the proposal
     councilGovernor.queue(targets, values, calldatas, _descriptionHash);
 
     vetoProposalId = _councilProposalId;
   }
 }
 
-// --- SMOKE TESTS ---
-contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
-  /// @notice Test 1: Verifies that the veto governor is initialized correctly.
+// --- TIMESTAMP-CLOCK TOKEN TESTS ---
+
+contract TimestampDaoTokenTest is BasicCouncilVetoGovernorTest {
+  MockERC20Votes internal daoToken;
+
+  function _deployDaoToken() internal override returns (address) {
+    daoToken = new MockERC20Votes();
+    return address(daoToken);
+  }
+
+  function _vetoGovernorParams()
+    internal
+    view
+    override
+    returns (BasicCouncilVetoGovernor.ConstructorParams memory)
+  {
+    return BasicCouncilVetoGovernor.ConstructorParams(
+      "BasicCouncilVetoGovernor",
+      address(0),
+      1 hours,
+      1 days,
+      0,
+      vetoGuardian,
+      deployer,
+      4 days,
+      3 days,
+      50,
+      10,
+      TimelockController(payable(address(0))),
+      deployer,
+      address(0)
+    );
+  }
+
+  function _mintDaoTokens(address _holder, uint256 _amount) internal override {
+    daoToken.mint(_holder, _amount);
+    vm.prank(_holder);
+    daoToken.delegate(_holder);
+  }
+
+  function _advanceTo(uint256 timepoint) internal override {
+    vm.warp(timepoint);
+  }
+}
+
+contract BasicCouncilVetoGovernorSmokeTest is TimestampDaoTokenTest {
   function test_SetupAndInitialization() public view {
     assertEq(vetoGovernor.COUNCIL(), address(councilGovernor));
     assertEq(vetoGovernor.vetoOverrideRole(), deployer);
     assertEq(address(vetoGovernor.timelock()), address(timelock));
   }
 
-  /// @notice Test 2: Verifies the happy path where a proposal is not vetoed and successfully queues
-  /// and executes.
   function test_HappyPath_ProposalSucceedsAndExecutes(uint256 _proposerIndex) public {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Succeeds");
 
-    skip(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
-
-    // Queue in timelock
     vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Succeeds")));
 
     skip(timelock.getMinDelay() + 1);
 
     assertEq(target.number(), 0);
-
-    // Execute
     councilGovernor.execute(targets, values, calldatas, keccak256(bytes("Succeeds")));
 
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Executed));
-    assertEq(target.number(), 1, "Target contract should have been incremented");
+    assertEq(target.number(), 1);
   }
 
-  /// @notice Test 3: Verifies that a proposal is successfully vetoed when the vetoQuorum is met.
   function test_VetoPath_ProposalIsSuccessfullyVetoed(uint256 _proposerIndex) public {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Vetoed");
 
-    skip(vetoGovernor.votingDelay() + 1);
+    _advanceTo(block.timestamp + vetoGovernor.votingDelay() + 1);
 
-    // Cast one vote to meet the veto quorum
     vm.prank(whale1);
-    vetoGovernor.castVote(_proposalId, 0); // 0 = Against (Veto)
+    vetoGovernor.castVote(_proposalId, 0);
 
-    // Wait for voting period (plus potential extension) to end
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
 
-    // Assert state is Defeated
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
 
-    // Verify it cannot be queued
     vm.expectRevert();
     vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Vetoed")));
   }
 
-  /// @notice Test 4: Verifies that a vetoed proposal can be overridden by the designated role and
-  /// then successfully executed.
   function test_VetoOverridePath_VetoedProposalIsOverriddenAndExecuted(uint256 _proposerIndex)
     public
   {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Overridden");
 
-    // Veto the proposal
-    skip(vetoGovernor.votingDelay() + 1);
+    _advanceTo(block.timestamp + vetoGovernor.votingDelay() + 1);
     vm.prank(whale1);
     vetoGovernor.castVote(_proposalId, 0);
 
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
 
-    // Override the veto
-    vm.prank(deployer); // `deployer` has the vetoOverrideRole
+    vm.prank(deployer);
     vetoGovernor.overrideVeto(_proposalId);
-
-    // Assert the state is now Succeeded due to the override
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
 
-    // Now, proceed with queuing and executing
     vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Overridden")));
     skip(timelock.getMinDelay() + 1);
     councilGovernor.execute(targets, values, calldatas, keccak256(bytes("Overridden")));
@@ -249,10 +254,8 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     assertEq(target.number(), 1);
   }
 
-  /// @notice Test 5: Verifies that only the designated Council Governor can create proposals.
   function test_RevertIf_NonCouncilProposes() public {
     vm.expectRevert("Only council");
-
     vm.prank(nonCouncilProposer);
     vetoGovernor.propose(targets, values, calldatas, "Invalid Proposal");
   }
@@ -279,7 +282,7 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     calldatas[0] = abi.encodeWithSignature("depositExact(uint256)", _value);
     uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "");
 
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
     vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("")));
     skip(timelock.getMinDelay());
 
@@ -299,7 +302,7 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     calldatas[0] = abi.encodeWithSignature("depositExact(uint256)", _value);
     uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "");
 
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
     vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("")));
     skip(timelock.getMinDelay());
 
@@ -319,7 +322,7 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
     calldatas[0] = abi.encodeWithSignature("deposit()");
     uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "");
 
-    vm.warp(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
     vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("")));
     skip(timelock.getMinDelay());
 
@@ -334,7 +337,7 @@ contract BasicCouncilVetoGovernorSmokeTest is BasicCouncilVetoGovernorTest {
   }
 }
 
-contract _IsValidDescriptionForProposer is BasicCouncilVetoGovernorTest {
+contract _IsValidDescriptionForProposer is TimestampDaoTokenTest {
   function testFuzz_ProposalWithProposerRestrictedDescriptionCanBeForwarded(uint256 _proposerIndex)
     public
   {
@@ -344,5 +347,192 @@ contract _IsValidDescriptionForProposer is BasicCouncilVetoGovernorTest {
     uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, _description);
 
     assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Pending));
+  }
+}
+
+// --- BLOCK-CLOCK ERC-5805 TOKEN TESTS ---
+
+abstract contract BlockClockDaoTokenTest is BasicCouncilVetoGovernorTest {
+  uint48 constant VETO_VOTING_DELAY = 10;
+  uint32 constant VETO_VOTING_PERIOD = 100;
+
+  function _vetoGovernorParams()
+    internal
+    view
+    override
+    returns (BasicCouncilVetoGovernor.ConstructorParams memory)
+  {
+    return BasicCouncilVetoGovernor.ConstructorParams(
+      "BasicCouncilVetoGovernor",
+      address(0),
+      VETO_VOTING_DELAY,
+      VETO_VOTING_PERIOD,
+      0,
+      vetoGuardian,
+      deployer,
+      VETO_VOTING_PERIOD * 4,
+      VETO_VOTING_PERIOD * 3,
+      50,
+      10,
+      TimelockController(payable(address(0))),
+      deployer,
+      address(0)
+    );
+  }
+
+  function _advanceTo(uint256 timepoint) internal override {
+    vm.roll(timepoint);
+  }
+}
+
+contract BlockClockDaoTokenSetupTest is BlockClockDaoTokenTest {
+  MockERC20VotesBlockNumber internal daoToken;
+
+  function _deployDaoToken() internal override returns (address) {
+    daoToken = new MockERC20VotesBlockNumber();
+    return address(daoToken);
+  }
+
+  function _mintDaoTokens(address _holder, uint256 _amount) internal override {
+    daoToken.mint(_holder, _amount);
+  }
+}
+
+contract BasicCouncilVetoGovernorBlockClockSmokeTest is BlockClockDaoTokenSetupTest {
+  function test_ClockReturnsBlockNumber() public view {
+    assertEq(vetoGovernor.clock(), uint48(block.number));
+    assertEq(vetoGovernor.CLOCK_MODE(), "mode=blocknumber&from=default");
+  }
+
+  function test_HappyPath_ProposalSucceedsAndExecutes(uint256 _proposerIndex) public {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Succeeds");
+
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Succeeds")));
+
+    skip(timelock.getMinDelay() + 1);
+    assertEq(target.number(), 0);
+    councilGovernor.execute(targets, values, calldatas, keccak256(bytes("Succeeds")));
+
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Executed));
+    assertEq(target.number(), 1);
+  }
+
+  function test_VetoPath_ProposalIsSuccessfullyVetoed(uint256 _proposerIndex) public {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Vetoed");
+
+    _advanceTo(block.number + vetoGovernor.votingDelay() + 1);
+
+    vm.prank(whale1);
+    vetoGovernor.castVote(_proposalId, 0);
+
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
+
+    vm.expectRevert();
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Vetoed")));
+  }
+
+  function test_VetoOverridePath_VetoedProposalIsOverriddenAndExecuted(uint256 _proposerIndex)
+    public
+  {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Overridden");
+
+    _advanceTo(block.number + vetoGovernor.votingDelay() + 1);
+    vm.prank(whale1);
+    vetoGovernor.castVote(_proposalId, 0);
+
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
+
+    vm.prank(deployer);
+    vetoGovernor.overrideVeto(_proposalId);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Overridden")));
+    skip(timelock.getMinDelay() + 1);
+    councilGovernor.execute(targets, values, calldatas, keccak256(bytes("Overridden")));
+
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Executed));
+    assertEq(target.number(), 1);
+  }
+}
+
+// --- NO-CLOCK ERC-5805 TOKEN TESTS (GovernorVotes fallback) ---
+
+contract NoClockDaoTokenSetupTest is BlockClockDaoTokenTest {
+  MockERC20VotesNoClock internal daoToken;
+
+  function _deployDaoToken() internal override returns (address) {
+    daoToken = new MockERC20VotesNoClock();
+    return address(daoToken);
+  }
+
+  function _mintDaoTokens(address _holder, uint256 _amount) internal override {
+    daoToken.mint(_holder, _amount);
+  }
+}
+
+contract BasicCouncilVetoGovernorNoClockSmokeTest is NoClockDaoTokenSetupTest {
+  function test_ClockFallsBackToBlockNumber() public view {
+    assertEq(vetoGovernor.clock(), uint48(block.number));
+    assertEq(vetoGovernor.CLOCK_MODE(), "mode=blocknumber&from=default");
+  }
+
+  function test_HappyPath_ProposalSucceedsAndExecutes(uint256 _proposerIndex) public {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Succeeds");
+
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Succeeds")));
+
+    skip(timelock.getMinDelay() + 1);
+    assertEq(target.number(), 0);
+    councilGovernor.execute(targets, values, calldatas, keccak256(bytes("Succeeds")));
+
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Executed));
+    assertEq(target.number(), 1);
+  }
+
+  function test_VetoPath_ProposalIsSuccessfullyVetoed(uint256 _proposerIndex) public {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Vetoed");
+
+    _advanceTo(block.number + vetoGovernor.votingDelay() + 1);
+
+    vm.prank(whale1);
+    vetoGovernor.castVote(_proposalId, 0);
+
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
+
+    vm.expectRevert();
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Vetoed")));
+  }
+
+  function test_VetoOverridePath_VetoedProposalIsOverriddenAndExecuted(uint256 _proposerIndex)
+    public
+  {
+    uint256 _proposalId = _proposeAndForwardToVetoGovernor(_proposerIndex, "Overridden");
+
+    _advanceTo(block.number + vetoGovernor.votingDelay() + 1);
+    vm.prank(whale1);
+    vetoGovernor.castVote(_proposalId, 0);
+
+    _advanceTo(vetoGovernor.proposalDeadline(_proposalId) + 1);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Defeated));
+
+    vm.prank(deployer);
+    vetoGovernor.overrideVeto(_proposalId);
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Succeeded));
+
+    vetoGovernor.queue(targets, values, calldatas, keccak256(bytes("Overridden")));
+    skip(timelock.getMinDelay() + 1);
+    councilGovernor.execute(targets, values, calldatas, keccak256(bytes("Overridden")));
+
+    assertEq(uint8(vetoGovernor.state(_proposalId)), uint8(IGovernor.ProposalState.Executed));
+    assertEq(target.number(), 1);
   }
 }

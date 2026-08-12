@@ -42,12 +42,18 @@ contract CompoundCouncilVetoGovernor is BasicCouncilVetoGovernor {
   {}
 
   /// @dev Matches COMP to use block number.
-  function clock() public view virtual override returns (uint48) {
+  function clock() public view virtual override(Governor, GovernorVotes) returns (uint48) {
     return uint48(block.number);
   }
 
   /// @dev Machine-readable description of the clock as specified in ERC-6372.
-  function CLOCK_MODE() public pure virtual override returns (string memory) {
+  function CLOCK_MODE()
+    public
+    pure
+    virtual
+    override(Governor, GovernorVotes)
+    returns (string memory)
+  {
     return "mode=blocknumber&from=default";
   }
 
