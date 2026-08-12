@@ -12,7 +12,6 @@ import {
   TimelockController
 } from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // Internal Dependencies
 import {GovernorVetoOverride} from "src/extensions/GovernorVetoOverride.sol";
@@ -33,6 +32,22 @@ import {GovernorExtendVetoPeriod} from "src/extensions/GovernorExtendVetoPeriod.
 /// - Proposals can be vetoed by the veto guardian.
 /// - A proposal's veto period can be extended if veto votes meet the minor threshold.
 /// - A veto can be overridden by the veto override role.
+///
+/// Clock mode (`clock()` / `CLOCK_MODE()`) is delegated to the ERC-5805 token passed via the
+/// constructor. The governor adopts the token's clock mode transparently:
+///   - A token implementing ERC-6372 sets the governor's clock to match (timestamp or block
+///     number).
+///   - A token with code but no ERC-6372 support causes `GovernorVotes` to fall back to a
+///     block-number clock via its `try`/`catch` handler.
+/// The token must already be deployed and have code at construction time — the constructor
+/// checkpoint-pushes keyed by `clock()`, which makes a live call to `token().clock()`.
+/// Counterfactual (precomputed) token addresses are not supported.
+///
+/// All time-denominated parameters (`votingDelay`, `votingPeriod`, `vetoOverrideDuration`,
+/// `votingPeriodExtension`) are interpreted in the token's clock unit (seconds or blocks).
+/// Pre-ERC-6372 tokens that use a timestamp-based checkpointing scheme will receive a
+/// block-number clock via the fallback, creating a clock mismatch. Deployers must ensure the
+/// token's checkpoint clock matches the intended governance semantics.
 contract BasicCouncilVetoGovernor is
   Governor,
   GovernorVotes,
@@ -47,13 +62,19 @@ contract BasicCouncilVetoGovernor is
 {
   /// @notice Data structure for deploying the `CouncilVetoGovernor`.
   /// @param name The name of the council veto governor.
-  /// @param token The token used to veto governance proposals.
-  /// @param votingDelay The delay before voting on a proposal begins.
-  /// @param votingPeriod The period of time voting will take place.
+  /// @param token The token used to veto governance proposals. Must be already deployed.
+  /// @param votingDelay Delay, in token clock units (seconds or blocks), before voting begins.
+  /// @param votingPeriod Duration, in token clock units (seconds or blocks), of the voting period.
   /// @param proposalThreshold The number of tokens needed to create a proposal.
   /// @param vetoGuardian The address authorized to veto proposals.
   /// @param vetoOverrideRole The address authorized to override vetoed proposals.
-  /// @param vetoOverrideDuration Time window for overrides after proposal deadline.
+  /// @param vetoOverrideDuration Duration, in token clock units (seconds or blocks), of the veto
+  ///   override window after the proposal deadline.
+  /// @param votingPeriodExtension Extra time, in token clock units (seconds or blocks), added to
+  /// the proposal deadline when the minor veto threshold is triggered.
+  /// @param votingPeriodExtensionThresholdPct Threshold (as percentage points) of veto threshold
+  ///   that triggers the extension.
+  /// @param vetoThresholdNumerator Numerator of the veto threshold fraction (denominator is 100).
   /// @param timelock The timelock contract used for managing proposals.
   /// @param governorAdmin The address authorized to change governance parameters.
   /// @param council The address of the council governor.
@@ -181,20 +202,6 @@ contract BasicCouncilVetoGovernor is
     returns (bool)
   {
     return GovernorTimelockControl.proposalNeedsQueuing(_proposalId);
-  }
-
-  function clock() public view virtual override(Governor, GovernorVotes) returns (uint48) {
-    return uint48(block.timestamp);
-  }
-
-  function CLOCK_MODE()
-    public
-    pure
-    virtual
-    override(Governor, GovernorVotes)
-    returns (string memory)
-  {
-    return "mode=timestamp";
   }
 
   function propose(

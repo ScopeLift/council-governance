@@ -186,6 +186,12 @@ contract BasicVetoGovernorTest is Test {
 }
 
 contract Constructor is Test {
+  MockERC20Votes internal token;
+
+  function setUp() public {
+    token = new MockERC20Votes();
+  }
+
   function test_ConstructorSetsParamsCorrectly(
     BasicCouncilVetoGovernor.ConstructorParams memory _params
   ) public {
@@ -198,7 +204,7 @@ contract Constructor is Test {
     BasicCouncilVetoGovernor.ConstructorParams memory _newParams =
       BasicCouncilVetoGovernor.ConstructorParams(
         _params.name,
-        _params.token,
+        address(token),
         _params.votingDelay,
         _params.votingPeriod,
         _params.proposalThreshold,
@@ -257,9 +263,9 @@ contract Quorum is BasicVetoGovernorTest {
 }
 
 contract Clock is BasicVetoGovernorTest {
-  function testFuzz_ReturnsCurrentTimestamp(uint256 _timestamp) public {
+  function testFuzz_ReturnsCurrentTimestamp(uint48 _timestamp) public {
     vm.warp(_timestamp);
-    assertEq(vetoGovernor.clock(), uint48(_timestamp));
+    assertEq(vetoGovernor.clock(), _timestamp);
   }
 }
 
