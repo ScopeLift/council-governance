@@ -38,9 +38,7 @@ abstract contract DeployErc5805CouncilGovernance is DeployCouncilGovernanceBase 
       if (block.number > 0) _timepoint = block.number - 1;
     }
     (bool _votesOk, bytes memory _votesData) = _params.daoToken
-      .staticcall(
-        abi.encodeWithSignature("getPastVotes(address,uint256)", address(this), _timepoint)
-      );
+      .staticcall(abi.encodeWithSignature("getPastVotes(address,uint256)", tx.origin, _timepoint));
     if (!_votesOk || _votesData.length != 32) {
       revert("DeployErc5805CouncilGovernance: getPastVotes is unavailable or malformed");
     }

@@ -8,6 +8,7 @@ import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
 import {
+  DeployErc5805CouncilGovernanceInvalidTokenAllocationTestConfig,
   DeployErc5805CouncilGovernanceTestConfig
 } from "script/test/DeployErc5805CouncilGovernanceTestConfig.s.sol";
 import {
@@ -42,6 +43,20 @@ contract DeployCouncilGovernanceIntegrationTest is Test {
     assertEq(_deploy.vetoGovernor().CLOCK_MODE(), "mode=blocknumber&from=default");
   }
 
+  function test_RevertIf_CouncilAllocationIsBelowOneWholeToken() public {
+    DeployErc5805CouncilGovernanceInvalidTokenAllocationTestConfig _deploy =
+      new DeployErc5805CouncilGovernanceInvalidTokenAllocationTestConfig();
+    _deploy.disableLogging();
+
+    vm.expectRevert(
+      bytes(
+        "DeployCouncilGovernanceBase: tokens per member is below 1e18; "
+        "set at least one whole 18-decimal council token per member"
+      )
+    );
+    _deploy.run();
+  }
+
   function _assertCommonDeployment(
     CouncilERC20 _token,
     TimelockController _timelock,
@@ -53,6 +68,7 @@ contract DeployCouncilGovernanceIntegrationTest is Test {
     assertEq(address(_councilGovernor.councilVetoGovernor()), address(_vetoGovernor));
     assertEq(address(_vetoGovernor.timelock()), address(_timelock));
     assertEq(_vetoGovernor.COUNCIL(), address(_councilGovernor));
+    assertEq(_vetoGovernor.proposalThreshold(), 0);
     assertTrue(_timelock.hasRole(_timelock.PROPOSER_ROLE(), address(_vetoGovernor)));
     assertTrue(_timelock.hasRole(_timelock.EXECUTOR_ROLE(), address(_vetoGovernor)));
     assertTrue(_timelock.hasRole(_timelock.DEFAULT_ADMIN_ROLE(), address(_timelock)));

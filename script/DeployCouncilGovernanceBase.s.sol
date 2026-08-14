@@ -39,7 +39,6 @@ abstract contract DeployCouncilGovernanceBase is Script {
     address daoToken;
     uint48 votingDelay;
     uint32 votingPeriod;
-    uint256 proposalThreshold;
     address vetoGuardian;
     address vetoOverrideRole;
     uint48 vetoOverrideDuration;
@@ -121,7 +120,7 @@ abstract contract DeployCouncilGovernanceBase is Script {
         token: _vetoParams.daoToken,
         votingDelay: _vetoParams.votingDelay,
         votingPeriod: _vetoParams.votingPeriod,
-        proposalThreshold: _vetoParams.proposalThreshold,
+        proposalThreshold: 0,
         vetoGuardian: _vetoParams.vetoGuardian,
         vetoOverrideRole: _vetoParams.vetoOverrideRole,
         vetoOverrideDuration: _vetoParams.vetoOverrideDuration,
@@ -220,7 +219,6 @@ abstract contract DeployCouncilGovernanceBase is Script {
     _log(string.concat("Council governor admin: ", vm.toString(_councilParams.admin)));
     _log(string.concat("Veto governor: ", _vetoParams.name));
     _log(string.concat("DAO token: ", vm.toString(_vetoParams.daoToken)));
-    _log(string.concat("Veto proposal threshold: ", vm.toString(_vetoParams.proposalThreshold)));
     _log(string.concat("Veto threshold (%): ", vm.toString(_vetoParams.vetoThresholdNumerator)));
     _log(string.concat("Veto guardian: ", vm.toString(_vetoParams.vetoGuardian)));
     _log(string.concat("Veto override role: ", vm.toString(_vetoParams.vetoOverrideRole)));
@@ -260,8 +258,11 @@ abstract contract DeployCouncilGovernanceBase is Script {
     if (_tokenParams.councilMembers.length == 0) {
       revert("DeployCouncilGovernanceBase: council member list is empty");
     }
-    if (_tokenParams.maxTokensPerMember == 0) {
-      revert("DeployCouncilGovernanceBase: tokens per member is zero");
+    if (_tokenParams.maxTokensPerMember < 1e18) {
+      revert(
+        "DeployCouncilGovernanceBase: tokens per member is below 1e18; "
+        "set at least one whole 18-decimal council token per member"
+      );
     }
     if (_councilParams.votingPeriod == 0) {
       revert("DeployCouncilGovernanceBase: council voting period is zero");

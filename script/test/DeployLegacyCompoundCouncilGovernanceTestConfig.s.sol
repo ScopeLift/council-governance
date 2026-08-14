@@ -22,7 +22,7 @@ contract DeployLegacyCompoundCouncilGovernanceTestConfig is DeployLegacyCompound
       name: "Test Compound Council",
       symbol: "TCOMP",
       admin: address(0xA11CE),
-      maxTokensPerMember: 100,
+      maxTokensPerMember: 1e18,
       councilMembers: _members
     });
   }
@@ -41,7 +41,7 @@ contract DeployLegacyCompoundCouncilGovernanceTestConfig is DeployLegacyCompound
       name: "Test Compound Council Governor",
       votingDelay: 1 days,
       votingPeriod: 7 days,
-      proposalThreshold: 100,
+      proposalThreshold: 1e18,
       quorumNumerator: 60,
       superQuorumNumerator: 100,
       admin: DEFAULT_SENDER
@@ -54,7 +54,6 @@ contract DeployLegacyCompoundCouncilGovernanceTestConfig is DeployLegacyCompound
       daoToken: COMP,
       votingDelay: 300,
       votingPeriod: 7200,
-      proposalThreshold: 0,
       vetoGuardian: address(0),
       vetoOverrideRole: DEFAULT_SENDER,
       vetoOverrideDuration: 28_800,
