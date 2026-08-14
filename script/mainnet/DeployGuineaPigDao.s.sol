@@ -25,7 +25,7 @@ contract DeployGuineaPigDao is DeployErc5805CouncilGovernance {
       name: "Guinea Pig DAO Minters Council",
       symbol: "GPDMINTCOUNCIL",
       admin: DAO_TIMELOCK,
-      maxTokensPerMember: 1,
+      maxTokensPerMember: 1e18,
       councilMembers: _councilMembers
     });
   }
@@ -44,9 +44,9 @@ contract DeployGuineaPigDao is DeployErc5805CouncilGovernance {
       name: "Guinea Pig DAO Minters Council Governor",
       votingDelay: 20 minutes,
       votingPeriod: 1 hours,
-      proposalThreshold: 1,
-      quorumNumerator: 50, // Two of four council members.
-      superQuorumNumerator: 75, // Three of four council members.
+      proposalThreshold: 1e18,
+      quorumNumerator: 40, // Two of five council members.
+      superQuorumNumerator: 60, // Three of five council members.
       admin: DAO_TIMELOCK
     });
   }
