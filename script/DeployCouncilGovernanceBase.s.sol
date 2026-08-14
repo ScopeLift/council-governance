@@ -258,8 +258,11 @@ abstract contract DeployCouncilGovernanceBase is Script {
     if (_tokenParams.councilMembers.length == 0) {
       revert("DeployCouncilGovernanceBase: council member list is empty");
     }
-    if (_tokenParams.maxTokensPerMember == 0) {
-      revert("DeployCouncilGovernanceBase: tokens per member is zero");
+    if (_tokenParams.maxTokensPerMember < 1e18) {
+      revert(
+        "DeployCouncilGovernanceBase: tokens per member is below 1e18; "
+        "set at least one whole 18-decimal council token per member"
+      );
     }
     if (_councilParams.votingPeriod == 0) {
       revert("DeployCouncilGovernanceBase: council voting period is zero");

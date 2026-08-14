@@ -25,7 +25,13 @@ contract DeployErc5805CouncilGovernanceTestConfig is DeployErc5805CouncilGoverna
     DeployCouncilGovernanceBase.run();
   }
 
-  function _getCouncilTokenParams() internal pure override returns (CouncilTokenParams memory) {
+  function _getCouncilTokenParams()
+    internal
+    pure
+    virtual
+    override
+    returns (CouncilTokenParams memory)
+  {
     address[] memory _members = new address[](3);
     _members[0] = address(0x1001);
     _members[1] = address(0x1002);
@@ -34,7 +40,7 @@ contract DeployErc5805CouncilGovernanceTestConfig is DeployErc5805CouncilGoverna
       name: "Test Council",
       symbol: "TCOUNCIL",
       admin: address(0xA11CE),
-      maxTokensPerMember: 100,
+      maxTokensPerMember: 1e18,
       councilMembers: _members
     });
   }
@@ -53,7 +59,7 @@ contract DeployErc5805CouncilGovernanceTestConfig is DeployErc5805CouncilGoverna
       name: "Test Council Governor",
       votingDelay: 1 days,
       votingPeriod: 7 days,
-      proposalThreshold: 100,
+      proposalThreshold: 1e18,
       quorumNumerator: 60,
       superQuorumNumerator: 100,
       admin: DEFAULT_SENDER
@@ -75,5 +81,15 @@ contract DeployErc5805CouncilGovernanceTestConfig is DeployErc5805CouncilGoverna
       admin: DEFAULT_SENDER,
       acknowledgeBlockNumberFallback: false
     });
+  }
+}
+
+contract DeployErc5805CouncilGovernanceInvalidTokenAllocationTestConfig is
+  DeployErc5805CouncilGovernanceTestConfig
+{
+  function _getCouncilTokenParams() internal pure override returns (CouncilTokenParams memory) {
+    CouncilTokenParams memory _params = super._getCouncilTokenParams();
+    _params.maxTokensPerMember = 1e18 - 1;
+    return _params;
   }
 }
