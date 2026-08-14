@@ -25,9 +25,7 @@ abstract contract DeployLegacyCompoundCouncilGovernance is DeployCouncilGovernan
     uint256 _pastBlock;
     if (block.number > 0) _pastBlock = block.number - 1;
     (bool _votesOk, bytes memory _votesData) = _params.daoToken
-      .staticcall(
-        abi.encodeWithSignature("getPriorVotes(address,uint256)", address(this), _pastBlock)
-      );
+      .staticcall(abi.encodeWithSignature("getPriorVotes(address,uint256)", tx.origin, _pastBlock));
     if (!_votesOk || _votesData.length != 32) {
       revert("DeployLegacyCompoundCouncilGovernance: getPriorVotes is unavailable or malformed");
     }
