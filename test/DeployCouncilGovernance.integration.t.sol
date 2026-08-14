@@ -53,6 +53,7 @@ contract DeployCouncilGovernanceIntegrationTest is Test {
     assertEq(address(_councilGovernor.councilVetoGovernor()), address(_vetoGovernor));
     assertEq(address(_vetoGovernor.timelock()), address(_timelock));
     assertEq(_vetoGovernor.COUNCIL(), address(_councilGovernor));
+    assertEq(_vetoGovernor.proposalThreshold(), 0);
     assertTrue(_timelock.hasRole(_timelock.PROPOSER_ROLE(), address(_vetoGovernor)));
     assertTrue(_timelock.hasRole(_timelock.EXECUTOR_ROLE(), address(_vetoGovernor)));
     assertTrue(_timelock.hasRole(_timelock.DEFAULT_ADMIN_ROLE(), address(_timelock)));

@@ -54,7 +54,6 @@ contract DeployLegacyCompoundCouncilGovernanceTestConfig is DeployLegacyCompound
       daoToken: COMP,
       votingDelay: 300,
       votingPeriod: 7200,
-      proposalThreshold: 0,
       vetoGuardian: address(0),
       vetoOverrideRole: DEFAULT_SENDER,
       vetoOverrideDuration: 28_800,

@@ -57,7 +57,6 @@ contract DeployGuineaPigDao is DeployErc5805CouncilGovernance {
       daoToken: DAO_TOKEN,
       votingDelay: 0,
       votingPeriod: 300, // Approximately one hour at 12 seconds per block.
-      proposalThreshold: 0,
       vetoGuardian: VETO_GUARDIAN,
       vetoOverrideRole: VETO_OVERRIDE_ROLE,
       vetoOverrideDuration: 100, // Approximately 20 minutes at 12 seconds per block.

@@ -66,7 +66,6 @@ contract DeployErc5805CouncilGovernanceTestConfig is DeployErc5805CouncilGoverna
       daoToken: address(DAO_TOKEN),
       votingDelay: 1 hours,
       votingPeriod: 1 days,
-      proposalThreshold: 0,
       vetoGuardian: address(0),
       vetoOverrideRole: DEFAULT_SENDER,
       vetoOverrideDuration: 4 days,
