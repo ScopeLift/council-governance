@@ -8,32 +8,18 @@ import {IERC5805} from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import {BasicCouncilGovernor} from "src/BasicCouncilGovernor.sol";
 import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 
-// Script Dependencies
-import {DeploymentConfigurationTest} from "script/DeploymentConfigurationTest.sol";
-
 contract BasicCouncilGovernorHarness is BasicCouncilGovernor {
-  constructor(IERC5805 _councilToken, address _vetoGovernor)
+  constructor(
+    IERC5805 _councilToken,
+    address _vetoGovernor,
+    string memory _name,
+    address _admin,
+    BasicCouncilGovernor.InitialCouncilParams memory _params
+  )
     BasicCouncilGovernor(
-      _config().councilGovernorName,
-      _councilToken,
-      BasicCouncilVetoGovernor(payable(_vetoGovernor)),
-      _config().councilGovernorAdmin,
-      BasicCouncilGovernor.InitialCouncilParams({
-        initialVotingDelay: _config().councilGovernorInitialVotingDelay,
-        initialVotingPeriod: _config().councilGovernorInitialVotingPeriod,
-        initialProposalThreshold: _config().councilGovernorInitialProposalThreshold,
-        initialQuorumFraction: _config().councilGovernorInitialQuorumFraction,
-        initialSuperQuorumFraction: _config().councilGovernorInitialSuperQuorumFraction
-      })
+      _name, _councilToken, BasicCouncilVetoGovernor(payable(_vetoGovernor)), _admin, _params
     )
   {}
-
-  function _config()
-    internal
-    returns (DeploymentConfigurationTest.CouncilGovernorDeploymentConfiguration memory)
-  {
-    return (new DeploymentConfigurationTest())._getCouncilGovernorDeploymentConfiguration();
-  }
 
   function exposed_ProposalDescriptions(uint256 proposalId) public view returns (string memory) {
     return proposalDescriptions[proposalId];

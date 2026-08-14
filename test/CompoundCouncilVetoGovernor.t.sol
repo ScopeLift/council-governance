@@ -14,11 +14,7 @@ import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {ICompVotes, CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 
 // Script Dependencies
-import {DeploymentConfigurationTestCompound} from "script/DeploymentConfigurationTestCompound.sol";
-import {
-  DeploymentInputMainnetForkTest
-} from "script/deploy-constants/DeploymentInputMainnetForkTest.sol";
-import {DeployTimelock} from "script/DeployTimelock.s.sol";
+import {GovernanceTestFixture} from "test/helpers/GovernanceTestFixture.sol";
 
 interface IComp is IERC20 {
   function delegate(address delegatee) external;
@@ -33,7 +29,7 @@ contract CompoundCouncilVetoGovernorTest is Test {
     string description;
   }
 
-  DeploymentInputMainnetForkTest internal input = new DeploymentInputMainnetForkTest();
+  GovernanceTestFixture internal input = new GovernanceTestFixture();
 
   IComp internal COMP = IComp(input.MAIN_DAO_TOKEN());
   address internal compDeployer = makeAddr("COMP Deployer");
@@ -41,11 +37,12 @@ contract CompoundCouncilVetoGovernorTest is Test {
   CompoundCouncilVetoGovernor internal vetoGovernor;
 
   function setUp() public {
-    DeploymentConfigurationTestCompound _config = new DeploymentConfigurationTestCompound();
     _deployComp();
-    TimelockController _timelock =
-      _deployTimelock(_config._getTimelockDeploymentConfiguration(), input.MAIN_DAO_GOVERNOR());
-    _deployVetoGovernor(_config._getVetoGovernorDeploymentConfiguration(), _timelock);
+    address[] memory _emptyAccounts = new address[](0);
+    TimelockController _timelock = new TimelockController(
+      input.TIMELOCK_MIN_DELAY(), _emptyAccounts, _emptyAccounts, input.MAIN_DAO_GOVERNOR()
+    );
+    _deployVetoGovernor(_timelock);
 
     vm.startPrank(input.MAIN_DAO_GOVERNOR());
     _timelock.grantRole(_timelock.EXECUTOR_ROLE(), address(vetoGovernor));
@@ -63,22 +60,25 @@ contract CompoundCouncilVetoGovernorTest is Test {
     assertEq(address(COMP).code, code);
   }
 
-  function _deployVetoGovernor(
-    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory _config,
-    TimelockController _timelock
-  ) internal {
-    _config.mainDaoToken = address(COMP);
-    vetoGovernor = new CompoundCouncilVetoGovernorHarness(
-      _config, _timelock, councilGovernor, input.MAIN_DAO_GOVERNOR()
-    );
-  }
-
-  function _deployTimelock(
-    DeploymentConfigurationTestCompound.TimelockDeploymentConfiguration memory _config,
-    address _deployer
-  ) internal returns (TimelockController _timelock) {
-    DeployTimelock _timelockScript = new DeployTimelock();
-    _timelock = _timelockScript.run(_deployer, _config);
+  function _deployVetoGovernor(TimelockController _timelock) internal {
+    BasicCouncilVetoGovernor.ConstructorParams memory _params =
+      BasicCouncilVetoGovernor.ConstructorParams({
+        name: input.COMPOUND_VETO_GOVERNOR_NAME(),
+        token: address(COMP),
+        votingDelay: input.COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_DELAY(),
+        votingPeriod: input.COMPOUND_VETO_GOVERNOR_INITIAL_VOTING_PERIOD(),
+        proposalThreshold: input.VETO_GOVERNOR_INITIAL_PROPOSAL_THRESHOLD(),
+        vetoGuardian: input.VETO_GUARDIAN(),
+        vetoOverrideRole: input.VETO_OVERRIDE_ROLE(),
+        vetoOverrideDuration: input.COMPOUND_VETO_OVERRIDE_DURATION(),
+        votingPeriodExtension: input.COMPOUND_VOTING_PERIOD_EXTENSION(),
+        votingPeriodExtensionThresholdPct: input.VOTING_PERIOD_EXTENSION_THRESHOLD_PCT(),
+        vetoThresholdNumerator: input.VETO_GOVERNOR_INITIAL_VETO_THRESHOLD_FRACTION(),
+        timelock: _timelock,
+        governorAdmin: input.GOVERNOR_ADMIN(),
+        council: councilGovernor
+      });
+    vetoGovernor = new CompoundCouncilVetoGovernorHarness(_params);
   }
 
   function _fundAndDelegate(address voter, uint256 amount) internal {

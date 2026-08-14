@@ -16,12 +16,9 @@ import {BasicCouncilVetoGovernor} from "src/BasicCouncilVetoGovernor.sol";
 import {CompoundCouncilVetoGovernor} from "src/CompoundCouncilVetoGovernor.sol";
 import {CouncilERC20} from "src/CouncilERC20.sol";
 
-import {DeployAndMintCouncilERC20} from "script/DeployAndMintCouncilERC20.s.sol";
-import {DeployTimelock} from "script/DeployTimelock.s.sol";
 import {
-  DeployCompoundGovernorsAndGrantRoles
-} from "script/DeployCompoundGovernorsAndGrantRoles.s.sol";
-import {DeploymentConfigurationTestCompound} from "script/DeploymentConfigurationTestCompound.sol";
+  DeployLegacyCompoundCouncilGovernanceTestConfig
+} from "script/test/DeployLegacyCompoundCouncilGovernanceTestConfig.s.sol";
 
 interface IComp is IERC20 {
   function delegate(address delegatee) external;
@@ -49,44 +46,24 @@ contract CompoundCouncilVetoGovernorIntegrationTest is Test {
   CouncilERC20 internal councilToken;
   BasicCouncilGovernor internal councilGovernor;
   CompoundCouncilVetoGovernor internal vetoGovernor;
-  DeploymentConfigurationTestCompound internal config;
 
   function setUp() public {
     string memory rpcUrl = vm.rpcUrl("mainnet");
     uint256 forkBlock = 23_810_240;
     vm.createSelectFork(rpcUrl, forkBlock);
 
-    config = new DeploymentConfigurationTestCompound();
-    deployer = config.MAIN_DAO_GOVERNOR();
-    councilMember = config.COUNCIL_MEMBERS(0);
-
-    DeployAndMintCouncilERC20 councilTokenScript = new DeployAndMintCouncilERC20();
-    councilTokenScript.setLoggingSilenced(true);
-
-    councilToken =
-      councilTokenScript.run(deployer, config._getCouncilERC20DeploymentConfiguration());
+    DeployLegacyCompoundCouncilGovernanceTestConfig _deploy =
+      new DeployLegacyCompoundCouncilGovernanceTestConfig();
+    _deploy.disableLogging();
+    _deploy.run();
     vm.warp(block.timestamp + 1);
 
-    DeployTimelock timelockScript = new DeployTimelock();
-    timelockScript.setLoggingSilenced(true);
-    timelock = timelockScript.run(deployer, config._getTimelockDeploymentConfiguration());
-
-    DeployCompoundGovernorsAndGrantRoles governorsScript =
-      new DeployCompoundGovernorsAndGrantRoles();
-    governorsScript.setLoggingSilenced(true);
-
-    DeploymentConfigurationTestCompound.VetoGovernorDeploymentConfiguration memory vetoConfig =
-      config._getVetoGovernorDeploymentConfiguration();
-    // Override the placeholder token address in the default test config with the real COMP token.
-    vetoConfig.mainDaoToken = address(COMP);
-
-    (councilGovernor, vetoGovernor) = governorsScript.run(
-      deployer,
-      timelock,
-      config._getCouncilGovernorDeploymentConfiguration(),
-      vetoConfig,
-      councilToken
-    );
+    councilToken = _deploy.councilToken();
+    timelock = _deploy.timelock();
+    councilGovernor = _deploy.councilGovernor();
+    vetoGovernor = CompoundCouncilVetoGovernor(payable(address(_deploy.vetoGovernor())));
+    deployer = tx.origin;
+    councilMember = address(0x2001);
   }
 
   function _buildEmptyProposal(string memory _description)
@@ -113,8 +90,8 @@ contract CompoundCouncilVetoGovernorIntegrationTest is Test {
     );
 
     vm.warp(councilGovernor.proposalSnapshot(_proposalId) + 1);
-    for (uint256 i = 0; i < 4; i++) {
-      vm.prank(config.COUNCIL_MEMBERS(i));
+    for (uint256 i = 0; i < 3; i++) {
+      vm.prank(address(uint160(0x2001 + i)));
       councilGovernor.castVote(_proposalId, uint8(GovernorCountingSimple.VoteType.For));
     }
 
